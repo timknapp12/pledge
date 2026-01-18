@@ -1,12 +1,12 @@
 # Pledge
 
-A Solana mobile dApp (Android only) that enables users to stake USDC tokens on personal goals. Users create time-bound goals with to-do lists, track progress, and self-report completion. 100% completion returns full stake; partial completion returns proportional amount minus fee; failure forfeits tokens to treasury/charity.
+A Solana mobile dApp that enables users to stake USDC tokens on personal goals. Users create time-bound goals with to-do lists, track progress, and self-report completion. 100% completion returns full stake; partial completion returns proportional amount minus fee; failure forfeits tokens to treasury/charity.
 
 ## Features
 
 - **Goal Pledges**: Create time-bound goals (1 day, 1 week, 1 month, or custom)
 - **USDC Staking**: Stake tokens as commitment to your goals
-- **To-Do Tracking**: Track progress with daily to-do lists
+- **To-Do Tracking**: Track progress with daily/weekly to-do lists
 - **Templates**: Save and reuse goal templates
 - **Points & Streaks**: Gamification with points and streak bonuses
 - **Push Notifications**: Reminders via Expo push notifications
@@ -81,11 +81,6 @@ npx expo start
 2. Deploy program: `cd packages/anchor && anchor deploy`
 3. Start Supabase locally: `supabase start`
 4. Run mobile app: `cd apps/mobile && npx expo start`
-
-## V2 Features (Planned)
-
-- **GitHub Integration**: Verify commit-based goals automatically
-- **X (Twitter) Integration**: Verify posting/engagement goals automatically
 
 ## License
 
