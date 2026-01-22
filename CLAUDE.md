@@ -145,6 +145,7 @@ Reference: `/Users/timk/rekt-react-native` for i18n pattern
 - Follow existing i18n pattern with i18next + expo-localization
 - Custom UI components (no external UI library)
 - Use React Query for data fetching/caching
+- **No web components** - pure React Native only, no WebViews or DOM-based components
 
 ### i18n (Internationalization)
 
@@ -329,6 +330,13 @@ await transact(async (wallet) => {
 
 - Use **Anchor v0.28.0** in frontend (React Native compatibility)
 - Use **Anchor 0.31.0** for program development
+
+### Goal Duration Types
+
+- **Duration presets (daily, weekly, monthly) are UX-only** - they exist purely for user convenience
+- The **Anchor program only cares about the end date (deadline)** - it has no knowledge of duration types
+- These presets help users quickly set common timeframes and organize goals in the UI
+- The frontend stores duration type in Supabase for display purposes, but it's never sent on-chain
 
 ### Polyfills Required (React Native)
 

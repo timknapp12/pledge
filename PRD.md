@@ -23,6 +23,8 @@ Pledge is a Solana mobile dApp (Android only) that enables users to set goals an
 - **Presets:** 1 day, 1 week, 1 month
 - **Custom:** User-defined start/end dates
 
+**Note:** These duration presets (daily, weekly, monthly) are purely for UX convenience. They provide quick buttons for users to set common timeframes and help organize/display goals in the UI. The Anchor program only stores and cares about the **end date (deadline)** - it has no concept of duration types.
+
 ### To-Do Structure
 
 - Each pledge contains a list of to-do items
@@ -274,8 +276,8 @@ pledge/
 
 | Layer             | Technology                                                     |
 | ----------------- | -------------------------------------------------------------- |
-| **Mobile**        | React Native (Expo), Android only                              |
-| **UI**            | Custom components, styled-components                           |
+| **Mobile**        | React Native (Expo), Android only, **no web components**       |
+| **UI**            | Custom components, styled-components, pure native (no WebViews)|
 | **Auth**          | Supabase + Sign in with Solana (MWA)                           |
 | **Wallet**        | Solana Mobile Wallet Adapter                                   |
 | **Blockchain**    | Anchor 0.31.0, @solana/web3.js v1.x, @coral-xyz/anchor v0.28.0 |
