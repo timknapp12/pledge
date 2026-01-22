@@ -297,6 +297,291 @@ for (const pledge of expiredPledges) {
 - Crank uses service role key (bypasses RLS)
 - Always verify on-chain before moving funds
 
+### Data Sync (On-Chain ↔ Supabase)
+
+**No indexer required for V1.** Use atomic frontend operations with reconciliation.
+
+#### Confirm-Then-Write Pattern
+
+All on-chain operations MUST wait for confirmation before DB write:
+
+```typescript
+// lib/sync/atomicOperations.ts
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Connection } from '@solana/web3.js';
+
+const PENDING_SYNC_KEY = 'pending_sync_operations';
+
+interface PendingSyncOp {
+  id: string;
+  type: 'CREATE_PLEDGE' | 'REPORT_COMPLETION' | 'EDIT_PLEDGE';
+  txSignature: string;
+  data: Record<string, unknown>;
+  createdAt: number;
+}
+
+export async function createPledgeAtomic(
+  program: Program,
+  supabase: SupabaseClient,
+  params: CreatePledgeParams
+): Promise<{ success: boolean; error?: string }> {
+  const pledgeKeypair = Keypair.generate();
+
+  // 1. Build and send transaction
+  let txSignature: string;
+  try {
+    txSignature = await program.methods
+      .createPledge(params.stakeAmount, params.deadline)
+      .accounts({
+        pledge: pledgeKeypair.publicKey,
+        user: wallet.publicKey,
+        // ... other accounts
+      })
+      .signers([pledgeKeypair])
+      .rpc();
+  } catch (err) {
+    return { success: false, error: 'Transaction failed' };
+  }
+
+  // 2. WAIT for confirmation (critical!)
+  const connection = program.provider.connection;
+  const confirmation = await connection.confirmTransaction(txSignature, 'confirmed');
+
+  if (confirmation.value.err) {
+    return { success: false, error: 'Transaction not confirmed' };
+  }
+
+  // 3. Now safe to write DB
+  const dbPayload = {
+    on_chain_address: pledgeKeypair.publicKey.toString(),
+    wallet_address: wallet.publicKey.toString(),
+    name: params.name,
+    stake_amount: params.stakeAmount.toNumber(),
+    deadline: new Date(params.deadline * 1000).toISOString(),
+    todos: params.todos,
+    status: 'active',
+  };
+
+  const { error: dbError } = await supabase.from('pledges').insert(dbPayload);
+
+  // 4. If DB fails, queue for retry (funds are safe on-chain)
+  if (dbError) {
+    await queueForRetry({
+      id: crypto.randomUUID(),
+      type: 'CREATE_PLEDGE',
+      txSignature,
+      data: dbPayload,
+      createdAt: Date.now(),
+    });
+    // Return success - tx worked, DB will sync later
+    return { success: true, error: 'DB sync pending' };
+  }
+
+  return { success: true };
+}
+
+async function queueForRetry(op: PendingSyncOp): Promise<void> {
+  const existing = await AsyncStorage.getItem(PENDING_SYNC_KEY);
+  const queue: PendingSyncOp[] = existing ? JSON.parse(existing) : [];
+  queue.push(op);
+  await AsyncStorage.setItem(PENDING_SYNC_KEY, JSON.stringify(queue));
+}
+```
+
+#### Reconciliation on App Load
+
+```typescript
+// lib/sync/reconcile.ts
+export async function reconcileUserPledges(
+  program: Program,
+  supabase: SupabaseClient,
+  walletAddress: PublicKey
+): Promise<void> {
+  // 1. Process any pending sync operations first
+  await processPendingSyncQueue(supabase);
+
+  // 2. Fetch on-chain pledges for this user
+  const onChainPledges = await program.account.pledge.all([
+    {
+      memcmp: {
+        offset: 8, // After discriminator
+        bytes: walletAddress.toBase58(),
+      },
+    },
+  ]);
+
+  // 3. Fetch DB pledges
+  const { data: dbPledges } = await supabase
+    .from('pledges')
+    .select('on_chain_address, status')
+    .eq('wallet_address', walletAddress.toString());
+
+  const dbPledgeMap = new Map(
+    dbPledges?.map((p) => [p.on_chain_address, p]) ?? []
+  );
+
+  // 4. Reconcile differences
+  for (const onChain of onChainPledges) {
+    const address = onChain.publicKey.toString();
+    const dbRecord = dbPledgeMap.get(address);
+
+    if (!dbRecord) {
+      // On-chain exists but not in DB - create record
+      await supabase.from('pledges').insert({
+        on_chain_address: address,
+        wallet_address: walletAddress.toString(),
+        stake_amount: onChain.account.stakeAmount.toNumber(),
+        deadline: new Date(onChain.account.deadline.toNumber() * 1000).toISOString(),
+        status: mapOnChainStatus(onChain.account.status),
+        // Note: some metadata (name, todos) may be lost if only on-chain exists
+        name: 'Recovered Pledge',
+        todos: [],
+      });
+    } else {
+      // Both exist - check if status needs sync
+      const onChainStatus = mapOnChainStatus(onChain.account.status);
+      if (dbRecord.status !== onChainStatus) {
+        await supabase
+          .from('pledges')
+          .update({ status: onChainStatus })
+          .eq('on_chain_address', address);
+      }
+    }
+  }
+}
+
+async function processPendingSyncQueue(supabase: SupabaseClient): Promise<void> {
+  const stored = await AsyncStorage.getItem(PENDING_SYNC_KEY);
+  if (!stored) return;
+
+  const queue: PendingSyncOp[] = JSON.parse(stored);
+  const remaining: PendingSyncOp[] = [];
+
+  for (const op of queue) {
+    try {
+      if (op.type === 'CREATE_PLEDGE') {
+        const { error } = await supabase.from('pledges').insert(op.data);
+        if (error) {
+          remaining.push(op); // Keep in queue for next attempt
+        }
+      }
+      // Handle other operation types...
+    } catch {
+      remaining.push(op);
+    }
+  }
+
+  if (remaining.length > 0) {
+    await AsyncStorage.setItem(PENDING_SYNC_KEY, JSON.stringify(remaining));
+  } else {
+    await AsyncStorage.removeItem(PENDING_SYNC_KEY);
+  }
+}
+
+function mapOnChainStatus(status: { active?: {}; reported?: {}; completed?: {}; forfeited?: {} }): string {
+  if (status.active) return 'active';
+  if (status.reported) return 'reported';
+  if (status.completed) return 'completed';
+  if (status.forfeited) return 'forfeited';
+  return 'unknown';
+}
+```
+
+#### Edit Pledge (Special Handling)
+
+Edit is the trickiest operation - user pays penalty, so we must be extra careful:
+
+```typescript
+// lib/sync/atomicOperations.ts
+export async function editPledgeAtomic(
+  program: Program,
+  supabase: SupabaseClient,
+  params: EditPledgeParams
+): Promise<{ success: boolean; error?: string }> {
+  // Store intended edit BEFORE transaction (in case app crashes)
+  const pendingEdit = {
+    pledgeAddress: params.pledgeAddress,
+    newTodos: params.newTodos,
+    timestamp: Date.now(),
+  };
+  await AsyncStorage.setItem(
+    `pending_edit_${params.pledgeAddress}`,
+    JSON.stringify(pendingEdit)
+  );
+
+  // 1. Send transaction (pays 10% penalty)
+  let txSignature: string;
+  try {
+    txSignature = await program.methods
+      .editPledge(params.newTodos)
+      .accounts({ /* ... */ })
+      .rpc();
+  } catch (err) {
+    // Tx failed - no penalty paid, clean up pending edit
+    await AsyncStorage.removeItem(`pending_edit_${params.pledgeAddress}`);
+    return { success: false, error: 'Transaction failed' };
+  }
+
+  // 2. Wait for confirmation
+  const confirmation = await connection.confirmTransaction(txSignature, 'confirmed');
+  if (confirmation.value.err) {
+    await AsyncStorage.removeItem(`pending_edit_${params.pledgeAddress}`);
+    return { success: false, error: 'Transaction not confirmed' };
+  }
+
+  // 3. Penalty paid - MUST update DB (retry until success)
+  let dbSuccess = false;
+  let attempts = 0;
+  const maxAttempts = 3;
+
+  while (!dbSuccess && attempts < maxAttempts) {
+    const { error } = await supabase
+      .from('pledges')
+      .update({ todos: params.newTodos })
+      .eq('on_chain_address', params.pledgeAddress);
+
+    if (!error) {
+      dbSuccess = true;
+      await AsyncStorage.removeItem(`pending_edit_${params.pledgeAddress}`);
+    } else {
+      attempts++;
+      await new Promise((r) => setTimeout(r, 1000 * attempts)); // Backoff
+    }
+  }
+
+  if (!dbSuccess) {
+    // Queue for reconciliation - user will see update on next load
+    await queueForRetry({
+      id: crypto.randomUUID(),
+      type: 'EDIT_PLEDGE',
+      txSignature,
+      data: { pledgeAddress: params.pledgeAddress, todos: params.newTodos },
+      createdAt: Date.now(),
+    });
+  }
+
+  return { success: true };
+}
+```
+
+#### When to Call Reconciliation
+
+```typescript
+// In app initialization (e.g., _layout.tsx or auth context)
+useEffect(() => {
+  if (wallet.connected && supabase) {
+    reconcileUserPledges(program, supabase, wallet.publicKey);
+  }
+}, [wallet.connected]);
+
+// After network reconnection
+NetInfo.addEventListener((state) => {
+  if (state.isConnected && wallet.connected) {
+    reconcileUserPledges(program, supabase, wallet.publicKey);
+  }
+});
+```
+
 ### MWA Transaction Signing
 
 ```typescript
@@ -361,9 +646,11 @@ global.TextEncoder = require('text-encoding').TextEncoder;
 
 ### Sync Strategy
 
-- On-chain is source of truth for pledge status
-- Supabase stores metadata, templates, user preferences
-- Crank verifies on-chain before any fund movement
+- **On-chain is source of truth** for pledge status and funds
+- **Supabase stores** metadata, templates, user preferences, daily progress
+- **No indexer needed** - use atomic frontend operations + reconciliation
+- **Crank verifies on-chain** before any fund movement
+- **See "Data Sync" in Key Patterns** for implementation details
 
 ---
 

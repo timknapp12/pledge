@@ -194,6 +194,70 @@ DB fields to include for future features:
 
 ---
 
+## Data Synchronization Architecture
+
+### Decision: No Indexer Required (V1)
+
+We use **atomic frontend operations** with **reconciliation on app load** instead of a dedicated indexer. This is sufficient because:
+
+1. **On-chain is authoritative for funds** - Crank always checks on-chain state before distributing
+2. **User-scoped data** - Each user only queries their own pledges
+3. **Limited sync points** - Only 4 operations need sync, all user-initiated
+4. **Crank is the backstop** - Already handles DB/on-chain mismatches
+
+### Sync Risk Analysis
+
+| Operation | On-Chain | Database | If Tx Succeeds but DB Fails |
+|-----------|----------|----------|------------------------------|
+| Create Pledge | PledgeAccount created, USDC to vault | pledges row created | User can't see pledge in UI; funds safe; reconcile on load |
+| Check Todos | None | daily_progress updated | N/A - DB only operation |
+| Report Completion | status → Reported | status updated | Crank processes correctly using on-chain state |
+| Edit Pledge | 10% penalty transferred | todos updated | **Worst case**: User paid penalty but edit not visible; retry from local queue |
+| Crank Process | Funds distributed | status updated | Crank retries; DB eventually consistent |
+
+### Pattern: Confirm-Then-Write
+
+All on-chain operations must **wait for transaction confirmation** before writing to the database:
+
+```
+1. Build transaction
+2. Sign via MWA
+3. Send transaction
+4. WAIT for confirmation (required!)
+5. Write to Supabase
+6. If DB write fails → queue for retry
+```
+
+### Local Retry Queue
+
+Failed DB writes are stored locally and retried:
+
+- Store in AsyncStorage with operation type and data
+- Process queue on app launch
+- Process queue after network reconnection
+- Remove from queue only after successful DB write
+
+### Reconciliation on App Load
+
+On every app launch, compare on-chain state with DB and fix discrepancies:
+
+1. Fetch user's on-chain pledges via `getProgramAccounts` filter
+2. Fetch user's DB pledges
+3. For each on-chain pledge not in DB → create DB record
+4. For each DB pledge with stale status → update from on-chain
+5. Process any pending items in local retry queue
+
+### When to Revisit (V2+)
+
+Consider adding an indexer when:
+
+- Social features require cross-user queries (leaderboards)
+- Real-time multi-device sync needed
+- Historical analytics on all on-chain events
+- User count grows to thousands with many pledges
+
+---
+
 ## UI/UX
 
 ### Tab Structure (3 tabs)
