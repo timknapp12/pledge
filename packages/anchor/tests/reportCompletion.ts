@@ -43,7 +43,7 @@ describe("report_completion", () => {
     const [vaultPda] = deriveVaultPda(ctx.program.programId, pledgePda);
 
     await ctx.program.methods
-      .createPledge(new anchor.BN(TEN_USDC), deadline)
+      .createPledge(new anchor.BN(TEN_USDC), deadline, createdAt)
       .accounts({
         user: user.keypair.publicKey,
         config: ctx.configPda,
@@ -93,7 +93,7 @@ describe("report_completion", () => {
     const [vaultPda] = deriveVaultPda(ctx.program.programId, pledgePda);
 
     await ctx.program.methods
-      .createPledge(new anchor.BN(TEN_USDC), deadline)
+      .createPledge(new anchor.BN(TEN_USDC), deadline, createdAt)
       .accounts({
         user: user2.keypair.publicKey,
         config: ctx.configPda,
@@ -139,7 +139,7 @@ describe("report_completion", () => {
     const [vaultPda] = deriveVaultPda(ctx.program.programId, pledgePda);
 
     await ctx.program.methods
-      .createPledge(new anchor.BN(TEN_USDC), deadline)
+      .createPledge(new anchor.BN(TEN_USDC), deadline, createdAt)
       .accounts({
         user: user3.keypair.publicKey,
         config: ctx.configPda,
@@ -185,7 +185,7 @@ describe("report_completion", () => {
     const [vaultPda] = deriveVaultPda(ctx.program.programId, pledgePda);
 
     await ctx.program.methods
-      .createPledge(new anchor.BN(TEN_USDC), deadline)
+      .createPledge(new anchor.BN(TEN_USDC), deadline, createdAt)
       .accounts({
         user: user4.keypair.publicKey,
         config: ctx.configPda,
@@ -232,7 +232,7 @@ describe("report_completion", () => {
     const [vaultPda] = deriveVaultPda(ctx.program.programId, pledgePda);
 
     await ctx.program.methods
-      .createPledge(new anchor.BN(TEN_USDC), deadline)
+      .createPledge(new anchor.BN(TEN_USDC), deadline, createdAt)
       .accounts({
         user: user5.keypair.publicKey,
         config: ctx.configPda,
@@ -282,7 +282,7 @@ describe("report_completion", () => {
     const [vaultPda] = deriveVaultPda(ctx.program.programId, pledgePda);
 
     await ctx.program.methods
-      .createPledge(new anchor.BN(TEN_USDC), deadline)
+      .createPledge(new anchor.BN(TEN_USDC), deadline, createdAt)
       .accounts({
         user: owner.keypair.publicKey,
         config: ctx.configPda,

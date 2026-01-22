@@ -88,7 +88,7 @@ async function main() {
   console.log("Creating pledge...");
   try {
     const tx = await program.methods
-      .createPledge(new anchor.BN(10_000_000), deadline)
+      .createPledge(new anchor.BN(10_000_000), deadline, createdAt)
       .accounts({
         user: user.publicKey,
         config: configPda,

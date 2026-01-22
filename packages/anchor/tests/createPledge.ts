@@ -61,7 +61,7 @@ describe("create_pledge", () => {
 
     try {
       await ctx.program.methods
-        .createPledge(new anchor.BN(stakeAmount), deadline)
+        .createPledge(new anchor.BN(stakeAmount), deadline, createdAt)
         .accounts({
           user: testUser.keypair.publicKey,
           config: ctx.configPda,
@@ -122,7 +122,7 @@ describe("create_pledge", () => {
 
     try {
       await ctx.program.methods
-        .createPledge(new anchor.BN(0), deadline)
+        .createPledge(new anchor.BN(0), deadline, createdAt)
         .accounts({
           user: user2.keypair.publicKey,
           config: ctx.configPda,
@@ -158,7 +158,7 @@ describe("create_pledge", () => {
 
     try {
       await ctx.program.methods
-        .createPledge(new anchor.BN(TEN_USDC), deadline)
+        .createPledge(new anchor.BN(TEN_USDC), deadline, createdAt)
         .accounts({
           user: user3.keypair.publicKey,
           config: ctx.configPda,
@@ -204,7 +204,7 @@ describe("create_pledge", () => {
 
     try {
       await ctx.program.methods
-        .createPledge(new anchor.BN(TEN_USDC), deadline)
+        .createPledge(new anchor.BN(TEN_USDC), deadline, createdAt)
         .accounts({
           user: user4.keypair.publicKey,
           config: ctx.configPda,

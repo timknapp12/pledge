@@ -60,7 +60,7 @@ describe("process_expired", () => {
     const [vaultPda] = deriveVaultPda(ctx.program.programId, pledgePda);
 
     await ctx.program.methods
-      .createPledge(new anchor.BN(stakeAmount), deadline)
+      .createPledge(new anchor.BN(stakeAmount), deadline, createdAt)
       .accounts({
         user: user.keypair.publicKey,
         config: ctx.configPda,
@@ -143,7 +143,7 @@ describe("process_expired", () => {
     const [vaultPda] = deriveVaultPda(ctx.program.programId, pledgePda);
 
     await ctx.program.methods
-      .createPledge(new anchor.BN(stakeAmount), deadline)
+      .createPledge(new anchor.BN(stakeAmount), deadline, createdAt)
       .accounts({
         user: user.keypair.publicKey,
         config: ctx.configPda,
@@ -218,7 +218,7 @@ describe("process_expired", () => {
     const [vaultPda] = deriveVaultPda(ctx.program.programId, pledgePda);
 
     await ctx.program.methods
-      .createPledge(new anchor.BN(TEN_USDC), deadline)
+      .createPledge(new anchor.BN(TEN_USDC), deadline, createdAt)
       .accounts({
         user: user.keypair.publicKey,
         config: ctx.configPda,
@@ -274,7 +274,7 @@ describe("process_expired", () => {
     const [vaultPda] = deriveVaultPda(ctx.program.programId, pledgePda);
 
     await ctx.program.methods
-      .createPledge(new anchor.BN(TEN_USDC), deadline)
+      .createPledge(new anchor.BN(TEN_USDC), deadline, createdAt)
       .accounts({
         user: user.keypair.publicKey,
         config: ctx.configPda,
