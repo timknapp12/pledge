@@ -170,8 +170,6 @@ export async function initializeConfig(ctx: TestContext): Promise<void> {
     )
     .accounts({
       admin: ctx.admin.publicKey,
-      config: ctx.configPda,
-      systemProgram: SystemProgram.programId,
     })
     .signers([ctx.admin])
     .rpc();
@@ -330,14 +328,10 @@ export async function createPledge(
     .createPledge(new anchor.BN(stakeAmount), deadline)
     .accounts({
       user: user.keypair.publicKey,
-      config: ctx.configPda,
       pledge: pledgePda,
       vault: vaultPda,
       userTokenAccount: user.tokenAccount,
       mint: ctx.usdcMint,
-      tokenProgram: TOKEN_PROGRAM_ID,
-      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-      systemProgram: SystemProgram.programId,
     })
     .signers([user.keypair])
     .rpc();

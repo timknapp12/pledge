@@ -55,14 +55,10 @@ describe("process_completion", () => {
       .createPledge(new anchor.BN(stakeAmount), deadline)
       .accounts({
         user: user.keypair.publicKey,
-        config: ctx.configPda,
         pledge: pledgePda,
         vault: vaultPda,
         userTokenAccount: user.tokenAccount,
         mint: ctx.usdcMint,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-        systemProgram: SystemProgram.programId,
       })
       .signers([user.keypair])
       .rpc();
@@ -74,7 +70,6 @@ describe("process_completion", () => {
       .reportCompletion(100)
       .accounts({
         user: user.keypair.publicKey,
-        config: ctx.configPda,
         pledge: pledgePda,
       })
       .signers([user.keypair])
@@ -91,21 +86,31 @@ describe("process_completion", () => {
     const charityBefore = await getTokenBalance(ctx.provider.connection, charityTokenAccount);
 
     // Process completion
-    await ctx.program.methods
-      .processCompletion()
-      .accounts({
-        crank: crank.publicKey,
-        config: ctx.configPda,
-        pledge: pledgePda,
-        vault: vaultPda,
-        user: user.keypair.publicKey,
-        userTokenAccount: user.tokenAccount,
-        treasuryTokenAccount,
-        charityTokenAccount,
-        tokenProgram: TOKEN_PROGRAM_ID,
-      })
-      .signers([crank])
-      .rpc();
+    try {
+      await ctx.program.methods
+        .processCompletion()
+        .accounts({
+          crank: crank.publicKey,
+          pledge: pledgePda,
+          vault: vaultPda,
+          user: user.keypair.publicKey,
+          userTokenAccount: user.tokenAccount,
+          treasuryTokenAccount,
+          charityTokenAccount,
+        })
+        .signers([crank])
+        .rpc();
+    } catch (e: any) {
+      console.log("ProcessCompletion error:", e.message);
+      console.log("Error code:", e.code);
+      console.log("Error name:", e.name);
+      if (e.error) console.log("Inner error:", JSON.stringify(e.error));
+      if (e.logs) {
+        console.log("Logs:");
+        e.logs.forEach((l: string) => console.log("  ", l));
+      }
+      throw e;
+    }
 
     // Verify user got full refund
     const userBalanceAfter = await getTokenBalance(
@@ -144,14 +149,10 @@ describe("process_completion", () => {
       .createPledge(new anchor.BN(stakeAmount), deadline)
       .accounts({
         user: user.keypair.publicKey,
-        config: ctx.configPda,
         pledge: pledgePda,
         vault: vaultPda,
         userTokenAccount: user.tokenAccount,
         mint: ctx.usdcMint,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-        systemProgram: SystemProgram.programId,
       })
       .signers([user.keypair])
       .rpc();
@@ -162,7 +163,6 @@ describe("process_completion", () => {
       .reportCompletion(50)
       .accounts({
         user: user.keypair.publicKey,
-        config: ctx.configPda,
         pledge: pledgePda,
       })
       .signers([user.keypair])
@@ -178,21 +178,31 @@ describe("process_completion", () => {
     const treasuryBefore = await getTokenBalance(ctx.provider.connection, treasuryTokenAccount);
     const charityBefore = await getTokenBalance(ctx.provider.connection, charityTokenAccount);
 
-    await ctx.program.methods
-      .processCompletion()
-      .accounts({
-        crank: crank.publicKey,
-        config: ctx.configPda,
-        pledge: pledgePda,
-        vault: vaultPda,
-        user: user.keypair.publicKey,
-        userTokenAccount: user.tokenAccount,
-        treasuryTokenAccount,
-        charityTokenAccount,
-        tokenProgram: TOKEN_PROGRAM_ID,
-      })
-      .signers([crank])
-      .rpc();
+    try {
+      await ctx.program.methods
+        .processCompletion()
+        .accounts({
+          crank: crank.publicKey,
+          pledge: pledgePda,
+          vault: vaultPda,
+          user: user.keypair.publicKey,
+          userTokenAccount: user.tokenAccount,
+          treasuryTokenAccount,
+          charityTokenAccount,
+        })
+        .signers([crank])
+        .rpc();
+    } catch (e: any) {
+      console.log("ProcessCompletion error:", e.message);
+      console.log("Error code:", e.code);
+      console.log("Error name:", e.name);
+      if (e.error) console.log("Inner error:", JSON.stringify(e.error));
+      if (e.logs) {
+        console.log("Logs:");
+        e.logs.forEach((l: string) => console.log("  ", l));
+      }
+      throw e;
+    }
 
     // Calculate expected amounts:
     // 50% of 10 USDC = 5 USDC proportional
@@ -239,14 +249,10 @@ describe("process_completion", () => {
       .createPledge(new anchor.BN(stakeAmount), deadline)
       .accounts({
         user: user.keypair.publicKey,
-        config: ctx.configPda,
         pledge: pledgePda,
         vault: vaultPda,
         userTokenAccount: user.tokenAccount,
         mint: ctx.usdcMint,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-        systemProgram: SystemProgram.programId,
       })
       .signers([user.keypair])
       .rpc();
@@ -257,7 +263,6 @@ describe("process_completion", () => {
       .reportCompletion(0)
       .accounts({
         user: user.keypair.publicKey,
-        config: ctx.configPda,
         pledge: pledgePda,
       })
       .signers([user.keypair])
@@ -273,21 +278,31 @@ describe("process_completion", () => {
     const treasuryBefore = await getTokenBalance(ctx.provider.connection, treasuryTokenAccount);
     const charityBefore = await getTokenBalance(ctx.provider.connection, charityTokenAccount);
 
-    await ctx.program.methods
-      .processCompletion()
-      .accounts({
-        crank: crank.publicKey,
-        config: ctx.configPda,
-        pledge: pledgePda,
-        vault: vaultPda,
-        user: user.keypair.publicKey,
-        userTokenAccount: user.tokenAccount,
-        treasuryTokenAccount,
-        charityTokenAccount,
-        tokenProgram: TOKEN_PROGRAM_ID,
-      })
-      .signers([crank])
-      .rpc();
+    try {
+      await ctx.program.methods
+        .processCompletion()
+        .accounts({
+          crank: crank.publicKey,
+          pledge: pledgePda,
+          vault: vaultPda,
+          user: user.keypair.publicKey,
+          userTokenAccount: user.tokenAccount,
+          treasuryTokenAccount,
+          charityTokenAccount,
+        })
+        .signers([crank])
+        .rpc();
+    } catch (e: any) {
+      console.log("ProcessCompletion error:", e.message);
+      console.log("Error code:", e.code);
+      console.log("Error name:", e.name);
+      if (e.error) console.log("Inner error:", JSON.stringify(e.error));
+      if (e.logs) {
+        console.log("Logs:");
+        e.logs.forEach((l: string) => console.log("  ", l));
+      }
+      throw e;
+    }
 
     // 0% completion = full forfeiture
     // Treasury (70%) = 7,000,000
@@ -326,14 +341,10 @@ describe("process_completion", () => {
       .createPledge(new anchor.BN(TEN_USDC), deadline)
       .accounts({
         user: user.keypair.publicKey,
-        config: ctx.configPda,
         pledge: pledgePda,
         vault: vaultPda,
         userTokenAccount: user.tokenAccount,
         mint: ctx.usdcMint,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-        systemProgram: SystemProgram.programId,
       })
       .signers([user.keypair])
       .rpc();
@@ -346,14 +357,12 @@ describe("process_completion", () => {
         .processCompletion()
         .accounts({
           crank: crank.publicKey,
-          config: ctx.configPda,
           pledge: pledgePda,
           vault: vaultPda,
           user: user.keypair.publicKey,
           userTokenAccount: user.tokenAccount,
           treasuryTokenAccount,
           charityTokenAccount,
-          tokenProgram: TOKEN_PROGRAM_ID,
         })
         .signers([crank])
         .rpc();
