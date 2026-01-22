@@ -5,7 +5,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-pledge = "GXmRKiwZ6ozV8iGJLq1usFafhpPPYFjfFoQcCPGUQpJe"
+pledge = "PLDG12YsnCxRHa9CkWDnzkA9vsbEFpThXHR9zgnDTDp"
 
 [registry]
 url = "https://api.apr.dev"

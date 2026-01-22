@@ -9,7 +9,7 @@ pub mod utils;
 pub use contexts::*;
 pub use state::*;
 
-declare_id!("GXmRKiwZ6ozV8iGJLq1usFafhpPPYFjfFoQcCPGUQpJe");
+declare_id!("PLDG12YsnCxRHa9CkWDnzkA9vsbEFpThXHR9zgnDTDp");
 
 #[program]
 pub mod pledge {
@@ -63,8 +63,10 @@ pub mod pledge {
         ctx: Context<CreatePledge>,
         stake_amount: u64,
         deadline: i64,
+        created_at: i64,
     ) -> Result<()> {
-        ctx.accounts.create_pledge(stake_amount, deadline, &ctx.bumps)
+        ctx.accounts
+            .create_pledge(stake_amount, deadline, created_at, &ctx.bumps)
     }
 
     /// Edit an existing pledge (10% penalty)

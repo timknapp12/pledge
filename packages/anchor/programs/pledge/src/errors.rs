@@ -20,6 +20,9 @@ pub enum ErrorCode {
     InvalidFee,
 
     // Pledge errors
+    #[msg("Invalid timestamp - exceeds clock drift tolerance")]
+    InvalidTimestamp,
+
     #[msg("Invalid deadline - must be in the future")]
     InvalidDeadline,
 

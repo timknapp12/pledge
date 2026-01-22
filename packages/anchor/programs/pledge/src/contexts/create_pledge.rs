@@ -8,7 +8,11 @@ use crate::constants::{CONFIG_SEED, PLEDGE_SEED, VAULT_SEED};
 use crate::errors::ErrorCode;
 use crate::state::{Pledge, PledgeCreated, PledgeStatus, ProgramConfig};
 
+// Maximum allowed clock drift (5 minutes in seconds)
+const MAX_CLOCK_DRIFT: i64 = 300;
+
 #[derive(Accounts)]
+#[instruction(stake_amount: u64, deadline: i64, created_at: i64)]
 pub struct CreatePledge<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
@@ -24,7 +28,7 @@ pub struct CreatePledge<'info> {
         init,
         payer = user,
         space = Pledge::INIT_SPACE,
-        seeds = [PLEDGE_SEED, user.key().as_ref(), &Clock::get()?.unix_timestamp.to_le_bytes()],
+        seeds = [PLEDGE_SEED, user.key().as_ref(), &created_at.to_le_bytes()],
         bump
     )]
     pub pledge: Account<'info, Pledge>,
@@ -58,10 +62,15 @@ impl<'info> CreatePledge<'info> {
         &mut self,
         stake_amount: u64,
         deadline: i64,
+        created_at: i64,
         bumps: &CreatePledgeBumps,
     ) -> Result<()> {
         let clock = Clock::get()?;
-        let created_at = clock.unix_timestamp;
+        let current_time = clock.unix_timestamp;
+
+        // Validate created_at is within acceptable range of current time
+        let drift = (created_at - current_time).abs();
+        require!(drift <= MAX_CLOCK_DRIFT, ErrorCode::InvalidTimestamp);
 
         // Validate inputs
         require!(stake_amount > 0, ErrorCode::InvalidStakeAmount);
