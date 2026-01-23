@@ -584,6 +584,32 @@ Enable automatic goal verification through connected accounts:
 - Hybrid goals: some tasks verified, some self-reported
 - Rate limiting considerations for API calls
 
+### Yield Earning on Staked USDC
+
+Consider allowing staked USDC to earn yield while locked in pledges:
+
+**Option A: User Opt-In Yield**
+
+- User toggles "Earn yield" when creating pledge
+- USDC deposited into lending protocol (Kamino or MarginFi) via CPI
+- Yield accrues during pledge duration
+- On completion: user receives stake + proportional yield
+- Adds complexity: CPI integration, ~10+ accounts per instruction, liquidity risk
+
+**Option B: Treasury Yield**
+
+- Simpler approach: treasury wallet deposits forfeited/fee USDC into lending protocol
+- No Anchor program changes required
+- Treasury earns yield on accumulated funds
+- Can be implemented off-chain via admin scripts or separate service
+
+**Implementation Considerations:**
+
+- MarginFi likely easier due to better documentation
+- Liquidity risk: withdrawals may fail if lending pool fully utilized
+- Interest attribution complexity for partial completions
+- Recommend starting with Option B (treasury yield) as lower complexity
+
 ---
 
 ## Success Metrics
