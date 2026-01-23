@@ -47,7 +47,7 @@ serve(async (req) => {
     // Create Supabase client with service role
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const jwtSecret = Deno.env.get('SUPABASE_JWT_SECRET')!;
+    const jwtSecret = Deno.env.get('JWT_SECRET')!;
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
