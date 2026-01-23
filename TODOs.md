@@ -7,3 +7,7 @@ supabase:
 
 - deploy edge function
 - set up env vars for front end, need to set up in expo for preview/prod
+
+firebase:
+
+- set up google services for both dev and prod
