@@ -26,6 +26,7 @@
     "expo-crypto": "~15.0.8",
     "expo-dev-client": "~6.0.20",
     "expo-font": "~14.0.10",
+    "expo-haptics": "~15.0.8",
     "expo-linking": "~8.0.11",
     "expo-localization": "~17.0.8",
     "expo-router": "~6.0.21",
@@ -53,6 +54,10 @@
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
+    "@typescript-eslint/eslint-plugin": "^8.53.1",
+    "@typescript-eslint/parser": "^8.53.1",
+    "eslint": "^9.39.2",
+    "eslint-config-expo": "^10.0.0",
     "react-test-renderer": "19.1.0",
     "typescript": "~5.9.2"
   },
