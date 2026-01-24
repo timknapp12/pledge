@@ -752,6 +752,9 @@ No subscription model - fees only apply to partial completions.
 - **GitHub Integration:** Verify commit-based goals automatically via GitHub API
 - **X (Twitter) Integration:** Verify posting/engagement goals via X API
 - DB schema includes `github_username` and `x_username` fields for future use
+- **Yield Earning:** Consider allowing staked USDC to earn yield via DeFi lending (Kamino/MarginFi)
+  - Option A: User opt-in yield on individual pledges (complex - requires CPI integration)
+  - Option B: Treasury earns yield on accumulated funds (simpler - off-chain implementation)
 
 ---
 
