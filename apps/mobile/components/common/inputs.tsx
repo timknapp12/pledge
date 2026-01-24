@@ -118,6 +118,7 @@ const InputContainer = styled.View`
   border-bottom-width: 2px;
   padding: 8px;
   padding-top: 24px;
+  padding-bottom: 4px;
 `;
 
 const Label = styled.Text`
