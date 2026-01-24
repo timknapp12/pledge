@@ -22,16 +22,26 @@ import {
   SecondaryButtonText,
   OutlineButtonText,
   FloatingLabelInput,
+  TextArea,
+  ThemeSelector,
 } from '@/components';
 
 export default function TabTwoScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [errorInput, setErrorInput] = useState('');
+  const [description, setDescription] = useState('');
 
   return (
     <ScrollContainer>
       <ContentContainer>
+        {/* Theme Section */}
+        <Section>
+          <Title2>Theme</Title2>
+          <Separator />
+          <ThemeSelector />
+        </Section>
+
         {/* Typography Section */}
         <Section>
           <Title2>Typography</Title2>
@@ -78,6 +88,12 @@ export default function TabTwoScreen() {
               value={errorInput}
               onChangeText={setErrorInput}
               error="This field is required"
+            />
+
+            <TextArea
+              label="Description"
+              value={description}
+              onChangeText={setDescription}
             />
           </Column>
         </Section>
