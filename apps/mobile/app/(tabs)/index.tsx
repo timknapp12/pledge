@@ -1,8 +1,9 @@
 import { ActivityIndicator, TouchableOpacity } from 'react-native';
-import styled from 'styled-components/native';
+import styled, { useTheme } from 'styled-components/native';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function HomeScreen() {
+  const theme = useTheme();
   const {
     user,
     walletAddress,
@@ -16,7 +17,7 @@ export default function HomeScreen() {
   if (isLoading) {
     return (
       <Container>
-        <ActivityIndicator size='large' color='#9945FF' />
+        <ActivityIndicator size="large" color={theme.colors.primary} />
         <LoadingText>Loading...</LoadingText>
       </Container>
     );
