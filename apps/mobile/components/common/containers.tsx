@@ -32,7 +32,10 @@ export const Separator = styled.View`
 
 export const Card = styled.View`
   background-color: ${(props) => props.theme.colors.cardBackground};
-  border-radius: 12px;
+  border-bottom-right-radius: 30px;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 30px;
+  border-bottom-left-radius: 4px;
   padding: 16px;
 `;
 
