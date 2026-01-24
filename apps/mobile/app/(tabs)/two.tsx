@@ -24,6 +24,7 @@ import {
   FloatingLabelInput,
   TextArea,
   ThemeSelector,
+  TrackedScrollView,
 } from '@/components';
 
 export default function TabTwoScreen() {
@@ -33,8 +34,9 @@ export default function TabTwoScreen() {
   const [description, setDescription] = useState('');
 
   return (
-    <ScrollContainer>
-      <ContentContainer>
+    <ScreenWrapper>
+      <TrackedScrollView style={{ flex: 1 }}>
+        <ContentContainer>
         {/* Theme Section */}
         <Section>
           <Title2>Theme</Title2>
@@ -148,12 +150,13 @@ export default function TabTwoScreen() {
         </Section>
 
         <BottomSpacer />
-      </ContentContainer>
-    </ScrollContainer>
+        </ContentContainer>
+      </TrackedScrollView>
+    </ScreenWrapper>
   );
 }
 
-const ScrollContainer = styled.ScrollView`
+const ScreenWrapper = styled.View`
   flex: 1;
   background-color: ${(props) => props.theme.colors.background};
 `;

@@ -4,3 +4,4 @@ export * from './buttons';
 export * from './inputs';
 export * from './ThemeSelector';
 export * from './CustomTabBar';
+export * from './TrackedScrollView';

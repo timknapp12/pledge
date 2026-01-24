@@ -7,9 +7,12 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
+  withTiming,
+  useDerivedValue,
 } from 'react-native-reanimated';
 import { useTheme } from 'styled-components/native';
-import { useThemeMode } from '../../theme/ThemeProvider';
+import { useThemeMode } from '@/theme/ThemeProvider';
+import { useScrollContext } from '@/contexts/ScrollContext';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -94,11 +97,17 @@ function TabItem({ routeName, isFocused, onPress, onLongPress }: TabItemProps) {
 export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const theme = useTheme();
   const { isDark } = useThemeMode();
+  const { isScrolling } = useScrollContext();
   const numTabs = state.routes.length;
   const tabWidth = SCREEN_WIDTH / numTabs;
 
   // Animated position for the glow
   const glowPosition = useSharedValue(state.index * tabWidth);
+
+  // Animated background opacity based on scroll state
+  const backgroundOpacity = useDerivedValue(() => {
+    return withTiming(isScrolling.value ? 0 : 1, { duration: 50 });
+  });
 
   useEffect(() => {
     glowPosition.value = withSpring(state.index * tabWidth, {
@@ -109,6 +118,12 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
 
   const glowStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: glowPosition.value }],
+    opacity: backgroundOpacity.value,
+  }));
+
+  const backgroundStyle = useAnimatedStyle(() => ({
+    backgroundColor: theme.colors.background,
+    opacity: backgroundOpacity.value,
   }));
 
   // Gradient colors for the glow
@@ -117,9 +132,9 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     : [`${theme.colors.primary}00`, `${theme.colors.primary}30`];
 
   return (
-    <View
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-    >
+    <View style={styles.container}>
+      {/* Animated background */}
+      <Animated.View style={[styles.background, backgroundStyle]} />
       {/* Animated glow behind selected tab */}
       <Animated.View
         style={[styles.glowContainer, { width: tabWidth }, glowStyle]}
@@ -177,6 +192,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+  },
+  background: {
+    ...StyleSheet.absoluteFillObject,
   },
   glowContainer: {
     position: 'absolute',
