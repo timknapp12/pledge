@@ -12,6 +12,7 @@ export default function TabLayout() {
     >
       <Tabs.Screen name="index" />
       <Tabs.Screen name="two" />
+      <Tabs.Screen name="three" />
     </Tabs>
   );
 }

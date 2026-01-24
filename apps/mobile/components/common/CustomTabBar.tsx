@@ -30,6 +30,11 @@ const TAB_CONFIG: Record<string, TabConfig> = {
     inactiveIcon: 'grid-outline',
     label: 'Components',
   },
+  three: {
+    activeIcon: 'person',
+    inactiveIcon: 'person-outline',
+    label: 'Profile',
+  },
 };
 
 const SPRING_CONFIG = {
@@ -108,8 +113,8 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
 
   // Gradient colors for the glow
   const glowColors = isDark
-    ? [`${theme.colors.primary}40`, `${theme.colors.primary}00`]
-    : [`${theme.colors.primary}30`, `${theme.colors.primary}00`];
+    ? [`${theme.colors.primary}00`, `${theme.colors.primary}40`]
+    : [`${theme.colors.primary}00`, `${theme.colors.primary}30`];
 
   return (
     <View
