@@ -1,35 +1,33 @@
 import { StatusBar } from 'expo-status-bar';
-import { Platform, StyleSheet } from 'react-native';
-
-import EditScreenInfo from '@/components/EditScreenInfo';
-import { Text, View } from '@/components/Themed';
+import { Platform } from 'react-native';
+import styled from 'styled-components/native';
 
 export default function ModalScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Modal</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/modal.tsx" />
-
-      {/* Use a light status bar on iOS to account for the black space above the modal */}
+    <Container>
+      <Title>Modal</Title>
+      <Separator />
       <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
-    </View>
+    </Container>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
-  },
-});
+const Container = styled.View`
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  background-color: ${(props) => props.theme.colors.background};
+`;
+
+const Title = styled.Text`
+  font-size: 20px;
+  font-weight: bold;
+  color: ${(props) => props.theme.colors.text};
+`;
+
+const Separator = styled.View`
+  margin: 30px 0;
+  height: 1px;
+  width: 80%;
+  background-color: ${(props) => props.theme.colors.separator};
+`;
