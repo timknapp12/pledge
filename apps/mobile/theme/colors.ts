@@ -3,8 +3,8 @@ export const white = '#FFFFFF';
 export const black = '#000000';
 
 // Brand colors
-export const burntOrange = '#EA580C';
-export const deepTeal = '#0F766E';
+export const slateIndigo = '#6366F1';
+export const warmCoral = '#F97316';
 
 // UI colors
 export const blue = '#2F95DC';
