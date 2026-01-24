@@ -19,4 +19,4 @@ export const lightCardBackground = '#0000000D'; // 5% opacity black
 // Dark theme specific
 export const darkTextSecondary = '#FFFFFFB3'; // 70% opacity white
 export const darkBorder = '#FFFFFF1A'; // 10% opacity white
-export const darkCardBackground = '#FFFFFF0D'; // 5% opacity white
+export const darkCardBackground = '#FFFFFF1A'; // 10% opacity white
