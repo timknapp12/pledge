@@ -20,5 +20,5 @@ enabled = true
 site_url = "http://localhost:3000"
 jwt_expiry = 86400
 
-[functions]
+[functions.verify-wallet]
 verify_jwt = false
