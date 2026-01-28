@@ -36,7 +36,7 @@ export const initializeI18n = async (): Promise<void> => {
     resources,
     ns: ['translation'],
     defaultNS: 'translation',
-    debug: __DEV__,
+    debug: false,
     interpolation: { escapeValue: false },
   });
 };
