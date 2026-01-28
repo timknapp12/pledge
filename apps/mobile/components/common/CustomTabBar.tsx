@@ -3,6 +3,7 @@ import { View, Pressable, StyleSheet, Dimensions } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -19,24 +20,24 @@ type IconName = keyof typeof Ionicons.glyphMap;
 interface TabConfig {
   activeIcon: IconName;
   inactiveIcon: IconName;
-  label: string;
+  labelKey: string;
 }
 
 const TAB_CONFIG: Record<string, TabConfig> = {
   index: {
     activeIcon: 'home',
     inactiveIcon: 'home-outline',
-    label: 'Home',
+    labelKey: 'Home',
   },
   two: {
     activeIcon: 'grid',
     inactiveIcon: 'grid-outline',
-    label: 'Components',
+    labelKey: 'Components',
   },
   three: {
     activeIcon: 'person',
     inactiveIcon: 'person-outline',
-    label: 'Profile',
+    labelKey: 'Profile',
   },
 };
 
@@ -62,7 +63,7 @@ function TabItem({ routeName, isFocused, onPress, onLongPress }: TabItemProps) {
   const config = TAB_CONFIG[routeName] || {
     activeIcon: 'ellipse' as IconName,
     inactiveIcon: 'ellipse-outline' as IconName,
-    label: routeName,
+    labelKey: routeName,
   };
 
   useEffect(() => {
@@ -133,7 +134,14 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
 
   return (
     <View style={styles.container}>
-      {/* Animated background */}
+      {/* Blur background (visible when scrolling) */}
+      <BlurView
+        intensity={50}
+        tint={isDark ? 'dark' : 'light'}
+        experimentalBlurMethod='dimezisBlurView'
+        style={styles.background}
+      />
+      {/* Solid background (fades out when scrolling to reveal blur) */}
       <Animated.View style={[styles.background, backgroundStyle]} />
       {/* Animated glow behind selected tab */}
       <Animated.View
