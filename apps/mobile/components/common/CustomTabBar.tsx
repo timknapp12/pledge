@@ -3,6 +3,7 @@ import { View, Pressable, StyleSheet, Dimensions } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -133,7 +134,14 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
 
   return (
     <View style={styles.container}>
-      {/* Animated background */}
+      {/* Blur background (visible when scrolling) */}
+      <BlurView
+        intensity={50}
+        tint={isDark ? 'dark' : 'light'}
+        experimentalBlurMethod='dimezisBlurView'
+        style={styles.background}
+      />
+      {/* Solid background (fades out when scrolling to reveal blur) */}
       <Animated.View style={[styles.background, backgroundStyle]} />
       {/* Animated glow behind selected tab */}
       <Animated.View
