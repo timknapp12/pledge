@@ -14,6 +14,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { AuthProvider } from '../contexts/AuthContext';
+import { I18nProvider } from '../contexts/I18nContext';
 import { ScrollProvider } from '@/contexts/ScrollContext';
 import { ThemeProvider, useThemeMode } from '@/theme/ThemeProvider';
 
@@ -56,11 +57,13 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   return (
-    <AuthProvider>
-      <ThemeProvider>
-        <ThemedNavigation />
-      </ThemeProvider>
-    </AuthProvider>
+    <I18nProvider>
+      <AuthProvider>
+        <ThemeProvider>
+          <ThemedNavigation />
+        </ThemeProvider>
+      </AuthProvider>
+    </I18nProvider>
   );
 }
 
