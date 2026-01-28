@@ -1,10 +1,17 @@
 // Pledge App Configuration
 // Supports: development, preview, production environments
 
+// Helius API Key (works for both devnet and mainnet)
+const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
+
 // Solana Network Configuration
-const DEVNET_RPC = 'https://api.devnet.solana.com';
-const MAINNET_RPC =
-  process.env.HELIUS_RPC_URL || 'https://api.mainnet-beta.solana.com';
+const DEVNET_RPC = HELIUS_API_KEY
+  ? `https://devnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`
+  : 'https://api.devnet.solana.com';
+
+const MAINNET_RPC = HELIUS_API_KEY
+  ? `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`
+  : 'https://api.mainnet-beta.solana.com';
 
 // USDC Mint Addresses
 const DEVNET_USDC = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'; // Devnet USDC
