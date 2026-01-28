@@ -20,24 +20,24 @@ type IconName = keyof typeof Ionicons.glyphMap;
 interface TabConfig {
   activeIcon: IconName;
   inactiveIcon: IconName;
-  label: string;
+  labelKey: string;
 }
 
 const TAB_CONFIG: Record<string, TabConfig> = {
   index: {
     activeIcon: 'home',
     inactiveIcon: 'home-outline',
-    label: 'Home',
+    labelKey: 'Home',
   },
   two: {
     activeIcon: 'grid',
     inactiveIcon: 'grid-outline',
-    label: 'Components',
+    labelKey: 'Components',
   },
   three: {
     activeIcon: 'person',
     inactiveIcon: 'person-outline',
-    label: 'Profile',
+    labelKey: 'Profile',
   },
 };
 
@@ -63,7 +63,7 @@ function TabItem({ routeName, isFocused, onPress, onLongPress }: TabItemProps) {
   const config = TAB_CONFIG[routeName] || {
     activeIcon: 'ellipse' as IconName,
     inactiveIcon: 'ellipse-outline' as IconName,
-    label: routeName,
+    labelKey: routeName,
   };
 
   useEffect(() => {
