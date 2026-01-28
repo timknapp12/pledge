@@ -670,15 +670,18 @@ ts-node scripts/update-split.ts --treasury 70 --charity 30
 
 ```env
 # Mobile App
+# Mobile App (apps/mobile/.env)
+HELIUS_API_KEY=           # Works for both devnet and mainnet
 EXPO_PUBLIC_SUPABASE_URL=
 EXPO_PUBLIC_SUPABASE_ANON_KEY=
-EXPO_PUBLIC_HELIUS_RPC_URL=
 EXPO_PUBLIC_PROGRAM_ID=
 
-# Supabase Functions
-HELIUS_API_KEY=
+# Supabase Functions (supabase/.env)
+HELIUS_API_KEY=           # Same key, used by Edge Functions
+SOLANA_NETWORK=           # 'devnet' or 'mainnet' (defaults to mainnet)
 PROGRAM_ID=
-CRANK_KEYPAIR=  # Base58 encoded
+CRANK_KEYPAIR=            # Base58 encoded
+SUPABASE_JWT_SECRET=      # For verify-wallet Edge Function
 
 # Development
 ANCHOR_PROVIDER_URL=
