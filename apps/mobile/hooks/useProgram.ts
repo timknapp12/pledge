@@ -27,9 +27,9 @@ export interface UseProgramReturn {
   createPledge: (
     stakeAmountUsdc: number,
     deadline: Date
-  ) => Promise<{ signature: string; pledgeAddress: PublicKey }>;
+  ) => Promise<{ signature: string; pledgeAddress: PublicKey; createdAt: number }>;
   reportCompletion: (
-    pledgeCreatedAt: BN,
+    pledgeAddress: string,
     completionPercentage: number
   ) => Promise<string>;
 
@@ -117,13 +117,13 @@ export const useProgram = (): UseProgramReturn => {
   /**
    * Create a new pledge ON-CHAIN via MWA.
    * After success, caller should write to Supabase (confirm-then-write pattern).
-   * Returns the signature and pledge address for DB storage.
+   * Returns the signature, pledge address, and createdAt timestamp for DB storage.
    */
   const createPledge = useCallback(
     async (
       stakeAmountUsdc: number,
       deadline: Date
-    ): Promise<{ signature: string; pledgeAddress: PublicKey }> => {
+    ): Promise<{ signature: string; pledgeAddress: PublicKey; createdAt: number }> => {
       if (!walletAddress) {
         throw new Error('Wallet not connected');
       }
@@ -135,13 +135,13 @@ export const useProgram = (): UseProgramReturn => {
         const userPubkey = new PublicKey(walletAddress);
 
         // Build the transaction
-        const { transaction, pledgeAddress } =
+        const { transaction, pledgeAddress, createdAt } =
           await buildCreatePledgeTransaction(userPubkey, stakeAmountUsdc, deadline);
 
         // Sign and send via MWA
         const { signature } = await signAndSendTransaction(transaction);
 
-        return { signature, pledgeAddress };
+        return { signature, pledgeAddress, createdAt: createdAt.toNumber() };
       } catch (err: any) {
         const message = err.message || 'Failed to create pledge';
         setError(message);
@@ -159,7 +159,7 @@ export const useProgram = (): UseProgramReturn => {
    * After success, caller should update Supabase status.
    */
   const reportCompletion = useCallback(
-    async (pledgeCreatedAt: BN, completionPercentage: number): Promise<string> => {
+    async (pledgeAddress: string, completionPercentage: number): Promise<string> => {
       if (!walletAddress) {
         throw new Error('Wallet not connected');
       }
@@ -169,11 +169,21 @@ export const useProgram = (): UseProgramReturn => {
 
       try {
         const userPubkey = new PublicKey(walletAddress);
+        const pledgePubkey = new PublicKey(pledgeAddress);
 
-        // Build the transaction
+        // Fetch the on-chain pledge to get createdAt (needed for PDA derivation)
+        const onChainPledge = await fetchPledge(pledgePubkey);
+        if (!onChainPledge) {
+          throw new Error('Pledge not found on-chain');
+        }
+
+        // Convert Date back to BN (createdAt is in seconds)
+        const createdAtBN = new BN(Math.floor(onChainPledge.createdAt.getTime() / 1000));
+
+        // Build the transaction using the on-chain createdAt
         const transaction = await buildReportCompletionTransaction(
           userPubkey,
-          pledgeCreatedAt,
+          createdAtBN,
           completionPercentage
         );
 
