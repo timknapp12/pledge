@@ -7,6 +7,7 @@ import {
   DefaultTheme,
   ThemeProvider as NavigationThemeProvider,
 } from '@react-navigation/native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -17,6 +18,15 @@ import { AuthProvider } from '../contexts/AuthContext';
 import { I18nProvider } from '../contexts/I18nContext';
 import { ScrollProvider } from '@/contexts/ScrollContext';
 import { ThemeProvider, useThemeMode } from '@/theme/ThemeProvider';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 2,
+    },
+  },
+});
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -57,13 +67,15 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   return (
-    <I18nProvider>
-      <AuthProvider>
-        <ThemeProvider>
-          <ThemedNavigation />
-        </ThemeProvider>
-      </AuthProvider>
-    </I18nProvider>
+    <QueryClientProvider client={queryClient}>
+      <I18nProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            <ThemedNavigation />
+          </ThemeProvider>
+        </AuthProvider>
+      </I18nProvider>
+    </QueryClientProvider>
   );
 }
 
