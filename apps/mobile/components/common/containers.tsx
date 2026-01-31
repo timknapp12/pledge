@@ -53,6 +53,7 @@ export const Card = styled.View`
   border-top-right-radius: 30px;
   border-bottom-left-radius: 4px;
   padding: 16px;
+  width: 100%;
 `;
 
 export const Gap = styled.View<{ $gap?: number }>`

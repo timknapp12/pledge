@@ -16,47 +16,12 @@ import {
   CenteredColumn,
   Card,
   TrackedScrollView,
+  Column,
+  Row,
+  Gap,
 } from '@/components';
 import { PastPledgeItem } from './PastPledgeItem';
 import { EmptyState } from './EmptyState';
-
-const Header = styled.View`
-  padding: 60px 20px 20px 20px;
-`;
-
-const StatsContainer = styled.View`
-  flex-direction: row;
-  flex-wrap: wrap;
-  padding: 0 20px;
-  gap: 12px;
-  margin-bottom: 24px;
-`;
-
-const StatCard = styled(Card)`
-  flex: 1;
-  min-width: 45%;
-  align-items: center;
-`;
-
-const StatValue = styled(Title2)`
-  color: ${({ theme }) => theme.colors.primary};
-`;
-
-const StatLabel = styled(BodySmallSecondary)`
-  margin-top: 4px;
-`;
-
-const SectionHeader = styled.View`
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 20px;
-  margin-bottom: 12px;
-`;
-
-const ContentContainer = styled.View`
-  padding-bottom: 100px;
-`;
 
 export const HistoryScreen = () => {
   const { t } = useTranslation();
@@ -121,58 +86,95 @@ export const HistoryScreen = () => {
 
   return (
     <ScreenContainer style={{ flex: 1 }}>
-      <TrackedScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
-            tintColor={theme.colors.primary}
-          />
-        }
+      <Column
+        style={{
+          justifyContent: 'space-between',
+          flex: 1,
+          width: '100%',
+        }}
       >
-        <Header>
-          <Title1>{t('History')}</Title1>
-        </Header>
+        <CenteredColumn style={{ flex: 1 }} $gap={24}>
+          {/* HEADER ROW */}
+          <Row $width='100%'>
+            <Title1>{t('History')}</Title1>
+          </Row>
 
-        {/* Stats Section */}
-        <SectionHeader>
-          <Title3>{t('Stats')}</Title3>
-        </SectionHeader>
-        <StatsContainer>
-          <StatCard>
-            <StatValue>${formatUsdcAmount(totalPledged)}</StatValue>
-            <StatLabel>{t('Total Pledged')}</StatLabel>
-          </StatCard>
-          <StatCard>
-            <StatValue>{successRate}%</StatValue>
-            <StatLabel>{t('Success Rate')}</StatLabel>
-          </StatCard>
-        </StatsContainer>
-
-        {/* Past Pledges Section */}
-        <SectionHeader>
-          <Title3>{t('Past Pledges')}</Title3>
-        </SectionHeader>
-
-        {pledgesLoading ? (
-          <ScreenContainer>
-            <ActivityIndicator size='large' color={theme.colors.primary} />
-          </ScreenContainer>
-        ) : pastPledges.length > 0 ? (
-          <ContentContainer>
-            {pastPledges.map((pledge) => (
-              <PastPledgeItem
-                key={pledge.id}
-                pledge={pledge}
-                onPress={() => handlePledgePress(pledge.id)}
+          <TrackedScrollView
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefetching}
+                onRefresh={refetch}
+                tintColor={theme.colors.primary}
               />
-            ))}
-          </ContentContainer>
-        ) : (
-          <EmptyState />
-        )}
-      </TrackedScrollView>
+            }
+          >
+            <Column style={{ flex: 1 }} $gap={24}>
+              {/* Stats Section */}
+              <Column $gap={4}>
+                <SectionHeader>
+                  <Title3>{t('Stats')}</Title3>
+                </SectionHeader>
+                <CenteredColumn $width='100%' style={{ flex: 1 }} $gap={8}>
+                  <Card style={{ alignItems: 'center' }}>
+                    <StatValue>${formatUsdcAmount(totalPledged)}</StatValue>
+                    <StatLabel>{t('Total Pledged')}</StatLabel>
+                  </Card>
+                  <Card style={{ alignItems: 'center' }}>
+                    <StatValue>{successRate}%</StatValue>
+                    <StatLabel>{t('Success Rate')}</StatLabel>
+                  </Card>
+                </CenteredColumn>
+              </Column>
+
+              {/* Past Pledges Section */}
+              <Column $gap={4}>
+                <SectionHeader>
+                  <Title3>{t('Past Pledges')}</Title3>
+                </SectionHeader>
+              </Column>
+
+              {pledgesLoading ? (
+                <CenteredColumn style={{ flex: 1 }}>
+                  <Gap $gap={48} />
+                  <ActivityIndicator
+                    size='large'
+                    color={theme.colors.primary}
+                  />
+                </CenteredColumn>
+              ) : pastPledges.length > 0 ? (
+                <ContentContainer>
+                  {pastPledges.map((pledge) => (
+                    <PastPledgeItem
+                      key={pledge.id}
+                      pledge={pledge}
+                      onPress={() => handlePledgePress(pledge.id)}
+                    />
+                  ))}
+                </ContentContainer>
+              ) : (
+                <EmptyState />
+              )}
+            </Column>
+          </TrackedScrollView>
+        </CenteredColumn>
+      </Column>
     </ScreenContainer>
   );
 };
+
+const StatValue = styled(Title2)`
+  color: ${({ theme }) => theme.colors.primary};
+`;
+
+const StatLabel = styled(BodySmallSecondary)`
+  margin-top: 4px;
+`;
+
+const SectionHeader = styled.View`
+  padding: 0 20px;
+`;
+
+const ContentContainer = styled.View`
+  padding-bottom: 100px;
+`;
