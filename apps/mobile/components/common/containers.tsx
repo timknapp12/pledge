@@ -2,6 +2,7 @@ import styled from 'styled-components/native';
 
 interface GapProps {
   $gap?: number;
+  $padding?: number;
 }
 
 export const ScreenContainer = styled.View`
@@ -10,11 +11,14 @@ export const ScreenContainer = styled.View`
   justify-content: center;
   padding: 20px;
   background-color: ${(props) => props.theme.colors.background};
+  width: 100%;
+  height: 100%;
 `;
 
 export const Column = styled.View<GapProps>`
   flex-direction: column;
   gap: ${(props) => props.$gap ?? 0}px;
+  padding: ${(props) => props.$padding ?? 0}px;
 `;
 
 export const Row = styled.View<GapProps>`

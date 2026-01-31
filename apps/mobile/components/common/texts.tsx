@@ -51,7 +51,7 @@ export const ErrorText = styled.Text`
 export const SuccessText = styled.Text`
   font-size: 16px;
   font-weight: 600;
-  color: ${(props) => props.theme.colors.success};
+  color: ${(props) => props.theme.colors.accent};
 `;
 
 // Monospace text - SpaceMono for wallet addresses

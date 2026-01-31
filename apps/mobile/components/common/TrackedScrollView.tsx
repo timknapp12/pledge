@@ -1,5 +1,10 @@
 import { useRef, useCallback } from 'react';
-import { ScrollView, ScrollViewProps, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
+import {
+  ScrollView,
+  ScrollViewProps,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+} from 'react-native';
 import { useScrollContext } from '../../contexts/ScrollContext';
 
 interface TrackedScrollViewProps extends ScrollViewProps {
@@ -37,7 +42,10 @@ export function TrackedScrollView({
   const handleScrollEndDrag = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
       // If no momentum, end immediately
-      if (!e.nativeEvent.velocity || (e.nativeEvent.velocity.y === 0 && e.nativeEvent.velocity.x === 0)) {
+      if (
+        !e.nativeEvent.velocity ||
+        (e.nativeEvent.velocity.y === 0 && e.nativeEvent.velocity.x === 0)
+      ) {
         handleScrollEnd();
       }
       onScrollEndDrag?.(e);
@@ -59,6 +67,8 @@ export function TrackedScrollView({
       onScrollEndDrag={handleScrollEndDrag}
       onMomentumScrollEnd={handleMomentumScrollEnd}
       scrollEventThrottle={16}
+      style={{ width: '100%', height: '100%' }}
+      contentContainerStyle={{ width: '100%', height: '100%' }}
       {...props}
     >
       {children}

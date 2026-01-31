@@ -9,12 +9,19 @@ import {
 import * as Haptics from 'expo-haptics';
 import styled, { css } from 'styled-components/native';
 import { useTheme } from 'styled-components/native';
+import { Ionicons } from '@expo/vector-icons';
+
+type IoniconsName = keyof typeof Ionicons.glyphMap;
 
 interface AnimatedPressableProps extends PressableProps {
   children: React.ReactNode;
   style?: ViewStyle;
   disabled?: boolean;
   loading?: boolean;
+}
+
+interface ButtonProps extends AnimatedPressableProps {
+  icon?: IoniconsName;
 }
 
 function AnimatedPressable({
@@ -119,7 +126,7 @@ const sharedCss = css`
 // Styled base containers for button variants
 const PrimaryButtonContainer = styled.View`
   ${sharedCss}
-  background-color: ${(props) => props.theme.colors.primary};
+  background-color: ${(props) => props.theme.colors.buttonPrimaryBg};
   padding: 16px 32px;
   min-width: 200px;
 `;
@@ -128,7 +135,7 @@ const SecondaryButtonContainer = styled.View`
   ${sharedCss}
   background-color: transparent;
   border-width: 1px;
-  border-color: ${(props) => props.theme.colors.primary};
+  border-color: ${(props) => props.theme.colors.buttonSecondaryBorder};
   padding: 12px 24px;
 `;
 
@@ -140,21 +147,50 @@ const OutlineButtonContainer = styled.View`
   padding: 12px 24px;
 `;
 
+// Content wrapper for icon + text
+const ButtonContent = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+`;
+
+// Text components (internal)
+const PrimaryButtonText = styled.Text`
+  color: ${(props) => props.theme.colors.buttonPrimaryText};
+  font-size: 18px;
+  font-weight: 600;
+`;
+
+const SecondaryButtonText = styled.Text`
+  color: ${(props) => props.theme.colors.buttonSecondaryText};
+  font-size: 16px;
+  font-weight: 600;
+`;
+
+const OutlineButtonText = styled.Text`
+  color: ${(props) => props.theme.colors.error};
+  font-size: 16px;
+`;
+
 // Button components
 export function PrimaryButton({
   children,
   style,
   loading = false,
+  icon,
   ...props
-}: AnimatedPressableProps) {
+}: ButtonProps) {
   const theme = useTheme();
   return (
     <AnimatedPressable loading={loading} {...props}>
       <PrimaryButtonContainer style={style}>
         {loading ? (
-          <ActivityIndicator size="small" color={theme.colors.iconOnPrimary} />
+          <ActivityIndicator size="small" color={theme.colors.buttonPrimaryText} />
         ) : (
-          children
+          <ButtonContent>
+            {icon && <Ionicons name={icon} size={20} color={theme.colors.buttonPrimaryText} />}
+            <PrimaryButtonText>{children}</PrimaryButtonText>
+          </ButtonContent>
         )}
       </PrimaryButtonContainer>
     </AnimatedPressable>
@@ -165,16 +201,20 @@ export function SecondaryButton({
   children,
   style,
   loading = false,
+  icon,
   ...props
-}: AnimatedPressableProps) {
+}: ButtonProps) {
   const theme = useTheme();
   return (
     <AnimatedPressable loading={loading} {...props}>
       <SecondaryButtonContainer style={style}>
         {loading ? (
-          <ActivityIndicator size="small" color={theme.colors.primary} />
+          <ActivityIndicator size="small" color={theme.colors.buttonSecondaryText} />
         ) : (
-          children
+          <ButtonContent>
+            {icon && <Ionicons name={icon} size={18} color={theme.colors.buttonSecondaryText} />}
+            <SecondaryButtonText>{children}</SecondaryButtonText>
+          </ButtonContent>
         )}
       </SecondaryButtonContainer>
     </AnimatedPressable>
@@ -185,8 +225,9 @@ export function OutlineButton({
   children,
   style,
   loading = false,
+  icon,
   ...props
-}: AnimatedPressableProps) {
+}: ButtonProps) {
   const theme = useTheme();
   return (
     <AnimatedPressable loading={loading} {...props}>
@@ -194,27 +235,12 @@ export function OutlineButton({
         {loading ? (
           <ActivityIndicator size="small" color={theme.colors.error} />
         ) : (
-          children
+          <ButtonContent>
+            {icon && <Ionicons name={icon} size={18} color={theme.colors.error} />}
+            <OutlineButtonText>{children}</OutlineButtonText>
+          </ButtonContent>
         )}
       </OutlineButtonContainer>
     </AnimatedPressable>
   );
 }
-
-// Text components for buttons
-export const ButtonText = styled.Text`
-  color: ${(props) => props.theme.colors.iconOnPrimary};
-  font-size: 18px;
-  font-weight: 600;
-`;
-
-export const SecondaryButtonText = styled.Text`
-  color: ${(props) => props.theme.colors.primary};
-  font-size: 16px;
-  font-weight: 600;
-`;
-
-export const OutlineButtonText = styled.Text`
-  color: ${(props) => props.theme.colors.error};
-  font-size: 16px;
-`;
