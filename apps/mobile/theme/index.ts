@@ -12,6 +12,15 @@ import {
   darkTextSecondary,
   darkBorder,
   darkCardBackground,
+  statusCompleted,
+  statusCompletedBg,
+  statusForfeited,
+  statusForfeitedBg,
+  primaryAlpha10,
+  primaryAlpha20,
+  primaryAlpha40,
+  iconOnPrimary,
+  shadowColor,
 } from './colors';
 
 export const lightTheme = {
@@ -27,6 +36,15 @@ export const lightTheme = {
     border: lightBorder,
     separator: lightBorder,
     cardBackground: lightCardBackground,
+    statusCompleted,
+    statusCompletedBg,
+    statusForfeited,
+    statusForfeitedBg,
+    primaryAlpha10,
+    primaryAlpha20,
+    primaryAlpha40,
+    iconOnPrimary,
+    shadowColor,
   },
 };
 
@@ -43,6 +61,15 @@ export const darkTheme = {
     border: darkBorder,
     separator: darkBorder,
     cardBackground: darkCardBackground,
+    statusCompleted,
+    statusCompletedBg,
+    statusForfeited,
+    statusForfeitedBg,
+    primaryAlpha10,
+    primaryAlpha20,
+    primaryAlpha40,
+    iconOnPrimary,
+    shadowColor,
   },
 };
 

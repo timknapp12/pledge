@@ -29,12 +29,12 @@ const TAB_CONFIG: Record<string, TabConfig> = {
     inactiveIcon: 'home-outline',
     labelKey: 'Home',
   },
-  two: {
-    activeIcon: 'grid',
-    inactiveIcon: 'grid-outline',
-    labelKey: 'Components',
+  history: {
+    activeIcon: 'time',
+    inactiveIcon: 'time-outline',
+    labelKey: 'History',
   },
-  three: {
+  profile: {
     activeIcon: 'person',
     inactiveIcon: 'person-outline',
     labelKey: 'Profile',
