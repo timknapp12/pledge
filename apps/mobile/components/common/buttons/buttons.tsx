@@ -162,7 +162,7 @@ export function OutlineButton({
 
 // Text components for buttons
 export const ButtonText = styled.Text`
-  color: #fff;
+  color: ${(props) => props.theme.colors.iconOnPrimary};
   font-size: 18px;
   font-weight: 600;
 `;
