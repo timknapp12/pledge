@@ -1,12 +1,22 @@
 import { useState, useCallback } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  View,
+} from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from 'styled-components/native';
 import styled from 'styled-components/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCreatePledgeInDb, parseUsdcToLamports, Todo } from '@/hooks/useSupabase';
+import {
+  useCreatePledgeInDb,
+  parseUsdcToLamports,
+  Todo,
+} from '@/hooks/useSupabase';
 import { useProgram } from '@/hooks/useProgram';
 import {
   Title1,
@@ -22,74 +32,10 @@ import {
   SecondaryButton,
   FloatingLabelInput,
   CenteredColumn,
+  Column,
 } from '@/components';
 
 type Timeframe = '1day' | '1week' | '1month' | 'custom';
-
-const HeaderRow = styled(Row)`
-  padding: 60px 20px 20px 20px;
-`;
-
-const BackButton = styled.Pressable`
-  width: 40px;
-  height: 40px;
-  border-radius: 20px;
-  background-color: ${({ theme }) => theme.colors.cardBackground};
-  align-items: center;
-  justify-content: center;
-`;
-
-const ContentArea = styled.View`
-  padding: 0 20px 40px 20px;
-`;
-
-const Section = styled.View`
-  margin: 16px 0 24px 0;
-`;
-
-const TodoRow = styled(Row)`
-  padding: 12px;
-  background-color: ${({ theme }) => theme.colors.cardBackground};
-  border-radius: 8px;
-  margin-bottom: 8px;
-`;
-
-const SummaryRow = styled(Row)<{ $last?: boolean }>`
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom-width: ${({ $last }) => ($last ? 0 : 1)}px;
-  border-bottom-color: ${({ theme }) => theme.colors.border};
-`;
-
-const BottomBar = styled(CenteredColumn)`
-  padding: 20px;
-  width: 100%;
-`;
-
-const AddButton = styled.Pressable`
-  padding: 12px;
-  background-color: ${({ theme }) => theme.colors.primary};
-  border-radius: 8px;
-  align-self: flex-end;
-`;
-
-const TimeframeButton = styled.Pressable<{ $selected: boolean }>`
-  flex: 1;
-  padding: 12px 8px;
-  border-radius: 8px;
-  background-color: ${({ theme, $selected }) =>
-    $selected ? theme.colors.primary : theme.colors.cardBackground};
-  align-items: center;
-  border-width: 1px;
-  border-color: ${({ theme, $selected }) =>
-    $selected ? theme.colors.primary : theme.colors.border};
-`;
-
-const TimeframeText = styled(BodySmall)<{ $selected: boolean }>`
-  color: ${({ theme, $selected }) =>
-    $selected ? theme.colors.iconOnPrimary : theme.colors.text};
-  font-weight: ${({ $selected }) => ($selected ? '600' : '400')};
-`;
 
 export const CreatePledgeScreen = () => {
   const { t } = useTranslation();
@@ -146,7 +92,8 @@ export const CreatePledgeScreen = () => {
     }
   };
 
-  const isValid = name.trim() && todos.length > 0 && parseFloat(stakeAmount) > 0;
+  const isValid =
+    name.trim() && todos.length > 0 && parseFloat(stakeAmount) > 0;
 
   const handleCreate = async () => {
     if (!isValid || !walletAddress) return;
@@ -192,151 +139,231 @@ export const CreatePledgeScreen = () => {
 
   return (
     <ScreenContainer style={{ flex: 1 }}>
-      <HeaderRow $gap={16}>
-        <BackButton onPress={() => router.back()}>
-          <Ionicons name='arrow-back' size={24} color={theme.colors.text} />
-        </BackButton>
-        <Title1>{t('New Pledge')}</Title1>
-      </HeaderRow>
-
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      <Column
+        style={{
+          justifyContent: 'space-between',
+          flex: 1,
+          width: '100%',
+          marginBottom: 12,
+        }}
       >
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <ContentArea>
-            {/* Goal Name */}
-            <Section>
-              <FloatingLabelInput
-                label={t('Goal Name')}
-                value={name}
-                onChangeText={setName}
-                autoFocus
-              />
-            </Section>
+        <CenteredColumn style={{ flex: 1 }} $gap={24}>
+          <Row $gap={16} $width='100%'>
+            <BackButton onPress={() => router.back()}>
+              <Ionicons name='arrow-back' size={24} color={theme.colors.text} />
+            </BackButton>
+            <Title1>{t('New Pledge')}</Title1>
+          </Row>
 
-            {/* Timeframe */}
-            <Section>
-              <Title3 style={{ marginBottom: 12 }}>{t('Timeframe')}</Title3>
-              <Row $gap={8}>
-                <TimeframeButton
-                  $selected={timeframe === '1day'}
-                  onPress={() => setTimeframe('1day')}
-                >
-                  <TimeframeText $selected={timeframe === '1day'}>
-                    {t('1 Day')}
-                  </TimeframeText>
-                </TimeframeButton>
-                <TimeframeButton
-                  $selected={timeframe === '1week'}
-                  onPress={() => setTimeframe('1week')}
-                >
-                  <TimeframeText $selected={timeframe === '1week'}>
-                    {t('1 Week')}
-                  </TimeframeText>
-                </TimeframeButton>
-                <TimeframeButton
-                  $selected={timeframe === '1month'}
-                  onPress={() => setTimeframe('1month')}
-                >
-                  <TimeframeText $selected={timeframe === '1month'}>
-                    {t('1 Month')}
-                  </TimeframeText>
-                </TimeframeButton>
-              </Row>
-            </Section>
-
-            {/* To-Do Items */}
-            <Section>
-              <Title3 style={{ marginBottom: 12 }}>{t('To-Do Items')}</Title3>
-
-              {todos.map((todo, index) => (
-                <TodoRow key={index} $gap={12}>
-                  <Ionicons
-                    name='checkbox-outline'
-                    size={20}
-                    color={theme.colors.textSecondary}
-                  />
-                  <Body style={{ flex: 1 }}>{todo}</Body>
-                  <Pressable onPress={() => handleRemoveTodo(index)} style={{ padding: 4 }}>
-                    <Ionicons name='close-circle' size={20} color={theme.colors.textSecondary} />
-                  </Pressable>
-                </TodoRow>
-              ))}
-
-              <Row $gap={8}>
-                <View style={{ flex: 1 }}>
-                  <FloatingLabelInput
-                    label={t('Add a task')}
-                    value={newTodo}
-                    onChangeText={setNewTodo}
-                    onSubmitEditing={handleAddTodo}
-                    returnKeyType='done'
-                  />
-                </View>
-                <AddButton onPress={handleAddTodo}>
-                  <Ionicons name='add' size={24} color={theme.colors.iconOnPrimary} />
-                </AddButton>
-              </Row>
-            </Section>
-
-            {/* Stake Amount */}
-            <Section>
-              <Title3 style={{ marginBottom: 12 }}>{t('Stake Amount')}</Title3>
-              <Row $gap={12}>
-                <View style={{ flex: 1 }}>
-                  <FloatingLabelInput
-                    label={t('USDC')}
-                    value={stakeAmount}
-                    onChangeText={setStakeAmount}
-                    keyboardType='decimal-pad'
-                  />
-                </View>
-              </Row>
-            </Section>
-
-            {/* Summary */}
-            {isValid && (
-              <Section>
-                <Title3 style={{ marginBottom: 8 }}>{t('Summary')}</Title3>
-                <Card style={{ marginTop: 8 }}>
-                  <SummaryRow>
-                    <BodySecondary>{t('Duration')}</BodySecondary>
-                    <Body>{getDurationText()}</Body>
-                  </SummaryRow>
-                  <SummaryRow>
-                    <BodySecondary>{t('Total tasks')}</BodySecondary>
-                    <Body>{todos.length}</Body>
-                  </SummaryRow>
-                  <SummaryRow $last>
-                    <BodySecondary>{t('Stake Amount')}</BodySecondary>
-                    <Body>${stakeAmount} {t('USDC')}</Body>
-                  </SummaryRow>
-                </Card>
-              </Section>
-            )}
-
-            {(error || programError) && (
-              <ErrorText style={{ marginBottom: 16, textAlign: 'center' }}>
-                {error || programError}
-              </ErrorText>
-            )}
-          </ContentArea>
-        </ScrollView>
-
-        <BottomBar $gap={12}>
-          <SecondaryButton onPress={() => router.back()}>
-            {t('Cancel')}
-          </SecondaryButton>
-          <PrimaryButton
-            onPress={handleCreate}
-            disabled={!isValid}
-            loading={isSubmitting}
+          <KeyboardAvoidingView
+            style={{ flex: 1, width: '100%' }}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           >
-            {t('Create')}
-          </PrimaryButton>
-        </BottomBar>
-      </KeyboardAvoidingView>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <CenteredColumn $width='100%' style={{ flex: 1 }}>
+                {/* Goal Name */}
+                <Section>
+                  <FloatingLabelInput
+                    label={t('Goal Name')}
+                    value={name}
+                    onChangeText={setName}
+                    autoFocus
+                  />
+                </Section>
+
+                {/* Timeframe */}
+                <Section>
+                  <Title3 style={{ marginBottom: 12 }}>{t('Timeframe')}</Title3>
+                  <Row $gap={8}>
+                    <TimeframeButton
+                      $selected={timeframe === '1day'}
+                      onPress={() => setTimeframe('1day')}
+                    >
+                      <TimeframeText $selected={timeframe === '1day'}>
+                        {t('1 Day')}
+                      </TimeframeText>
+                    </TimeframeButton>
+                    <TimeframeButton
+                      $selected={timeframe === '1week'}
+                      onPress={() => setTimeframe('1week')}
+                    >
+                      <TimeframeText $selected={timeframe === '1week'}>
+                        {t('1 Week')}
+                      </TimeframeText>
+                    </TimeframeButton>
+                    <TimeframeButton
+                      $selected={timeframe === '1month'}
+                      onPress={() => setTimeframe('1month')}
+                    >
+                      <TimeframeText $selected={timeframe === '1month'}>
+                        {t('1 Month')}
+                      </TimeframeText>
+                    </TimeframeButton>
+                  </Row>
+                </Section>
+
+                {/* To-Do Items */}
+                <Section>
+                  <Title3 style={{ marginBottom: 12 }}>
+                    {t('To-Do Items')}
+                  </Title3>
+
+                  {todos.map((todo, index) => (
+                    <TodoRow key={index} $gap={12}>
+                      <Ionicons
+                        name='checkbox-outline'
+                        size={20}
+                        color={theme.colors.textSecondary}
+                      />
+                      <Body style={{ flex: 1 }}>{todo}</Body>
+                      <Pressable
+                        onPress={() => handleRemoveTodo(index)}
+                        style={{ padding: 4 }}
+                      >
+                        <Ionicons
+                          name='close-circle'
+                          size={20}
+                          color={theme.colors.textSecondary}
+                        />
+                      </Pressable>
+                    </TodoRow>
+                  ))}
+
+                  <Row $gap={8}>
+                    <View style={{ flex: 1 }}>
+                      <FloatingLabelInput
+                        label={t('Add a task')}
+                        value={newTodo}
+                        onChangeText={setNewTodo}
+                        onSubmitEditing={handleAddTodo}
+                        returnKeyType='done'
+                      />
+                    </View>
+                    <AddButton onPress={handleAddTodo}>
+                      <Ionicons
+                        name='add'
+                        size={24}
+                        color={theme.colors.iconOnPrimary}
+                      />
+                    </AddButton>
+                  </Row>
+                </Section>
+
+                {/* Stake Amount */}
+                <Section>
+                  <Title3 style={{ marginBottom: 12 }}>
+                    {t('Stake Amount')}
+                  </Title3>
+                  <Row $gap={12}>
+                    <View style={{ flex: 1 }}>
+                      <FloatingLabelInput
+                        label={t('USDC')}
+                        value={stakeAmount}
+                        onChangeText={setStakeAmount}
+                        keyboardType='decimal-pad'
+                      />
+                    </View>
+                  </Row>
+                </Section>
+
+                {/* Summary */}
+                {isValid && (
+                  <Section>
+                    <Title3 style={{ marginBottom: 8 }}>{t('Summary')}</Title3>
+                    <Card style={{ marginTop: 8 }}>
+                      <SummaryRow>
+                        <BodySecondary>{t('Duration')}</BodySecondary>
+                        <Body>{getDurationText()}</Body>
+                      </SummaryRow>
+                      <SummaryRow>
+                        <BodySecondary>{t('Total tasks')}</BodySecondary>
+                        <Body>{todos.length}</Body>
+                      </SummaryRow>
+                      <SummaryRow $last>
+                        <BodySecondary>{t('Stake Amount')}</BodySecondary>
+                        <Body>
+                          ${stakeAmount} {t('USDC')}
+                        </Body>
+                      </SummaryRow>
+                    </Card>
+                  </Section>
+                )}
+
+                {(error || programError) && (
+                  <ErrorText style={{ marginBottom: 16, textAlign: 'center' }}>
+                    {error || programError}
+                  </ErrorText>
+                )}
+              </CenteredColumn>
+            </ScrollView>
+
+            <CenteredColumn $gap={12} $width='100%'>
+              <SecondaryButton onPress={() => router.back()}>
+                {t('Cancel')}
+              </SecondaryButton>
+              <PrimaryButton
+                onPress={handleCreate}
+                disabled={!isValid}
+                loading={isSubmitting}
+              >
+                {t('Create')}
+              </PrimaryButton>
+            </CenteredColumn>
+          </KeyboardAvoidingView>
+        </CenteredColumn>
+      </Column>
     </ScreenContainer>
   );
 };
+
+const BackButton = styled.Pressable`
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  background-color: ${({ theme }) => theme.colors.cardBackground};
+  align-items: center;
+  justify-content: center;
+`;
+
+const Section = styled.View`
+  margin: 16px 0 24px 0;
+  width: 100%;
+`;
+
+const TodoRow = styled(Row)`
+  padding: 12px;
+  background-color: ${({ theme }) => theme.colors.cardBackground};
+  border-radius: 8px;
+`;
+
+const SummaryRow = styled(Row)<{ $last?: boolean }>`
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom-width: ${({ $last }) => ($last ? 0 : 1)}px;
+  border-bottom-color: ${({ theme }) => theme.colors.border};
+`;
+
+const AddButton = styled.Pressable`
+  padding: 12px;
+  background-color: ${({ theme }) => theme.colors.primary};
+  border-radius: 8px;
+  align-self: flex-end;
+`;
+
+const TimeframeButton = styled.Pressable<{ $selected: boolean }>`
+  flex: 1;
+  padding: 12px 8px;
+  border-radius: 8px;
+  background-color: ${({ theme, $selected }) =>
+    $selected ? theme.colors.primary : theme.colors.cardBackground};
+  align-items: center;
+  border-width: 1px;
+  border-color: ${({ theme, $selected }) =>
+    $selected ? theme.colors.primary : theme.colors.border};
+`;
+
+const TimeframeText = styled(BodySmall)<{ $selected: boolean }>`
+  color: ${({ theme, $selected }) =>
+    $selected ? theme.colors.iconOnPrimary : theme.colors.text};
+  font-weight: ${({ $selected }) => ($selected ? '600' : '400')};
+`;

@@ -87,8 +87,8 @@ function ThemedNavigation() {
     <ScrollProvider>
       <NavigationThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
-        <Stack>
-          <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name='(tabs)' />
         </Stack>
       </NavigationThemeProvider>
     </ScrollProvider>
