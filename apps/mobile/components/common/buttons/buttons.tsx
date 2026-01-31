@@ -1,11 +1,20 @@
 import { useRef, useCallback } from 'react';
-import { Pressable, Animated, PressableProps, ViewStyle } from 'react-native';
+import {
+  Pressable,
+  Animated,
+  PressableProps,
+  ViewStyle,
+  ActivityIndicator,
+} from 'react-native';
 import * as Haptics from 'expo-haptics';
 import styled, { css } from 'styled-components/native';
+import { useTheme } from 'styled-components/native';
 
 interface AnimatedPressableProps extends PressableProps {
   children: React.ReactNode;
   style?: ViewStyle;
+  disabled?: boolean;
+  loading?: boolean;
 }
 
 function AnimatedPressable({
@@ -14,13 +23,17 @@ function AnimatedPressable({
   onPressOut,
   onPress,
   style,
+  disabled = false,
+  loading = false,
   ...props
 }: AnimatedPressableProps) {
+  const isDisabled = disabled || loading;
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = useCallback(
     (e: any) => {
+      if (isDisabled) return;
       Animated.parallel([
         Animated.spring(scaleAnim, {
           toValue: 0.97,
@@ -34,7 +47,7 @@ function AnimatedPressable({
       ]).start();
       onPressIn?.(e);
     },
-    [scaleAnim, opacityAnim, onPressIn],
+    [scaleAnim, opacityAnim, onPressIn, isDisabled],
   );
 
   const handlePressOut = useCallback(
@@ -57,6 +70,7 @@ function AnimatedPressable({
 
   const handlePress = useCallback(
     (e: any) => {
+      if (isDisabled) return;
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       } catch {
@@ -64,7 +78,7 @@ function AnimatedPressable({
       }
       onPress?.(e);
     },
-    [onPress],
+    [onPress, isDisabled],
   );
 
   return (
@@ -72,15 +86,19 @@ function AnimatedPressable({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       onPress={handlePress}
+      disabled={isDisabled}
+      style={{ width: '100%' }}
       {...props}
     >
       <Animated.View
         style={[
           style,
           {
+            width: '100%',
             transform: [{ scale: scaleAnim }],
             opacity: opacityAnim,
           },
+          isDisabled && { opacity: 0.5 },
         ]}
       >
         {children}
@@ -95,6 +113,7 @@ const sharedCss = css`
   border-top-right-radius: 30px;
   border-bottom-left-radius: 4px;
   align-items: center;
+  width: 100%;
 `;
 
 // Styled base containers for button variants
@@ -125,11 +144,19 @@ const OutlineButtonContainer = styled.View`
 export function PrimaryButton({
   children,
   style,
+  loading = false,
   ...props
 }: AnimatedPressableProps) {
+  const theme = useTheme();
   return (
-    <AnimatedPressable {...props}>
-      <PrimaryButtonContainer style={style}>{children}</PrimaryButtonContainer>
+    <AnimatedPressable loading={loading} {...props}>
+      <PrimaryButtonContainer style={style}>
+        {loading ? (
+          <ActivityIndicator size="small" color={theme.colors.iconOnPrimary} />
+        ) : (
+          children
+        )}
+      </PrimaryButtonContainer>
     </AnimatedPressable>
   );
 }
@@ -137,12 +164,18 @@ export function PrimaryButton({
 export function SecondaryButton({
   children,
   style,
+  loading = false,
   ...props
 }: AnimatedPressableProps) {
+  const theme = useTheme();
   return (
-    <AnimatedPressable {...props}>
+    <AnimatedPressable loading={loading} {...props}>
       <SecondaryButtonContainer style={style}>
-        {children}
+        {loading ? (
+          <ActivityIndicator size="small" color={theme.colors.primary} />
+        ) : (
+          children
+        )}
       </SecondaryButtonContainer>
     </AnimatedPressable>
   );
@@ -151,11 +184,19 @@ export function SecondaryButton({
 export function OutlineButton({
   children,
   style,
+  loading = false,
   ...props
 }: AnimatedPressableProps) {
+  const theme = useTheme();
   return (
-    <AnimatedPressable {...props}>
-      <OutlineButtonContainer style={style}>{children}</OutlineButtonContainer>
+    <AnimatedPressable loading={loading} {...props}>
+      <OutlineButtonContainer style={style}>
+        {loading ? (
+          <ActivityIndicator size="small" color={theme.colors.error} />
+        ) : (
+          children
+        )}
+      </OutlineButtonContainer>
     </AnimatedPressable>
   );
 }
