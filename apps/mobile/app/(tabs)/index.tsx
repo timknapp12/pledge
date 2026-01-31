@@ -30,7 +30,6 @@ import {
   Row,
   Card,
   PrimaryButton,
-  ButtonText,
   TrackedScrollView,
 } from '@/components';
 
@@ -225,7 +224,7 @@ function EmptyState({ onCreatePress }: { onCreatePress: () => void }) {
         )}
       </BodySecondary>
       <PrimaryButton onPress={onCreatePress} style={{ marginTop: 16 }}>
-        <ButtonText>{t('Create Pledge')}</ButtonText>
+        {t('Create Pledge')}
       </PrimaryButton>
     </EmptyStateContainer>
   );
@@ -252,13 +251,10 @@ function ConnectWalletScreen() {
         <PrimaryButton
           onPress={connect}
           disabled={isConnecting}
-          style={{ marginTop: 24, opacity: isConnecting ? 0.6 : 1 }}
+          loading={isConnecting}
+          style={{ marginTop: 24 }}
         >
-          {isConnecting ? (
-            <ActivityIndicator size='small' color={theme.colors.iconOnPrimary} />
-          ) : (
-            <ButtonText>{t('Connect Wallet')}</ButtonText>
-          )}
+          {t('Connect Wallet')}
         </PrimaryButton>
 
         {error && (

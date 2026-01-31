@@ -25,21 +25,36 @@ import {
 
 export const lightTheme = {
   colors: {
+    // Base
     background: white,
     text: black,
     textSecondary: lightTextSecondary,
     tint: blue,
     tabIconDefault: gray,
+
+    // Brand
     primary: slateIndigo,
-    success: warmCoral,
+    accent: warmCoral,
     error: red,
+
+    // Buttons
+    buttonPrimaryBg: warmCoral,
+    buttonPrimaryText: white,
+    buttonSecondaryBorder: slateIndigo,
+    buttonSecondaryText: slateIndigo,
+
+    // UI
     border: lightBorder,
     separator: lightBorder,
     cardBackground: lightCardBackground,
+
+    // Status
     statusCompleted,
     statusCompletedBg,
     statusForfeited,
     statusForfeitedBg,
+
+    // Primary alpha variants
     primaryAlpha10,
     primaryAlpha20,
     primaryAlpha40,
@@ -50,21 +65,36 @@ export const lightTheme = {
 
 export const darkTheme = {
   colors: {
+    // Base
     background: black,
     text: white,
     textSecondary: darkTextSecondary,
     tint: white,
     tabIconDefault: gray,
+
+    // Brand
     primary: slateIndigo,
-    success: warmCoral,
+    accent: warmCoral,
     error: red,
+
+    // Buttons
+    buttonPrimaryBg: warmCoral,
+    buttonPrimaryText: white,
+    buttonSecondaryBorder: slateIndigo,
+    buttonSecondaryText: slateIndigo,
+
+    // UI
     border: darkBorder,
     separator: darkBorder,
     cardBackground: darkCardBackground,
+
+    // Status
     statusCompleted,
     statusCompletedBg,
     statusForfeited,
     statusForfeitedBg,
+
+    // Primary alpha variants
     primaryAlpha10,
     primaryAlpha20,
     primaryAlpha40,
