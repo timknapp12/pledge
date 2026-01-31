@@ -1,4 +1,4 @@
-import { Alert, View } from 'react-native';
+import { Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from 'styled-components/native';
 import styled from 'styled-components/native';
@@ -19,6 +19,7 @@ import {
   Card,
   TrackedScrollView,
   ThemeSelector,
+  OutlineButton,
 } from '@/components';
 
 const Header = styled.View`
@@ -69,27 +70,6 @@ const SettingsLabel = styled.View`
   gap: 12px;
 `;
 
-const SignOutButton = styled.Pressable`
-  margin: 24px 20px;
-  padding: 16px;
-  background-color: ${({ theme }) => theme.colors.cardBackground};
-  border-radius: 12px;
-  align-items: center;
-  border-width: 1px;
-  border-color: ${({ theme }) => theme.colors.statusForfeited};
-`;
-
-const SignOutText = styled(Body)`
-  color: ${({ theme }) => theme.colors.statusForfeited};
-  font-weight: 600;
-`;
-
-const VersionText = styled(BodySmallSecondary)`
-  text-align: center;
-  margin-top: 8px;
-  margin-bottom: 100px;
-`;
-
 type IoniconsName = keyof typeof Ionicons.glyphMap;
 
 interface SettingsItemProps {
@@ -100,7 +80,13 @@ interface SettingsItemProps {
   isLast?: boolean;
 }
 
-function SettingsItem({ icon, label, value, onPress, isLast }: SettingsItemProps) {
+function SettingsItem({
+  icon,
+  label,
+  value,
+  onPress,
+  isLast,
+}: SettingsItemProps) {
   const theme = useTheme();
   const Container = isLast ? SettingsRowLast : SettingsRow;
 
@@ -113,7 +99,11 @@ function SettingsItem({ icon, label, value, onPress, isLast }: SettingsItemProps
       <Row $gap={8}>
         {value && <BodySecondary>{value}</BodySecondary>}
         {onPress && (
-          <Ionicons name="chevron-forward" size={20} color={theme.colors.textSecondary} />
+          <Ionicons
+            name='chevron-forward'
+            size={20}
+            color={theme.colors.textSecondary}
+          />
         )}
       </Row>
     </Container>
@@ -126,14 +116,10 @@ export default function ProfileScreen() {
   const { user, walletAddress, disconnect } = useAuth();
 
   const handleSignOut = () => {
-    Alert.alert(
-      t('Sign Out'),
-      t('Are you sure?'),
-      [
-        { text: t('Cancel'), style: 'cancel' },
-        { text: t('Sign Out'), style: 'destructive', onPress: disconnect },
-      ]
-    );
+    Alert.alert(t('Sign Out'), t('Are you sure?'), [
+      { text: t('Cancel'), style: 'cancel' },
+      { text: t('Sign Out'), style: 'destructive', onPress: disconnect },
+    ]);
   };
 
   const handleTemplates = () => {
@@ -150,7 +136,11 @@ export default function ProfileScreen() {
     return (
       <ScreenContainer>
         <CenteredColumn $gap={16}>
-          <Ionicons name="person-outline" size={64} color={theme.colors.textSecondary} />
+          <Ionicons
+            name='person-outline'
+            size={64}
+            color={theme.colors.textSecondary}
+          />
           <BodySecondary style={{ textAlign: 'center' }}>
             {t('Connect your Solana wallet to get started')}
           </BodySecondary>
@@ -160,7 +150,9 @@ export default function ProfileScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <ScreenContainer
+      style={{ flex: 1, backgroundColor: theme.colors.background }}
+    >
       <TrackedScrollView showsVerticalScrollIndicator={false}>
         <Header>
           <Title1>{t('Profile')}</Title1>
@@ -169,7 +161,7 @@ export default function ProfileScreen() {
         {/* Wallet Card */}
         <WalletCard>
           <WalletIcon>
-            <Ionicons name="wallet" size={24} color={theme.colors.primary} />
+            <Ionicons name='wallet' size={24} color={theme.colors.primary} />
           </WalletIcon>
           <Column style={{ flex: 1 }}>
             <Body>{t('Connected Wallet')}</Body>
@@ -183,9 +175,7 @@ export default function ProfileScreen() {
         <SectionHeader>
           <Title3>{t('Theme')}</Title3>
         </SectionHeader>
-        <SettingsCard>
-          <ThemeSelector />
-        </SettingsCard>
+        <ThemeSelector />
 
         {/* Settings Section */}
         <SectionHeader>
@@ -193,41 +183,26 @@ export default function ProfileScreen() {
         </SectionHeader>
         <SettingsCard>
           <SettingsItem
-            icon="documents-outline"
+            icon='documents-outline'
             label={t('Templates')}
             onPress={handleTemplates}
           />
           <SettingsItem
-            icon="notifications-outline"
+            icon='notifications-outline'
             label={t('Notifications')}
             onPress={handleNotifications}
             isLast
           />
         </SettingsCard>
 
-        {/* About Section */}
-        <SectionHeader>
-          <Title3>{t('About')}</Title3>
-        </SectionHeader>
-        <SettingsCard>
-          <SettingsItem
-            icon="information-circle-outline"
-            label={t('Version')}
-            value={appVersion}
-            isLast
-          />
-        </SettingsCard>
-
         {/* Sign Out */}
-        <SignOutButton onPress={handleSignOut}>
-          <Row $gap={8}>
-            <Ionicons name="log-out-outline" size={20} color={theme.colors.statusForfeited} />
-            <SignOutText>{t('Sign Out')}</SignOutText>
-          </Row>
-        </SignOutButton>
-
-        <VersionText>Pledge v{appVersion}</VersionText>
+        <CenteredColumn $padding={16} $gap={16}>
+          <OutlineButton icon='log-out-outline' onPress={handleSignOut}>
+            {t('Sign Out')}
+          </OutlineButton>
+          <BodySmallSecondary>Pledge v{appVersion}</BodySmallSecondary>
+        </CenteredColumn>
       </TrackedScrollView>
-    </View>
+    </ScreenContainer>
   );
 }
