@@ -14,7 +14,10 @@
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {
-    "turbo": "^2.3.0"
+    "assert": "^2.1.0",
+    "stream-browserify": "^3.0.0",
+    "turbo": "^2.3.0",
+    "util": "^0.12.5"
   },
   "packageManager": "npm@10.2.0",
   "engines": {
