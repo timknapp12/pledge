@@ -19,31 +19,9 @@ import {
   TrackedScrollView,
   ThemeSelector,
   OutlineButton,
+  Row,
 } from '@/components';
 import { SettingsItem } from './SettingsItem';
-
-const Header = styled.View`
-  padding: 60px 20px 20px 20px;
-`;
-
-const WalletCard = styled(Card)`
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
-`;
-
-const WalletIcon = styled.View`
-  width: 48px;
-  height: 48px;
-  border-radius: 24px;
-  background-color: ${({ theme }) => theme.colors.primary}20;
-  align-items: center;
-  justify-content: center;
-`;
-
-const SectionHeader = styled.View`
-  padding: 0 20px;
-`;
 
 export const ProfileScreen = () => {
   const { t } = useTranslation();
@@ -85,74 +63,95 @@ export const ProfileScreen = () => {
   }
 
   return (
-    <ScreenContainer style={{ flex: 1, marginBottom: 48 }}>
-      <TrackedScrollView showsVerticalScrollIndicator={false}>
-        <Column
-          style={{
-            justifyContent: 'space-between',
-            flex: 1,
-          }}
-        >
-          <Column style={{ flex: 1 }} $gap={24}>
-            <Header>
-              <Title1>{t('Profile')}</Title1>
-            </Header>
+    <ScreenContainer style={{ flex: 1 }}>
+      <Column
+        style={{
+          justifyContent: 'space-between',
+          flex: 1,
+          width: '100%',
+        }}
+      >
+        <CenteredColumn style={{ flex: 1 }} $gap={24}>
+          <Row $width='100%'>
+            <Title1>{t('Profile')}</Title1>
+          </Row>
+          <TrackedScrollView showsVerticalScrollIndicator={false}>
+            <Column style={{ flex: 1 }} $gap={24}>
+              {/* Wallet Card */}
+              <WalletCard>
+                <WalletIcon>
+                  <Ionicons
+                    name='wallet'
+                    size={24}
+                    color={theme.colors.primary}
+                  />
+                </WalletIcon>
+                <Column $gap={4}>
+                  <Body>{t('Connected Wallet')}</Body>
+                  <MonoText>
+                    {walletAddress?.slice(0, 8)}...{walletAddress?.slice(-8)}
+                  </MonoText>
+                </Column>
+              </WalletCard>
 
-            {/* Wallet Card */}
-            <WalletCard>
-              <WalletIcon>
-                <Ionicons
-                  name='wallet'
-                  size={24}
-                  color={theme.colors.primary}
-                />
-              </WalletIcon>
-              <Column $gap={4}>
-                <Body>{t('Connected Wallet')}</Body>
-                <MonoText>
-                  {walletAddress?.slice(0, 8)}...{walletAddress?.slice(-8)}
-                </MonoText>
+              {/* Theme Section */}
+              <Column>
+                <SectionHeader>
+                  <Title3>{t('Theme')}</Title3>
+                </SectionHeader>
+                <ThemeSelector />
               </Column>
-            </WalletCard>
 
-            {/* Theme Section */}
-            <Column>
-              <SectionHeader>
-                <Title3>{t('Theme')}</Title3>
-              </SectionHeader>
-              <ThemeSelector />
+              {/* Settings Section */}
+              <Column>
+                <SectionHeader>
+                  <Title3>{t('Settings')}</Title3>
+                </SectionHeader>
+                <Card>
+                  <SettingsItem
+                    icon='documents-outline'
+                    label={t('Templates')}
+                    onPress={handleTemplates}
+                  />
+                  <SettingsItem
+                    icon='notifications-outline'
+                    label={t('Notifications')}
+                    onPress={handleNotifications}
+                    isLast
+                  />
+                </Card>
+              </Column>
             </Column>
 
-            {/* Settings Section */}
-            <Column>
-              <SectionHeader>
-                <Title3>{t('Settings')}</Title3>
-              </SectionHeader>
-              <Card>
-                <SettingsItem
-                  icon='documents-outline'
-                  label={t('Templates')}
-                  onPress={handleTemplates}
-                />
-                <SettingsItem
-                  icon='notifications-outline'
-                  label={t('Notifications')}
-                  onPress={handleNotifications}
-                  isLast
-                />
-              </Card>
-            </Column>
-          </Column>
-
-          {/* Sign Out */}
-          <CenteredColumn $padding={16} $gap={16}>
-            <OutlineButton icon='log-out-outline' onPress={handleSignOut}>
-              {t('Sign Out')}
-            </OutlineButton>
-            <BodySmallSecondary>Pledge v{appVersion}</BodySmallSecondary>
-          </CenteredColumn>
-        </Column>
-      </TrackedScrollView>
+            {/* Sign Out */}
+            <CenteredColumn $padding={16} $gap={16}>
+              <OutlineButton icon='log-out-outline' onPress={handleSignOut}>
+                {t('Sign Out')}
+              </OutlineButton>
+              <BodySmallSecondary>Pledge v{appVersion}</BodySmallSecondary>
+            </CenteredColumn>
+          </TrackedScrollView>
+        </CenteredColumn>
+      </Column>
     </ScreenContainer>
   );
 };
+
+const WalletCard = styled(Card)`
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+`;
+
+const WalletIcon = styled.View`
+  width: 48px;
+  height: 48px;
+  border-radius: 24px;
+  background-color: ${({ theme }) => theme.colors.primary}20;
+  align-items: center;
+  justify-content: center;
+`;
+
+const SectionHeader = styled.View`
+  padding: 0 20px;
+`;
