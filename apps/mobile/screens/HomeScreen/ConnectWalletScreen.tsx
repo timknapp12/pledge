@@ -24,9 +24,10 @@ export const ConnectWalletScreen = () => {
         style={{
           justifyContent: 'space-between',
           flex: 1,
+          marginBottom: 60,
         }}
       >
-        <CenteredColumn style={{ flex: 1, justifyContent: 'center' }}>
+        <CenteredColumn $gap={12} style={{ flex: 1, justifyContent: 'center' }}>
           <Ionicons
             name='wallet-outline'
             size={64}
@@ -46,7 +47,7 @@ export const ConnectWalletScreen = () => {
           onPress={connect}
           disabled={isConnecting}
           loading={isConnecting}
-          style={{ marginTop: 24 }}
+          icon='wallet-outline'
         >
           {t('Connect Wallet')}
         </PrimaryButton>

@@ -6,6 +6,7 @@ import {
   BodySecondary,
   CenteredColumn,
   PrimaryButton,
+  Gap,
 } from '@/components';
 
 export interface EmptyStateProps {
@@ -17,18 +18,33 @@ export const EmptyState = ({ onCreatePress }: EmptyStateProps) => {
   const theme = useTheme();
 
   return (
-    <CenteredColumn $gap={16} $padding={40}>
-      <Ionicons
-        name='flag-outline'
-        size={64}
-        color={theme.colors.textSecondary}
-      />
-      <Title2 style={{ textAlign: 'center' }}>{t('No active pledges')}</Title2>
-      <BodySecondary style={{ textAlign: 'center', maxWidth: 280 }}>
-        {t(
-          'Create your first pledge to start achieving your goals with skin in the game.',
-        )}
-      </BodySecondary>
+    <CenteredColumn
+      $gap={24}
+      $width='100%'
+      style={{
+        flex: 1,
+        justifyContent: 'space-between',
+        marginBottom: 60,
+      }}
+    >
+      <CenteredColumn $gap={12} style={{ flex: 1, justifyContent: 'center' }}>
+        <Ionicons
+          name='flag-outline'
+          size={64}
+          color={theme.colors.textSecondary}
+        />
+        <Title2 style={{ textAlign: 'center' }}>
+          {t('No active pledges')}
+        </Title2>
+
+        <Gap $gap={32} />
+        {/* // TODO - think of new copy */}
+        <BodySecondary style={{ textAlign: 'center', maxWidth: 280 }}>
+          {t(
+            'Create your first pledge to start achieving your goals with skin in the game.',
+          )}
+        </BodySecondary>
+      </CenteredColumn>
       <PrimaryButton onPress={onCreatePress} style={{ marginTop: 16 }}>
         {t('Create Pledge')}
       </PrimaryButton>

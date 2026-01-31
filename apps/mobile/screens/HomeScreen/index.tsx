@@ -12,44 +12,13 @@ import {
   MonoText,
   ScreenContainer,
   TrackedScrollView,
+  Row,
+  Column,
+  CenteredColumn,
 } from '@/components';
 import { PledgeListItem } from './PledgeListItem';
 import { EmptyState } from './EmptyState';
 import { ConnectWalletScreen } from './ConnectWalletScreen';
-
-const Header = styled.View`
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  padding: 60px 20px 20px 20px;
-`;
-
-const WalletBadge = styled.Pressable`
-  flex-direction: row;
-  align-items: center;
-  background-color: ${({ theme }) => theme.colors.cardBackground};
-  padding: 8px 12px;
-  border-radius: 20px;
-  gap: 6px;
-`;
-
-const FAB = styled.Pressable`
-  position: absolute;
-  bottom: 100px;
-  right: 20px;
-  width: 56px;
-  height: 56px;
-  border-radius: 28px;
-  background-color: ${({ theme }) => theme.colors.primary};
-  align-items: center;
-  justify-content: center;
-`;
-
-const ContentContainer = styled.View`
-  flex: 1;
-  padding: 0 20px 100px 20px;
-`;
 
 export const HomeScreen = () => {
   const { t } = useTranslation();
@@ -91,58 +60,106 @@ export const HomeScreen = () => {
   // Authenticated - show pledges
   return (
     <ScreenContainer style={{ flex: 1 }}>
-      <Header>
-        <Title1>{t('My Pledges')}</Title1>
-        <WalletBadge onPress={disconnect}>
-          <Ionicons name='wallet' size={16} color={theme.colors.primary} />
-          <MonoText style={{ fontSize: 12 }}>
-            {walletAddress?.slice(0, 4)}...{walletAddress?.slice(-4)}
-          </MonoText>
-        </WalletBadge>
-      </Header>
+      <Column
+        $width='100%'
+        style={{
+          justifyContent: 'space-between',
+          flex: 1,
+        }}
+      >
+        <CenteredColumn $gap={24} style={{ flex: 1 }}>
+          {/* HEADER ROW */}
+          <Row
+            $gap={16}
+            $width='100%'
+            style={{ justifyContent: 'space-between' }}
+          >
+            <Title1>{t('My Pledges')}</Title1>
+            <WalletBadge onPress={disconnect}>
+              <Ionicons name='wallet' size={16} color={theme.colors.primary} />
+              <MonoText style={{ fontSize: 12 }}>
+                {walletAddress?.slice(0, 4)}...{walletAddress?.slice(-4)}
+              </MonoText>
+            </WalletBadge>
+          </Row>
 
-      {pledgesLoading ? (
-        <ScreenContainer>
-          <ActivityIndicator size='large' color={theme.colors.primary} />
-        </ScreenContainer>
-      ) : pledges && pledges.length > 0 ? (
-        <TrackedScrollView
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefetching}
-              onRefresh={refetch}
-              tintColor={theme.colors.primary}
-            />
-          }
-        >
-          <ContentContainer>
-            {pledges.map((pledge) => (
-              <PledgeListItem
-                key={pledge.id}
-                pledge={pledge}
-                onPress={() => handlePledgePress(pledge.id)}
+          {pledgesLoading ? (
+            <CenteredColumn
+              style={{
+                flex: 1,
+                justifyContent: 'center',
+              }}
+            >
+              <ActivityIndicator size='large' color={theme.colors.primary} />
+              <BodySecondary style={{ marginTop: 16 }}>
+                {t('Pledging...')}
+              </BodySecondary>
+            </CenteredColumn>
+          ) : pledges && pledges.length > 0 ? (
+            <TrackedScrollView
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isRefetching}
+                  onRefresh={refetch}
+                  tintColor={theme.colors.primary}
+                />
+              }
+            >
+              <Column style={{ flex: 1 }} $gap={24}>
+                {pledges.map((pledge) => (
+                  <PledgeListItem
+                    key={pledge.id}
+                    pledge={pledge}
+                    onPress={() => handlePledgePress(pledge.id)}
+                  />
+                ))}
+              </Column>
+            </TrackedScrollView>
+          ) : (
+            <EmptyState onCreatePress={handleCreatePledge} />
+          )}
+
+          {pledges && pledges.length > 0 && (
+            <FAB
+              onPress={handleCreatePledge}
+              style={{
+                shadowColor: theme.colors.shadowColor,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.25,
+                shadowRadius: 4,
+              }}
+            >
+              <Ionicons
+                name='add'
+                size={28}
+                color={theme.colors.iconOnPrimary}
               />
-            ))}
-          </ContentContainer>
-        </TrackedScrollView>
-      ) : (
-        <EmptyState onCreatePress={handleCreatePledge} />
-      )}
-
-      {pledges && pledges.length > 0 && (
-        <FAB
-          onPress={handleCreatePledge}
-          style={{
-            shadowColor: theme.colors.shadowColor,
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.25,
-            shadowRadius: 4,
-          }}
-        >
-          <Ionicons name='add' size={28} color={theme.colors.iconOnPrimary} />
-        </FAB>
-      )}
+            </FAB>
+          )}
+        </CenteredColumn>
+      </Column>
     </ScreenContainer>
   );
 };
+
+const WalletBadge = styled.Pressable`
+  flex-direction: row;
+  align-items: center;
+  background-color: ${({ theme }) => theme.colors.cardBackground};
+  padding: 8px 12px;
+  border-radius: 20px;
+  gap: 6px;
+`;
+
+const FAB = styled.Pressable`
+  position: absolute;
+  bottom: 100px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 28px;
+  background-color: ${({ theme }) => theme.colors.primary};
+  align-items: center;
+  justify-content: center;
+`;
