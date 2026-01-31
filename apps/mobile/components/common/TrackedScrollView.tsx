@@ -11,11 +11,14 @@ interface TrackedScrollViewProps extends ScrollViewProps {
   children: React.ReactNode;
 }
 
+const TAB_BAR_INSET = 60;
+
 export function TrackedScrollView({
   children,
   onScrollBeginDrag,
   onScrollEndDrag,
   onMomentumScrollEnd,
+  contentContainerStyle,
   ...props
 }: TrackedScrollViewProps) {
   const { setScrolling } = useScrollContext();
@@ -67,8 +70,11 @@ export function TrackedScrollView({
       onScrollEndDrag={handleScrollEndDrag}
       onMomentumScrollEnd={handleMomentumScrollEnd}
       scrollEventThrottle={16}
-      style={{ width: '100%', height: '100%' }}
-      contentContainerStyle={{ width: '100%', height: '100%' }}
+      style={{ width: '100%' }}
+      contentContainerStyle={[
+        { flexGrow: 1, paddingBottom: TAB_BAR_INSET },
+        contentContainerStyle,
+      ]}
       {...props}
     >
       {children}
