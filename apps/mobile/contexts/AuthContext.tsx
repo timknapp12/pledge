@@ -13,8 +13,9 @@ import {
   transact,
   Web3MobileWallet,
 } from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
-import { toUint8Array, fromUint8Array } from 'js-base64';
+import { toUint8Array } from 'js-base64';
 import nacl from 'tweetnacl';
+import bs58 from 'bs58';
 import {
   createAuthenticatedClient,
   getStoredAuthToken,
@@ -77,7 +78,6 @@ function generateNonce(): string {
 
 // Convert signature Uint8Array to base58 string
 function uint8ArrayToBase58(uint8Array: Uint8Array): string {
-  const bs58 = require('bs58');
   return bs58.encode(uint8Array);
 }
 
