@@ -72,6 +72,7 @@ export const ProfileScreen = () => {
         }}
       >
         <CenteredColumn style={{ flex: 1 }} $gap={24}>
+          {/* HEADER ROW */}
           <Row $width='100%'>
             <Title1>{t('Profile')}</Title1>
           </Row>
@@ -95,7 +96,7 @@ export const ProfileScreen = () => {
               </WalletCard>
 
               {/* Theme Section */}
-              <Column>
+              <Column $gap={4}>
                 <SectionHeader>
                   <Title3>{t('Theme')}</Title3>
                 </SectionHeader>
@@ -103,7 +104,7 @@ export const ProfileScreen = () => {
               </Column>
 
               {/* Settings Section */}
-              <Column>
+              <Column $gap={4}>
                 <SectionHeader>
                   <Title3>{t('Settings')}</Title3>
                 </SectionHeader>
