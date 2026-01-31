@@ -9,6 +9,7 @@ import {
   ScreenContainer,
   CenteredColumn,
   PrimaryButton,
+  Gap,
 } from '@/components';
 
 export const ConnectWalletScreen = () => {
@@ -18,16 +19,28 @@ export const ConnectWalletScreen = () => {
 
   return (
     <ScreenContainer>
-      <CenteredColumn $gap={16}>
-        <Ionicons
-          name='wallet-outline'
-          size={64}
-          color={theme.colors.primary}
-        />
-        <Title1>{t('Pledge')}</Title1>
-        <BodySecondary style={{ textAlign: 'center', maxWidth: 280 }}>
-          {t('Stake on your goals. Connect your Solana wallet to get started.')}
-        </BodySecondary>
+      <CenteredColumn
+        $gap={16}
+        style={{
+          justifyContent: 'space-between',
+          flex: 1,
+        }}
+      >
+        <CenteredColumn style={{ flex: 1, justifyContent: 'center' }}>
+          <Ionicons
+            name='wallet-outline'
+            size={64}
+            color={theme.colors.primary}
+          />
+          <Title1>{t('Pledge')}</Title1>
+          <Gap $gap={32} />
+          {/* // TODO - think of new copy */}
+          <BodySecondary style={{ textAlign: 'center', maxWidth: 280 }}>
+            {t(
+              'Stake on your goals. Connect your Solana wallet to get started.',
+            )}
+          </BodySecondary>
+        </CenteredColumn>
 
         <PrimaryButton
           onPress={connect}
