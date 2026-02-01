@@ -156,7 +156,7 @@ const ButtonContent = styled.View`
 // Text components (internal)
 const PrimaryButtonText = styled.Text`
   color: ${(props) => props.theme.colors.buttonPrimaryText};
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
 `;
 
@@ -184,10 +184,19 @@ export function PrimaryButton({
     <AnimatedPressable loading={loading} {...props}>
       <PrimaryButtonContainer style={style}>
         {loading ? (
-          <ActivityIndicator size="small" color={theme.colors.buttonPrimaryText} />
+          <ActivityIndicator
+            size='small'
+            color={theme.colors.buttonPrimaryText}
+          />
         ) : (
           <ButtonContent>
-            {icon && <Ionicons name={icon} size={20} color={theme.colors.buttonPrimaryText} />}
+            {icon && (
+              <Ionicons
+                name={icon}
+                size={20}
+                color={theme.colors.buttonPrimaryText}
+              />
+            )}
             <PrimaryButtonText>{children}</PrimaryButtonText>
           </ButtonContent>
         )}
@@ -208,10 +217,19 @@ export function SecondaryButton({
     <AnimatedPressable loading={loading} {...props}>
       <SecondaryButtonContainer style={style}>
         {loading ? (
-          <ActivityIndicator size="small" color={theme.colors.buttonSecondaryText} />
+          <ActivityIndicator
+            size='small'
+            color={theme.colors.buttonSecondaryText}
+          />
         ) : (
           <ButtonContent>
-            {icon && <Ionicons name={icon} size={18} color={theme.colors.buttonSecondaryText} />}
+            {icon && (
+              <Ionicons
+                name={icon}
+                size={18}
+                color={theme.colors.buttonSecondaryText}
+              />
+            )}
             <SecondaryButtonText>{children}</SecondaryButtonText>
           </ButtonContent>
         )}
@@ -232,10 +250,12 @@ export function OutlineButton({
     <AnimatedPressable loading={loading} {...props}>
       <OutlineButtonContainer style={style}>
         {loading ? (
-          <ActivityIndicator size="small" color={theme.colors.error} />
+          <ActivityIndicator size='small' color={theme.colors.error} />
         ) : (
           <ButtonContent>
-            {icon && <Ionicons name={icon} size={18} color={theme.colors.error} />}
+            {icon && (
+              <Ionicons name={icon} size={18} color={theme.colors.error} />
+            )}
             <OutlineButtonText>{children}</OutlineButtonText>
           </ButtonContent>
         )}
