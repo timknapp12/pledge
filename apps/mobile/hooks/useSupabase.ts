@@ -1,6 +1,10 @@
 // Supabase data hooks using React Query
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { queryKeys } from './queryKeys';
+
+// Re-export queryKeys for backward compatibility
+export { queryKeys };
 
 // Types matching Supabase schema
 export interface Todo {
@@ -42,14 +46,6 @@ export interface Template {
   created_at: string;
 }
 
-// Query keys for cache management
-export const queryKeys = {
-  pledges: (walletAddress: string) => ['pledges', walletAddress] as const,
-  pledge: (pledgeId: string) => ['pledge', pledgeId] as const,
-  dailyProgress: (pledgeId: string, date?: string) =>
-    ['dailyProgress', pledgeId, date] as const,
-  templates: (walletAddress: string) => ['templates', walletAddress] as const,
-};
 
 // Fetch all pledges for the current user
 export function usePledges() {
@@ -69,29 +65,23 @@ export function usePledges() {
       return data ?? [];
     },
     enabled: !!walletAddress,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10, // 10 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 }
 
-// Fetch active pledges only
+// Fetch active pledges only (derived from usePledges to share cache)
 export function useActivePledges() {
-  const { supabase, walletAddress } = useAuth();
+  const pledgesQuery = usePledges();
 
-  return useQuery({
-    queryKey: [...queryKeys.pledges(walletAddress ?? ''), 'active'] as const,
-    queryFn: async (): Promise<Pledge[]> => {
-      if (!walletAddress) return [];
-
-      const { data, error } = await supabase
-        .from('pledges')
-        .select('*')
-        .eq('status', 'Active')
-        .order('deadline', { ascending: true });
-
-      if (error) throw error;
-      return data ?? [];
-    },
-    enabled: !!walletAddress,
-  });
+  return {
+    ...pledgesQuery,
+    data: pledgesQuery.data
+      ?.filter((p) => p.status === 'Active')
+      .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime()),
+  };
 }
 
 // Fetch a single pledge with its daily progress
