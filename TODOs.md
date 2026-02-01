@@ -4,8 +4,9 @@ supabase:
 
 - added sql tables (also did first migration on prod) ✅
 - added jwt secret to edge functions (also did on prod) ✅
+- ran sql migration 2 for both dev and prod ✅
 - added more vars in supabase/env that need to be added as secrets to both dev/prod supabase
-- deploy edge function
+- deploy edge function to both dev and prod ✅
 - set up env vars for front end, need to set up in expo for preview/prod
 - create and add CRANK_KEYPAIR to supabase/env ✅ (devnet admin: 6F1zqkPXyeJ64e4T4fpREhzgnLW3vwsdstrGqQ8BaVFz)
 - add CRANK_KEYPAIR to supabase dev and prod secrets - load with some funds
