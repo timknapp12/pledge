@@ -5,3 +5,4 @@ export * from './inputs';
 export * from './ThemeSelector';
 export * from './CustomTabBar';
 export * from './TrackedScrollView';
+export * from './ErrorState';

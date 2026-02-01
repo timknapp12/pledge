@@ -19,6 +19,7 @@ import {
   Column,
   Row,
   Gap,
+  ErrorState,
 } from '@/components';
 import { PastPledgeItem } from './PastPledgeItem';
 import { EmptyState } from './EmptyState';
@@ -31,6 +32,8 @@ export const HistoryScreen = () => {
   const {
     data: allPledges,
     isLoading: pledgesLoading,
+    isError,
+    error,
     refetch,
     isRefetching,
   } = usePledges();
@@ -142,6 +145,11 @@ export const HistoryScreen = () => {
                     color={theme.colors.primary}
                   />
                 </CenteredColumn>
+              ) : isError ? (
+                <ErrorState
+                  message={error instanceof Error ? error.message : undefined}
+                  onRetry={refetch}
+                />
               ) : pastPledges.length > 0 ? (
                 <ContentContainer>
                   {pastPledges.map((pledge) => (
