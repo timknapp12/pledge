@@ -129,6 +129,16 @@ module.exports = {
       'expo-router',
       'expo-localization',
       'expo-secure-store',
+      '@react-native-community/datetimepicker',
+      [
+        'expo-notifications',
+        {
+          // Note: Create a proper notification icon (96x96 white on transparent)
+          // For now, using adaptive-icon as placeholder
+          icon: './assets/images/adaptive-icon.png',
+          color: '#6366f1',
+        },
+      ],
       [
         'expo-build-properties',
         {
