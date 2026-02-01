@@ -45,7 +45,6 @@ export const ConnectWalletScreen = () => {
 
         <PrimaryButton
           onPress={connect}
-          disabled={isConnecting}
           loading={isConnecting}
           icon='wallet-outline'
         >
