@@ -26,6 +26,8 @@ import {
   Row,
   Card,
   PrimaryButton,
+  ErrorState,
+  CenteredColumn,
 } from '@/components';
 
 function formatDeadline(deadline: string): string {
@@ -62,7 +64,13 @@ export const PledgeDetailScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { walletAddress } = useAuth();
 
-  const { data: pledge, isLoading: pledgeLoading, refetch } = usePledge(id);
+  const {
+    data: pledge,
+    isLoading: pledgeLoading,
+    isError,
+    error,
+    refetch,
+  } = usePledge(id);
   const { data: todayProgress, isLoading: progressLoading } =
     useTodayProgress(id);
   const updateProgress = useUpdateDailyProgress();
@@ -158,10 +166,25 @@ export const PledgeDetailScreen = () => {
     );
   }
 
+  if (isError) {
+    return (
+      <ScreenContainer>
+        <CenteredColumn style={{ flex: 1, justifyContent: 'center' }}>
+          <ErrorState
+            message={error instanceof Error ? error.message : undefined}
+            onRetry={refetch}
+          />
+        </CenteredColumn>
+      </ScreenContainer>
+    );
+  }
+
   if (!pledge) {
     return (
       <ScreenContainer>
-        <ErrorText>{t('Pledge not found')}</ErrorText>
+        <CenteredColumn style={{ flex: 1, justifyContent: 'center' }}>
+          <ErrorText>{t('Pledge not found')}</ErrorText>
+        </CenteredColumn>
       </ScreenContainer>
     );
   }

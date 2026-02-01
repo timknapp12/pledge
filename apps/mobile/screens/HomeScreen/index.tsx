@@ -15,6 +15,7 @@ import {
   Row,
   Column,
   CenteredColumn,
+  ErrorState,
 } from '@/components';
 import { PledgeListItem } from './PledgeListItem';
 import { EmptyState } from './EmptyState';
@@ -28,6 +29,8 @@ export const HomeScreen = () => {
   const {
     data: pledges,
     isLoading: pledgesLoading,
+    isError,
+    error,
     refetch,
     isRefetching,
   } = useActivePledges();
@@ -94,6 +97,13 @@ export const HomeScreen = () => {
               <BodySecondary style={{ marginTop: 16 }}>
                 {t('Pledging...')}
               </BodySecondary>
+            </CenteredColumn>
+          ) : isError ? (
+            <CenteredColumn style={{ flex: 1, justifyContent: 'center' }}>
+              <ErrorState
+                message={error instanceof Error ? error.message : undefined}
+                onRetry={refetch}
+              />
             </CenteredColumn>
           ) : pledges && pledges.length > 0 ? (
             <TrackedScrollView
