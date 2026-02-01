@@ -1,6 +1,8 @@
 // Polyfills must be imported first
 import '../lib/polyfills';
 
+import 'react-native-reanimated';
+
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import {
   DarkTheme,
@@ -13,7 +15,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import 'react-native-reanimated';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AuthProvider } from '../contexts/AuthContext';
 import { I18nProvider } from '../contexts/I18nContext';
@@ -84,13 +86,15 @@ function ThemedNavigation() {
   const { isDark } = useThemeMode();
 
   return (
-    <ScrollProvider>
-      <NavigationThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
-        <StatusBar style={isDark ? 'light' : 'dark'} />
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name='(tabs)' />
-        </Stack>
-      </NavigationThemeProvider>
-    </ScrollProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ScrollProvider>
+        <NavigationThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
+          <StatusBar style={isDark ? 'light' : 'dark'} />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name='(tabs)' />
+          </Stack>
+        </NavigationThemeProvider>
+      </ScrollProvider>
+    </GestureHandlerRootView>
   );
 }
