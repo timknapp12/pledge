@@ -127,8 +127,7 @@ const sharedCss = css`
 const PrimaryButtonContainer = styled.View`
   ${sharedCss}
   background-color: ${(props) => props.theme.colors.buttonPrimaryBg};
-  padding: 16px 32px;
-  min-width: 200px;
+  padding: 12px 24px;
 `;
 
 const SecondaryButtonContainer = styled.View`
