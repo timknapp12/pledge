@@ -9,7 +9,17 @@ export { queryKeys };
 // Types matching Supabase schema
 export interface Todo {
   text: string;
-  days?: number[] | null; // [0-6] for specific days, null for all days
+  days: number[] | null; // [0-6] for specific days, null for all days
+}
+
+export interface ReminderConfig {
+  type: 'daily' | 'before_deadline';
+  time?: string; // "HH:mm" for daily
+  hours?: number; // hours before deadline
+}
+
+export interface ReminderSettings {
+  reminders: ReminderConfig[];
 }
 
 export interface Pledge {
@@ -26,6 +36,7 @@ export interface Pledge {
   status: 'Active' | 'Reported' | 'Completed' | 'Forfeited';
   completion_percentage: number | null;
   points_earned: number | null;
+  reminder_settings: ReminderSettings | null;
   created_at: string;
 }
 
@@ -198,6 +209,7 @@ export function useCreatePledgeInDb() {
       deadline: string;
       stake_amount: number;
       todos: Todo[];
+      reminder_settings?: ReminderSettings | null;
     }) => {
       if (!user?.id) throw new Error('User not authenticated');
 
@@ -213,6 +225,7 @@ export function useCreatePledgeInDb() {
           deadline: pledge.deadline,
           stake_amount: pledge.stake_amount,
           todos: pledge.todos,
+          reminder_settings: pledge.reminder_settings ?? null,
           status: 'Active',
         })
         .select()

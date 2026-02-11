@@ -19,7 +19,7 @@ Use the `Skill` tool to invoke these when relevant:
 | `solana-dev`                     | Solana development - wallet connection, transactions, Anchor programs, testing |
 | `expo-app-design:building-ui`    | Building UI with Expo Router - styling, components, navigation, animations     |
 | `expo-app-design:data-fetching`  | Network requests, API calls, React Query, caching, offline support             |
-| `expo-app-design:tailwind-setup` | If switching to Tailwind (currently using styled-components)                   |
+| `expo-app-design:tailwind-setup` | If switching to Tailwind (currently using StyleSheet + useAppTheme)            |
 | `expo-app-design:dev-client`     | Building/distributing Expo development clients                                 |
 | `expo-deployment:cicd-workflows` | EAS workflow YAML files, CI/CD pipelines                                       |
 | `expo-deployment:deployment`     | Deploying to Play Store, web hosting                                           |
@@ -48,7 +48,7 @@ Use MCP tools for documentation and project management:
 | Layer           | Technology                                      |
 | --------------- | ----------------------------------------------- |
 | Mobile          | React Native (Expo), Android only               |
-| UI              | Custom components, styled-components            |
+| UI              | Custom components, StyleSheet + useAppTheme()   |
 | Auth            | Supabase + Sign in with Solana                  |
 | Wallet          | Solana Mobile Wallet Adapter (MWA)              |
 | Blockchain      | Anchor 0.31.0                                   |
@@ -140,7 +140,7 @@ pub fn create_pledge(ctx: Context<CreatePledge>, ...) -> Result<()> {
 
 Reference: `/Users/timk/rekt-react-native` for i18n pattern
 
-- Use **styled-components** for styling
+- Use **StyleSheet.create()** + **useAppTheme()** hook for styling (no styled-components)
 - Use **Expo Router** for navigation
 - Follow existing i18n pattern with i18next + expo-localization
 - Custom UI components (no external UI library)
