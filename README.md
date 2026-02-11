@@ -13,25 +13,25 @@ A Solana mobile dApp that enables users to stake USDC tokens on personal goals. 
 
 ## Fee Structure
 
-| Completion | Fee | Result |
-|------------|-----|--------|
-| 100% | None | Full stake returned |
-| 1-99% | 1% | Proportional refund minus fee |
-| 0% | N/A | Full forfeiture (70% treasury, 30% charity) |
+| Completion | Fee  | Result                                      |
+| ---------- | ---- | ------------------------------------------- |
+| 100%       | None | Full stake returned                         |
+| 1-99%      | 1%   | Proportional refund minus fee               |
+| 0%         | N/A  | Full forfeiture (70% treasury, 30% charity) |
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| Mobile | React Native (Expo), Android only |
-| UI | Custom components, styled-components |
-| Auth | Supabase + Sign in with Solana (SIWS) |
-| Wallet | Solana Mobile Wallet Adapter (MWA) |
-| Blockchain | Anchor 0.30.1 |
+| Layer           | Technology                                      |
+| --------------- | ----------------------------------------------- |
+| Mobile          | React Native (Expo), Android only               |
+| UI              | Custom components                               |
+| Auth            | Supabase + Sign in with Solana (SIWS)           |
+| Wallet          | Solana Mobile Wallet Adapter (MWA)              |
+| Blockchain      | Anchor 0.30.1                                   |
 | Frontend Solana | @solana/web3.js v1.x, @coral-xyz/anchor v0.28.0 |
-| RPC | Helius |
-| Database | Supabase (Postgres) |
-| Notifications | Supabase pg_cron + Edge Functions + Expo push |
+| RPC             | Helius                                          |
+| Database        | Supabase (Postgres)                             |
+| Notifications   | Supabase pg_cron + Edge Functions + Expo push   |
 
 ## Project Structure
 
