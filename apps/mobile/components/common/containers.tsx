@@ -1,61 +1,134 @@
-import styled from 'styled-components/native';
+import { View, ViewProps, StyleSheet } from 'react-native';
+import { useAppTheme } from '@/theme/ThemeProvider';
+import { cardBorderRadius } from '@/theme';
 
-interface GapProps {
-  $gap?: number;
-  $padding?: number;
-  $width?: string;
+interface GapViewProps extends ViewProps {
+  gap?: number;
+  padding?: number;
+  width?: string;
 }
 
-export const ScreenContainer = styled.View`
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  background-color: ${(props) => props.theme.colors.background};
-  width: 100%;
-  height: 100%;
-  margin-top: 48px;
-`;
+export function ScreenContainer({ style, ...props }: ViewProps) {
+  const { theme } = useAppTheme();
+  return (
+    <View
+      style={[
+        styles.screenContainer,
+        { backgroundColor: theme.colors.background },
+        style,
+      ]}
+      {...props}
+    />
+  );
+}
 
-export const Column = styled.View<GapProps>`
-  flex-direction: column;
-  padding: ${(props) => props.$padding ?? 0}px;
-  gap: ${(props) => props.$gap ?? 0}px;
-  width: ${(props) => props.$width ?? 'auto'};
-`;
+export function Column({ gap, padding, width, style, ...props }: GapViewProps) {
+  return (
+    <View
+      style={[
+        styles.column,
+        gap !== undefined && { gap },
+        padding !== undefined && { padding },
+        width !== undefined && { width: width as any },
+        style,
+      ]}
+      {...props}
+    />
+  );
+}
 
-export const CenteredColumn = styled(Column)`
-  align-items: center;
-  width: 100%;
-  padding: ${(props) => props.$padding ?? 0}px;
-  gap: ${(props) => props.$gap ?? 0}px;
-`;
+export function CenteredColumn({ gap, padding, width, style, ...props }: GapViewProps) {
+  return (
+    <View
+      style={[
+        styles.centeredColumn,
+        gap !== undefined && { gap },
+        padding !== undefined && { padding },
+        width !== undefined && { width: width as any },
+        style,
+      ]}
+      {...props}
+    />
+  );
+}
 
-export const Row = styled.View<GapProps>`
-  flex-direction: row;
-  align-items: center;
-  padding: ${(props) => props.$padding ?? 0}px;
-  gap: ${(props) => props.$gap ?? 0}px;
-  width: ${(props) => props.$width ?? 'auto'};
-`;
+export function Row({ gap, padding, width, style, ...props }: GapViewProps) {
+  return (
+    <View
+      style={[
+        styles.row,
+        gap !== undefined && { gap },
+        padding !== undefined && { padding },
+        width !== undefined && { width: width as any },
+        style,
+      ]}
+      {...props}
+    />
+  );
+}
 
-export const Separator = styled.View`
-  margin: 30px 0;
-  height: 2px;
-  width: 80%;
-  background-color: ${(props) => props.theme.colors.separator};
-`;
+export function Separator({ style, ...props }: ViewProps) {
+  const { theme } = useAppTheme();
+  return (
+    <View
+      style={[
+        styles.separator,
+        { backgroundColor: theme.colors.separator },
+        style,
+      ]}
+      {...props}
+    />
+  );
+}
 
-export const Card = styled.View`
-  background-color: ${(props) => props.theme.colors.cardBackground};
-  border-bottom-right-radius: 30px;
-  border-top-left-radius: 4px;
-  border-top-right-radius: 30px;
-  border-bottom-left-radius: 4px;
-  padding: 16px;
-  width: 100%;
-`;
+export function Card({ style, ...props }: ViewProps) {
+  const { theme } = useAppTheme();
+  return (
+    <View
+      style={[
+        styles.card,
+        { backgroundColor: theme.colors.cardBackground },
+        style,
+      ]}
+      {...props}
+    />
+  );
+}
 
-export const Gap = styled.View<{ $gap?: number }>`
-  height: ${(props) => props.$gap ?? 12}px;
-`;
+export function Gap({ gap = 12, style, ...props }: GapViewProps) {
+  return <View style={[{ height: gap }, style]} {...props} />;
+}
+
+const styles = StyleSheet.create({
+  screenContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    width: '100%',
+    height: '100%',
+    marginTop: 48,
+  },
+  column: {
+    flexDirection: 'column',
+  },
+  centeredColumn: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: '100%',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  separator: {
+    marginVertical: 30,
+    height: 2,
+    width: '80%',
+  },
+  card: {
+    ...cardBorderRadius,
+    padding: 16,
+    width: '100%',
+  },
+});

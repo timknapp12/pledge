@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useTheme } from 'styled-components/native';
+import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -14,27 +14,27 @@ import {
 
 export const ConnectWalletScreen = () => {
   const { t } = useTranslation();
-  const theme = useTheme();
+  const { theme } = useAppTheme();
   const { isConnecting, error, connect } = useAuth();
 
   return (
     <ScreenContainer>
       <CenteredColumn
-        $gap={16}
+        gap={16}
         style={{
           justifyContent: 'space-between',
           flex: 1,
           marginBottom: 60,
         }}
       >
-        <CenteredColumn $gap={12} style={{ flex: 1, justifyContent: 'center' }}>
+        <CenteredColumn gap={12} style={{ flex: 1, justifyContent: 'center' }}>
           <Ionicons
             name='wallet-outline'
             size={64}
             color={theme.colors.primary}
           />
           <Title1>{t('Pledge')}</Title1>
-          <Gap $gap={32} />
+          <Gap gap={32} />
           {/* // TODO - think of new copy */}
           <BodySecondary style={{ textAlign: 'center', maxWidth: 280 }}>
             {t(

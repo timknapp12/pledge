@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useTheme } from 'styled-components/native';
+import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { CenteredColumn } from './containers';
 import { BodySecondary, BodySmallSecondary } from './texts';
@@ -12,10 +12,10 @@ interface ErrorStateProps {
 
 export const ErrorState = ({ message, onRetry }: ErrorStateProps) => {
   const { t } = useTranslation();
-  const theme = useTheme();
+  const { theme } = useAppTheme();
 
   return (
-    <CenteredColumn $gap={16} style={{ padding: 32 }}>
+    <CenteredColumn gap={16} style={{ padding: 32 }}>
       <Ionicons
         name='cloud-offline-outline'
         size={48}

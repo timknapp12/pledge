@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useTheme } from 'styled-components/native';
+import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
 import {
   Title2,
@@ -15,19 +15,19 @@ export interface EmptyStateProps {
 
 export const EmptyState = ({ onCreatePress }: EmptyStateProps) => {
   const { t } = useTranslation();
-  const theme = useTheme();
+  const { theme } = useAppTheme();
 
   return (
     <CenteredColumn
-      $gap={24}
-      $width='100%'
+      gap={24}
+      width='100%'
       style={{
         flex: 1,
         justifyContent: 'space-between',
         marginBottom: 60,
       }}
     >
-      <CenteredColumn $gap={12} style={{ flex: 1, justifyContent: 'center' }}>
+      <CenteredColumn gap={12} style={{ flex: 1, justifyContent: 'center' }}>
         <Ionicons
           name='flag-outline'
           size={64}
@@ -37,7 +37,7 @@ export const EmptyState = ({ onCreatePress }: EmptyStateProps) => {
           {t('No active pledges')}
         </Title2>
 
-        <Gap $gap={32} />
+        <Gap gap={32} />
         {/* // TODO - think of new copy */}
         <BodySecondary style={{ textAlign: 'center', maxWidth: 280 }}>
           {t(

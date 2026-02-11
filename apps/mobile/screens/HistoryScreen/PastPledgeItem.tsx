@@ -1,6 +1,7 @@
-import { Pressable } from 'react-native';
+import { Pressable, View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import styled from 'styled-components/native';
+import { useAppTheme } from '@/theme/ThemeProvider';
+import { getStatusBgColor, getStatusTextColor } from '@/theme';
 import {
   Title3,
   BodySecondary,
@@ -11,39 +12,6 @@ import {
   Card,
 } from '@/components';
 import { formatUsdcAmount, Pledge } from '@/hooks/useSupabase';
-
-const PledgeCard = styled(Card)`
-  margin: 0 20px 12px 20px;
-`;
-
-const StatusBadge = styled.View<{ $status: string }>`
-  padding: 4px 8px;
-  border-radius: 12px;
-  background-color: ${({ theme, $status }) => {
-    switch ($status) {
-      case 'Completed':
-        return theme.colors.statusCompletedBg;
-      case 'Forfeited':
-        return theme.colors.statusForfeitedBg;
-      default:
-        return theme.colors.cardBackground;
-    }
-  }};
-`;
-
-const StatusText = styled(BodySmall)<{ $status: string }>`
-  color: ${({ theme, $status }) => {
-    switch ($status) {
-      case 'Completed':
-        return theme.colors.statusCompleted;
-      case 'Forfeited':
-        return theme.colors.statusForfeited;
-      default:
-        return theme.colors.text;
-    }
-  }};
-  font-weight: 600;
-`;
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -61,10 +29,11 @@ export interface PastPledgeItemProps {
 
 export const PastPledgeItem = ({ pledge, onPress }: PastPledgeItemProps) => {
   const { t } = useTranslation();
+  const { theme } = useAppTheme();
 
   return (
     <Pressable onPress={onPress}>
-      <PledgeCard>
+      <Card style={localStyles.pledgeCard}>
         <Row
           style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}
         >
@@ -74,9 +43,21 @@ export const PastPledgeItem = ({ pledge, onPress }: PastPledgeItemProps) => {
               {formatDate(pledge.deadline)}
             </BodySmallSecondary>
           </Column>
-          <StatusBadge $status={pledge.status}>
-            <StatusText $status={pledge.status}>{t(pledge.status)}</StatusText>
-          </StatusBadge>
+          <View
+            style={[
+              localStyles.statusBadge,
+              { backgroundColor: getStatusBgColor(theme, pledge.status) },
+            ]}
+          >
+            <BodySmall
+              style={{
+                color: getStatusTextColor(theme, pledge.status),
+                fontWeight: '600',
+              }}
+            >
+              {t(pledge.status)}
+            </BodySmall>
+          </View>
         </Row>
 
         <Row style={{ marginTop: 12, justifyContent: 'space-between' }}>
@@ -89,7 +70,19 @@ export const PastPledgeItem = ({ pledge, onPress }: PastPledgeItemProps) => {
             </BodySmall>
           )}
         </Row>
-      </PledgeCard>
+      </Card>
     </Pressable>
   );
 };
+
+const localStyles = StyleSheet.create({
+  pledgeCard: {
+    marginHorizontal: 20,
+    marginBottom: 12,
+  },
+  statusBadge: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+  },
+});

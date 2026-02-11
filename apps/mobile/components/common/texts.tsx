@@ -1,62 +1,142 @@
-import styled from 'styled-components/native';
+import { Text, TextProps, StyleSheet } from 'react-native';
+import { useAppTheme } from '@/theme/ThemeProvider';
 
-// Title components - Iceberg font
-export const Title1 = styled.Text`
-  font-size: 32px;
-  font-family: Iceberg;
-  color: ${(props) => props.theme.colors.primary};
-`;
+export function Title1({ style, ...props }: TextProps) {
+  const { theme } = useAppTheme();
+  return (
+    <Text
+      style={[styles.title1, { color: theme.colors.primary }, style]}
+      {...props}
+    />
+  );
+}
 
-export const Title2 = styled.Text`
-  font-size: 24px;
-  font-family: Iceberg;
-  color: ${(props) => props.theme.colors.text};
-`;
+export function Title2({ style, ...props }: TextProps) {
+  const { theme } = useAppTheme();
+  return (
+    <Text
+      style={[styles.title2, { color: theme.colors.text }, style]}
+      {...props}
+    />
+  );
+}
 
-export const Title3 = styled.Text`
-  font-size: 20px;
-  font-family: Iceberg;
-  color: ${(props) => props.theme.colors.text};
-`;
+export function Title3({ style, ...props }: TextProps) {
+  const { theme } = useAppTheme();
+  return (
+    <Text
+      style={[styles.title3, { color: theme.colors.text }, style]}
+      {...props}
+    />
+  );
+}
 
-// Body components - System font (Roboto on Android)
-export const Body = styled.Text`
-  font-size: 16px;
-  color: ${(props) => props.theme.colors.text};
-`;
+export function Body({ style, ...props }: TextProps) {
+  const { theme } = useAppTheme();
+  return (
+    <Text
+      style={[styles.body, { color: theme.colors.text }, style]}
+      {...props}
+    />
+  );
+}
 
-export const BodySecondary = styled.Text`
-  font-size: 16px;
-  color: ${(props) => props.theme.colors.textSecondary};
-  opacity: 0.8;
-`;
+export function BodySecondary({ style, ...props }: TextProps) {
+  const { theme } = useAppTheme();
+  return (
+    <Text
+      style={[styles.bodySecondary, { color: theme.colors.textSecondary }, style]}
+      {...props}
+    />
+  );
+}
 
-export const BodySmall = styled.Text`
-  font-size: 14px;
-  color: ${(props) => props.theme.colors.text};
-`;
+export function BodySmall({ style, ...props }: TextProps) {
+  const { theme } = useAppTheme();
+  return (
+    <Text
+      style={[styles.bodySmall, { color: theme.colors.text }, style]}
+      {...props}
+    />
+  );
+}
 
-export const BodySmallSecondary = styled.Text`
-  font-size: 14px;
-  color: ${(props) => props.theme.colors.textSecondary};
-  opacity: 0.6;
-`;
+export function BodySmallSecondary({ style, ...props }: TextProps) {
+  const { theme } = useAppTheme();
+  return (
+    <Text
+      style={[styles.bodySmallSecondary, { color: theme.colors.textSecondary }, style]}
+      {...props}
+    />
+  );
+}
 
-// Status text components
-export const ErrorText = styled.Text`
-  font-size: 14px;
-  color: ${(props) => props.theme.colors.error};
-`;
+export function ErrorText({ style, ...props }: TextProps) {
+  const { theme } = useAppTheme();
+  return (
+    <Text
+      style={[styles.errorText, { color: theme.colors.error }, style]}
+      {...props}
+    />
+  );
+}
 
-export const SuccessText = styled.Text`
-  font-size: 16px;
-  font-weight: 600;
-  color: ${(props) => props.theme.colors.accent};
-`;
+export function SuccessText({ style, ...props }: TextProps) {
+  const { theme } = useAppTheme();
+  return (
+    <Text
+      style={[styles.successText, { color: theme.colors.accent }, style]}
+      {...props}
+    />
+  );
+}
 
-// Monospace text - SpaceMono for wallet addresses
-export const MonoText = styled.Text`
-  font-size: 14px;
-  font-family: SpaceMono;
-  color: ${(props) => props.theme.colors.text};
-`;
+export function MonoText({ style, ...props }: TextProps) {
+  const { theme } = useAppTheme();
+  return (
+    <Text
+      style={[styles.monoText, { color: theme.colors.text }, style]}
+      {...props}
+    />
+  );
+}
+
+const styles = StyleSheet.create({
+  title1: {
+    fontSize: 32,
+    fontFamily: 'Iceberg',
+  },
+  title2: {
+    fontSize: 24,
+    fontFamily: 'Iceberg',
+  },
+  title3: {
+    fontSize: 20,
+    fontFamily: 'Iceberg',
+  },
+  body: {
+    fontSize: 16,
+  },
+  bodySecondary: {
+    fontSize: 16,
+    opacity: 0.8,
+  },
+  bodySmall: {
+    fontSize: 14,
+  },
+  bodySmallSecondary: {
+    fontSize: 14,
+    opacity: 0.6,
+  },
+  errorText: {
+    fontSize: 14,
+  },
+  successText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  monoText: {
+    fontSize: 14,
+    fontFamily: 'SpaceMono',
+  },
+});

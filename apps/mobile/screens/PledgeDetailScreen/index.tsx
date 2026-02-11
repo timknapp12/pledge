@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, Pressable, View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from 'styled-components/native';
-import styled from 'styled-components/native';
+import { useAppTheme } from '@/theme/ThemeProvider';
+import { getStatusBgColor, getStatusTextColor } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
@@ -59,7 +59,7 @@ function formatTimeRemaining(deadline: string): string {
 
 export const PledgeDetailScreen = () => {
   const { t } = useTranslation();
-  const theme = useTheme();
+  const { theme } = useAppTheme();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { walletAddress } = useAuth();
@@ -195,83 +195,145 @@ export const PledgeDetailScreen = () => {
 
   return (
     <ScreenContainer style={{ flex: 1 }}>
-      <Header>
-        <BackButton onPress={() => router.back()}>
+      <View style={localStyles.header}>
+        <Pressable
+          onPress={() => router.back()}
+          style={[
+            localStyles.backButton,
+            { backgroundColor: theme.colors.cardBackground },
+          ]}
+        >
           <Ionicons name='arrow-back' size={24} color={theme.colors.text} />
-        </BackButton>
+        </Pressable>
         <Column style={{ flex: 1 }}>
           <Title1 numberOfLines={1}>{pledge.name}</Title1>
         </Column>
-        <StatusBadge $status={pledge.status}>
-          <StatusText $status={pledge.status}>{t(pledge.status)}</StatusText>
-        </StatusBadge>
-      </Header>
+        <View
+          style={[
+            localStyles.statusBadge,
+            { backgroundColor: getStatusBgColor(theme, pledge.status) },
+          ]}
+        >
+          <BodySmall
+            style={{
+              color: getStatusTextColor(theme, pledge.status),
+              fontWeight: '600',
+            }}
+          >
+            {t(pledge.status)}
+          </BodySmall>
+        </View>
+      </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <ContentContainer>
+        <View style={localStyles.contentContainer}>
           {/* Info Card */}
-          <InfoCard>
-            <InfoRow>
+          <Card style={localStyles.infoCard}>
+            <View style={localStyles.infoRow}>
               <BodySecondary>{t('Staked')}</BodySecondary>
               <Body>
                 ${formatUsdcAmount(pledge.stake_amount)} {t('USDC')}
               </Body>
-            </InfoRow>
-            <InfoRow>
+            </View>
+            <View style={localStyles.infoRow}>
               <BodySecondary>{t('Deadline')}</BodySecondary>
               <Body>{formatDeadline(pledge.deadline)}</Body>
-            </InfoRow>
-            <InfoRow>
+            </View>
+            <View style={localStyles.infoRow}>
               <BodySecondary>{t('Time Remaining')}</BodySecondary>
               <Body>{formatTimeRemaining(pledge.deadline)}</Body>
-            </InfoRow>
-          </InfoCard>
+            </View>
+          </Card>
 
           {/* Progress */}
-          <ProgressContainer>
+          <View style={localStyles.progressContainer}>
             <Row style={{ justifyContent: 'space-between' }}>
               <Title3>{t('Progress')}</Title3>
               <Title3 style={{ color: theme.colors.primary }}>
                 {progress}%
               </Title3>
             </Row>
-            <ProgressBar>
-              <ProgressFill $progress={progress} />
-            </ProgressBar>
-          </ProgressContainer>
+            <View
+              style={[
+                localStyles.progressBar,
+                { backgroundColor: theme.colors.border },
+              ]}
+            >
+              <View
+                style={[
+                  localStyles.progressFill,
+                  {
+                    width: `${progress}%`,
+                    backgroundColor: theme.colors.primary,
+                  },
+                ]}
+              />
+            </View>
+          </View>
 
           {/* Today's Tasks */}
-          <Column $gap={8}>
+          <Column gap={8}>
             <Title3 style={{ marginBottom: 8 }}>{t("Today's Tasks")}</Title3>
-            {pledge.todos?.map((todo, index) => (
-              <TodoItem
-                key={index}
-                $completed={completedTodos.includes(index)}
-                onPress={() =>
-                  pledge.status === 'Active' && handleTodoToggle(index)
-                }
-                disabled={pledge.status !== 'Active'}
-              >
-                <CheckboxIcon $completed={completedTodos.includes(index)}>
-                  {completedTodos.includes(index) && (
-                    <Ionicons
-                      name='checkmark'
-                      size={16}
-                      color={theme.colors.iconOnPrimary}
-                    />
-                  )}
-                </CheckboxIcon>
-                <TodoText $completed={completedTodos.includes(index)}>
-                  {todo.text}
-                </TodoText>
-              </TodoItem>
-            ))}
+            {pledge.todos?.map((todo, index) => {
+              const completed = completedTodos.includes(index);
+              return (
+                <Pressable
+                  key={index}
+                  style={[
+                    localStyles.todoItem,
+                    {
+                      backgroundColor: completed
+                        ? theme.colors.primaryAlpha10
+                        : theme.colors.cardBackground,
+                      borderColor: completed
+                        ? theme.colors.primaryAlpha40
+                        : theme.colors.border,
+                    },
+                  ]}
+                  onPress={() =>
+                    pledge.status === 'Active' && handleTodoToggle(index)
+                  }
+                  disabled={pledge.status !== 'Active'}
+                >
+                  <View
+                    style={[
+                      localStyles.checkboxIcon,
+                      {
+                        borderColor: completed
+                          ? theme.colors.primary
+                          : theme.colors.border,
+                        backgroundColor: completed
+                          ? theme.colors.primary
+                          : 'transparent',
+                      },
+                    ]}
+                  >
+                    {completed && (
+                      <Ionicons
+                        name='checkmark'
+                        size={16}
+                        color={theme.colors.iconOnPrimary}
+                      />
+                    )}
+                  </View>
+                  <Body
+                    style={{
+                      flex: 1,
+                      textDecorationLine: completed ? 'line-through' : 'none',
+                      opacity: completed ? 0.6 : 1,
+                    }}
+                  >
+                    {todo.text}
+                  </Body>
+                </Pressable>
+              );
+            })}
           </Column>
-        </ContentContainer>
+        </View>
       </ScrollView>
 
       {pledge.status === 'Active' && (
-        <ButtonContainer>
+        <View style={localStyles.buttonContainer}>
           {canReport ? (
             <PrimaryButton
               onPress={handleReportCompletion}
@@ -285,133 +347,82 @@ export const PledgeDetailScreen = () => {
               {t('Complete your tasks daily. Report after deadline.')}
             </BodySmallSecondary>
           )}
-        </ButtonContainer>
+        </View>
       )}
     </ScreenContainer>
   );
 };
 
-const Header = styled.View`
-  flex-direction: row;
-  align-items: center;
-  padding: 60px 20px 20px 20px;
-  gap: 16px;
-`;
-
-const BackButton = styled.Pressable`
-  width: 40px;
-  height: 40px;
-  border-radius: 20px;
-  background-color: ${({ theme }) => theme.colors.cardBackground};
-  align-items: center;
-  justify-content: center;
-`;
-
-const ContentContainer = styled.View`
-  padding: 0 20px 100px 20px;
-`;
-
-const StatusBadge = styled.View<{ $status: string }>`
-  padding: 6px 12px;
-  border-radius: 16px;
-  background-color: ${({ theme, $status }) => {
-    switch ($status) {
-      case 'Active':
-        return theme.colors.primaryAlpha20;
-      case 'Completed':
-        return theme.colors.statusCompletedBg;
-      case 'Forfeited':
-        return theme.colors.statusForfeitedBg;
-      default:
-        return theme.colors.cardBackground;
-    }
-  }};
-`;
-
-const StatusText = styled(BodySmall)<{ $status: string }>`
-  color: ${({ theme, $status }) => {
-    switch ($status) {
-      case 'Active':
-        return theme.colors.primary;
-      case 'Completed':
-        return theme.colors.statusCompleted;
-      case 'Forfeited':
-        return theme.colors.statusForfeited;
-      default:
-        return theme.colors.text;
-    }
-  }};
-  font-weight: 600;
-`;
-
-const InfoCard = styled(Card)`
-  margin-bottom: 16px;
-`;
-
-const InfoRow = styled.View`
-  flex-direction: row;
-  justify-content: space-between;
-  padding: 8px 0;
-`;
-
-const ProgressContainer = styled.View`
-  margin-bottom: 24px;
-`;
-
-const ProgressBar = styled.View`
-  height: 12px;
-  background-color: ${({ theme }) => theme.colors.border};
-  border-radius: 6px;
-  overflow: hidden;
-  margin-top: 8px;
-`;
-
-const ProgressFill = styled.View<{ $progress: number }>`
-  height: 100%;
-  width: ${({ $progress }) => $progress}%;
-  background-color: ${({ theme }) => theme.colors.primary};
-  border-radius: 6px;
-`;
-
-const TodoItem = styled.Pressable<{ $completed: boolean }>`
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  background-color: ${({ theme, $completed }) =>
-    $completed ? theme.colors.primaryAlpha10 : theme.colors.cardBackground};
-  border-radius: 12px;
-  margin-bottom: 8px;
-  border-width: 1px;
-  border-color: ${({ theme, $completed }) =>
-    $completed ? theme.colors.primaryAlpha40 : theme.colors.border};
-`;
-
-const TodoText = styled(Body)<{ $completed: boolean }>`
-  flex: 1;
-  text-decoration-line: ${({ $completed }) =>
-    $completed ? 'line-through' : 'none'};
-  opacity: ${({ $completed }) => ($completed ? 0.6 : 1)};
-`;
-
-const CheckboxIcon = styled.View<{ $completed: boolean }>`
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  border-width: 2px;
-  border-color: ${({ theme, $completed }) =>
-    $completed ? theme.colors.primary : theme.colors.border};
-  background-color: ${({ theme, $completed }) =>
-    $completed ? theme.colors.primary : 'transparent'};
-  align-items: center;
-  justify-content: center;
-`;
-
-const ButtonContainer = styled.View`
-  padding: 20px;
-  gap: 12px;
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-`;
+const localStyles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 60,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    gap: 16,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  contentContainer: {
+    paddingTop: 0,
+    paddingHorizontal: 20,
+    paddingBottom: 100,
+  },
+  statusBadge: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+  },
+  infoCard: {
+    marginBottom: 16,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  progressContainer: {
+    marginBottom: 24,
+  },
+  progressBar: {
+    height: 12,
+    borderRadius: 6,
+    overflow: 'hidden',
+    marginTop: 8,
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 6,
+  },
+  todoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+  },
+  checkboxIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonContainer: {
+    padding: 20,
+    gap: 12,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+});

@@ -1,7 +1,6 @@
-import { ActivityIndicator, RefreshControl } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from 'styled-components/native';
-import styled from 'styled-components/native';
+import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,7 +22,7 @@ import { ConnectWalletScreen } from './ConnectWalletScreen';
 
 export const HomeScreen = () => {
   const { t } = useTranslation();
-  const theme = useTheme();
+  const { theme } = useAppTheme();
   const router = useRouter();
   const { user, walletAddress, isLoading: authLoading, disconnect } = useAuth();
   const {
@@ -64,26 +63,32 @@ export const HomeScreen = () => {
   return (
     <ScreenContainer style={{ flex: 1 }}>
       <Column
-        $width='100%'
+        width='100%'
         style={{
           justifyContent: 'space-between',
           flex: 1,
         }}
       >
-        <CenteredColumn $gap={24} style={{ flex: 1 }}>
+        <CenteredColumn gap={24} style={{ flex: 1 }}>
           {/* HEADER ROW */}
           <Row
-            $gap={16}
-            $width='100%'
+            gap={16}
+            width='100%'
             style={{ justifyContent: 'space-between' }}
           >
             <Title1>{t('My Pledges')}</Title1>
-            <WalletBadge onPress={disconnect}>
+            <Pressable
+              onPress={disconnect}
+              style={[
+                localStyles.walletBadge,
+                { backgroundColor: theme.colors.cardBackground },
+              ]}
+            >
               <Ionicons name='wallet' size={16} color={theme.colors.primary} />
               <MonoText style={{ fontSize: 12 }}>
                 {walletAddress?.slice(0, 4)}...{walletAddress?.slice(-4)}
               </MonoText>
-            </WalletBadge>
+            </Pressable>
           </Row>
 
           {pledgesLoading ? (
@@ -116,7 +121,7 @@ export const HomeScreen = () => {
                 />
               }
             >
-              <Column style={{ flex: 1 }} $gap={24}>
+              <Column style={{ flex: 1 }} gap={24}>
                 {pledges.map((pledge) => (
                   <PledgeListItem
                     key={pledge.id}
@@ -131,21 +136,25 @@ export const HomeScreen = () => {
           )}
 
           {pledges && pledges.length > 0 && (
-            <FAB
+            <Pressable
               onPress={handleCreatePledge}
-              style={{
-                shadowColor: theme.colors.shadowColor,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.25,
-                shadowRadius: 4,
-              }}
+              style={[
+                localStyles.fab,
+                {
+                  backgroundColor: theme.colors.primary,
+                  shadowColor: theme.colors.shadowColor,
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 4,
+                },
+              ]}
             >
               <Ionicons
                 name='add'
                 size={28}
                 color={theme.colors.iconOnPrimary}
               />
-            </FAB>
+            </Pressable>
           )}
         </CenteredColumn>
       </Column>
@@ -153,23 +162,23 @@ export const HomeScreen = () => {
   );
 };
 
-const WalletBadge = styled.Pressable`
-  flex-direction: row;
-  align-items: center;
-  background-color: ${({ theme }) => theme.colors.cardBackground};
-  padding: 8px 12px;
-  border-radius: 20px;
-  gap: 6px;
-`;
-
-const FAB = styled.Pressable`
-  position: absolute;
-  bottom: 100px;
-  right: 20px;
-  width: 56px;
-  height: 56px;
-  border-radius: 28px;
-  background-color: ${({ theme }) => theme.colors.primary};
-  align-items: center;
-  justify-content: center;
-`;
+const localStyles = StyleSheet.create({
+  walletBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    gap: 6,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 100,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
