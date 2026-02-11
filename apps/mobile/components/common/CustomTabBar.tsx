@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { View, Pressable, StyleSheet, Dimensions } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import Animated, {
@@ -11,8 +12,7 @@ import Animated, {
   withTiming,
   useDerivedValue,
 } from 'react-native-reanimated';
-import { useTheme } from 'styled-components/native';
-import { useThemeMode } from '@/theme/ThemeProvider';
+import { useAppTheme, useThemeMode } from '@/theme/ThemeProvider';
 import { useScrollContext } from '@/contexts/ScrollContext';
 
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -57,7 +57,7 @@ interface TabItemProps {
 }
 
 function TabItem({ routeName, isFocused, onPress, onLongPress }: TabItemProps) {
-  const theme = useTheme();
+  const { theme } = useAppTheme();
   const scale = useSharedValue(1);
 
   const config = TAB_CONFIG[routeName] || {
@@ -96,7 +96,7 @@ function TabItem({ routeName, isFocused, onPress, onLongPress }: TabItemProps) {
 }
 
 export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
-  const theme = useTheme();
+  const { theme } = useAppTheme();
   const { isDark } = useThemeMode();
   const { isScrolling } = useScrollContext();
   const numTabs = state.routes.length;
@@ -161,6 +161,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
           const isFocused = state.index === index;
 
           const onPress = () => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
             const event = navigation.emit({
               type: 'tabPress',
               target: route.key,

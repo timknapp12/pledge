@@ -1,14 +1,14 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useColorScheme } from 'react-native';
-import { ThemeProvider as StyledThemeProvider } from 'styled-components/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { lightTheme, darkTheme } from './index';
+import { lightTheme, darkTheme, AppTheme } from './index';
 
 const THEME_STORAGE_KEY = 'pledge_theme_mode';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
 interface ThemeContextValue {
+  theme: AppTheme;
   mode: ThemeMode;
   setMode: (mode: ThemeMode) => void;
   isDark: boolean;
@@ -51,16 +51,21 @@ export function ThemeProvider({ children }: Props) {
   }
 
   return (
-    <ThemeContext.Provider value={{ mode, setMode: handleSetMode, isDark }}>
-      <StyledThemeProvider theme={theme}>{children}</StyledThemeProvider>
+    <ThemeContext.Provider value={{ theme, mode, setMode: handleSetMode, isDark }}>
+      {children}
     </ThemeContext.Provider>
   );
 }
 
-export function useThemeMode() {
+export function useAppTheme() {
   const context = useContext(ThemeContext);
   if (!context) {
-    throw new Error('useThemeMode must be used within a ThemeProvider');
+    throw new Error('useAppTheme must be used within a ThemeProvider');
   }
   return context;
+}
+
+export function useThemeMode() {
+  const context = useAppTheme();
+  return { mode: context.mode, setMode: context.setMode, isDark: context.isDark };
 }

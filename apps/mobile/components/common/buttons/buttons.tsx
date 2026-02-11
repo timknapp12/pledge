@@ -5,11 +5,14 @@ import {
   PressableProps,
   ViewStyle,
   ActivityIndicator,
+  View,
+  Text,
+  StyleSheet,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import styled, { css } from 'styled-components/native';
-import { useTheme } from 'styled-components/native';
 import { Ionicons } from '@expo/vector-icons';
+import { useAppTheme } from '@/theme/ThemeProvider';
+import { cardBorderRadius } from '@/theme';
 
 type IoniconsName = keyof typeof Ionicons.glyphMap;
 
@@ -114,64 +117,6 @@ function AnimatedPressable({
   );
 }
 
-const sharedCss = css`
-  border-bottom-right-radius: 30px;
-  border-top-left-radius: 4px;
-  border-top-right-radius: 30px;
-  border-bottom-left-radius: 4px;
-  align-items: center;
-  width: 100%;
-`;
-
-// Styled base containers for button variants
-const PrimaryButtonContainer = styled.View`
-  ${sharedCss}
-  background-color: ${(props) => props.theme.colors.buttonPrimaryBg};
-  padding: 12px 24px;
-`;
-
-const SecondaryButtonContainer = styled.View`
-  ${sharedCss}
-  background-color: transparent;
-  border-width: 1px;
-  border-color: ${(props) => props.theme.colors.buttonSecondaryBorder};
-  padding: 12px 24px;
-`;
-
-const OutlineButtonContainer = styled.View`
-  ${sharedCss}
-  background-color: transparent;
-  border-width: 1px;
-  border-color: ${(props) => props.theme.colors.error};
-  padding: 12px 24px;
-`;
-
-// Content wrapper for icon + text
-const ButtonContent = styled.View`
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-`;
-
-// Text components (internal)
-const PrimaryButtonText = styled.Text`
-  color: ${(props) => props.theme.colors.buttonPrimaryText};
-  font-size: 16px;
-  font-weight: 600;
-`;
-
-const SecondaryButtonText = styled.Text`
-  color: ${(props) => props.theme.colors.buttonSecondaryText};
-  font-size: 16px;
-  font-weight: 600;
-`;
-
-const OutlineButtonText = styled.Text`
-  color: ${(props) => props.theme.colors.error};
-  font-size: 16px;
-`;
-
-// Button components
 export function PrimaryButton({
   children,
   style,
@@ -179,17 +124,23 @@ export function PrimaryButton({
   icon,
   ...props
 }: ButtonProps) {
-  const theme = useTheme();
+  const { theme } = useAppTheme();
   return (
     <AnimatedPressable loading={loading} {...props}>
-      <PrimaryButtonContainer style={style}>
+      <View
+        style={[
+          styles.buttonBase,
+          { backgroundColor: theme.colors.buttonPrimaryBg, paddingVertical: 12, paddingHorizontal: 24 },
+          style,
+        ]}
+      >
         {loading ? (
           <ActivityIndicator
             size='small'
             color={theme.colors.buttonPrimaryText}
           />
         ) : (
-          <ButtonContent>
+          <View style={styles.buttonContent}>
             {icon && (
               <Ionicons
                 name={icon}
@@ -197,10 +148,12 @@ export function PrimaryButton({
                 color={theme.colors.buttonPrimaryText}
               />
             )}
-            <PrimaryButtonText>{children}</PrimaryButtonText>
-          </ButtonContent>
+            <Text style={[styles.buttonText, { color: theme.colors.buttonPrimaryText }]}>
+              {children}
+            </Text>
+          </View>
         )}
-      </PrimaryButtonContainer>
+      </View>
     </AnimatedPressable>
   );
 }
@@ -212,17 +165,29 @@ export function SecondaryButton({
   icon,
   ...props
 }: ButtonProps) {
-  const theme = useTheme();
+  const { theme } = useAppTheme();
   return (
     <AnimatedPressable loading={loading} {...props}>
-      <SecondaryButtonContainer style={style}>
+      <View
+        style={[
+          styles.buttonBase,
+          {
+            backgroundColor: 'transparent',
+            borderWidth: 1,
+            borderColor: theme.colors.buttonSecondaryBorder,
+            paddingVertical: 12,
+            paddingHorizontal: 24,
+          },
+          style,
+        ]}
+      >
         {loading ? (
           <ActivityIndicator
             size='small'
             color={theme.colors.buttonSecondaryText}
           />
         ) : (
-          <ButtonContent>
+          <View style={styles.buttonContent}>
             {icon && (
               <Ionicons
                 name={icon}
@@ -230,10 +195,12 @@ export function SecondaryButton({
                 color={theme.colors.buttonSecondaryText}
               />
             )}
-            <SecondaryButtonText>{children}</SecondaryButtonText>
-          </ButtonContent>
+            <Text style={[styles.buttonText, { color: theme.colors.buttonSecondaryText }]}>
+              {children}
+            </Text>
+          </View>
         )}
-      </SecondaryButtonContainer>
+      </View>
     </AnimatedPressable>
   );
 }
@@ -245,21 +212,55 @@ export function OutlineButton({
   icon,
   ...props
 }: ButtonProps) {
-  const theme = useTheme();
+  const { theme } = useAppTheme();
   return (
     <AnimatedPressable loading={loading} {...props}>
-      <OutlineButtonContainer style={style}>
+      <View
+        style={[
+          styles.buttonBase,
+          {
+            backgroundColor: 'transparent',
+            borderWidth: 1,
+            borderColor: theme.colors.error,
+            paddingVertical: 12,
+            paddingHorizontal: 24,
+          },
+          style,
+        ]}
+      >
         {loading ? (
           <ActivityIndicator size='small' color={theme.colors.error} />
         ) : (
-          <ButtonContent>
+          <View style={styles.buttonContent}>
             {icon && (
               <Ionicons name={icon} size={18} color={theme.colors.error} />
             )}
-            <OutlineButtonText>{children}</OutlineButtonText>
-          </ButtonContent>
+            <Text style={[styles.outlineButtonText, { color: theme.colors.error }]}>
+              {children}
+            </Text>
+          </View>
         )}
-      </OutlineButtonContainer>
+      </View>
     </AnimatedPressable>
   );
 }
+
+const styles = StyleSheet.create({
+  buttonBase: {
+    ...cardBorderRadius,
+    alignItems: 'center',
+    width: '100%',
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  outlineButtonText: {
+    fontSize: 16,
+  },
+});

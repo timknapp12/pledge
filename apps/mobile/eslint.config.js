@@ -14,7 +14,7 @@ module.exports = defineConfig([
           caughtErrorsIgnorePattern: '^_',
         },
       ],
-      // Allow default + named imports (common pattern for styled-components)
+      // Allow default + named imports
       'import/no-named-as-default': 'off',
       'import/no-named-as-default-member': 'off',
       // Resolver often fails on React Native, path aliases (@/), native bindings.

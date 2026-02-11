@@ -1,14 +1,14 @@
 import { useTranslation } from 'react-i18next';
-import { useTheme } from 'styled-components/native';
+import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { Title2, BodySecondary, CenteredColumn } from '@/components';
 
 export const EmptyState = () => {
   const { t } = useTranslation();
-  const theme = useTheme();
+  const { theme } = useAppTheme();
 
   return (
-    <CenteredColumn $gap={16} $padding={40}>
+    <CenteredColumn gap={16} padding={40}>
       <Ionicons
         name='time-outline'
         size={64}

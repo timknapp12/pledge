@@ -104,3 +104,36 @@ export const darkTheme = {
 };
 
 export type AppTheme = typeof lightTheme;
+
+export const cardBorderRadius = {
+  borderBottomRightRadius: 30,
+  borderTopLeftRadius: 4,
+  borderTopRightRadius: 30,
+  borderBottomLeftRadius: 4,
+};
+
+export function getStatusBgColor(theme: AppTheme, status: string): string {
+  switch (status) {
+    case 'Active':
+      return theme.colors.primaryAlpha20;
+    case 'Completed':
+      return theme.colors.statusCompletedBg;
+    case 'Forfeited':
+      return theme.colors.statusForfeitedBg;
+    default:
+      return theme.colors.cardBackground;
+  }
+}
+
+export function getStatusTextColor(theme: AppTheme, status: string): string {
+  switch (status) {
+    case 'Active':
+      return theme.colors.primary;
+    case 'Completed':
+      return theme.colors.statusCompleted;
+    case 'Forfeited':
+      return theme.colors.statusForfeited;
+    default:
+      return theme.colors.text;
+  }
+}

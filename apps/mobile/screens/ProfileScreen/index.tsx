@@ -1,7 +1,6 @@
-import { Alert } from 'react-native';
+import { Alert, View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from 'styled-components/native';
-import styled from 'styled-components/native';
+import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { useAuth } from '../../contexts/AuthContext';
@@ -25,7 +24,7 @@ import { SettingsItem } from './SettingsItem';
 
 export const ProfileScreen = () => {
   const { t } = useTranslation();
-  const theme = useTheme();
+  const { theme } = useAppTheme();
   const { user, walletAddress, disconnect } = useAuth();
 
   const handleSignOut = () => {
@@ -48,7 +47,7 @@ export const ProfileScreen = () => {
   if (!user) {
     return (
       <ScreenContainer>
-        <CenteredColumn $gap={16}>
+        <CenteredColumn gap={16}>
           <Ionicons
             name='person-outline'
             size={64}
@@ -71,43 +70,48 @@ export const ProfileScreen = () => {
           width: '100%',
         }}
       >
-        <CenteredColumn style={{ flex: 1 }} $gap={24}>
+        <CenteredColumn style={{ flex: 1 }} gap={24}>
           {/* HEADER ROW */}
-          <Row $width='100%'>
+          <Row width='100%'>
             <Title1>{t('Profile')}</Title1>
           </Row>
           <TrackedScrollView showsVerticalScrollIndicator={false}>
-            <Column style={{ flex: 1 }} $gap={24}>
+            <Column style={{ flex: 1 }} gap={24}>
               {/* Wallet Card */}
-              <WalletCard>
-                <WalletIcon>
+              <Card style={localStyles.walletCard}>
+                <View
+                  style={[
+                    localStyles.walletIcon,
+                    { backgroundColor: `${theme.colors.primary}20` },
+                  ]}
+                >
                   <Ionicons
                     name='wallet'
                     size={24}
                     color={theme.colors.primary}
                   />
-                </WalletIcon>
-                <Column $gap={4}>
+                </View>
+                <Column gap={4}>
                   <Body>{t('Connected Wallet')}</Body>
                   <MonoText>
                     {walletAddress?.slice(0, 8)}...{walletAddress?.slice(-8)}
                   </MonoText>
                 </Column>
-              </WalletCard>
+              </Card>
 
               {/* Theme Section */}
-              <Column $gap={4}>
-                <SectionHeader>
+              <Column gap={4}>
+                <View style={localStyles.sectionHeader}>
                   <Title3>{t('Theme')}</Title3>
-                </SectionHeader>
+                </View>
                 <ThemeSelector />
               </Column>
 
               {/* Settings Section */}
-              <Column $gap={4}>
-                <SectionHeader>
+              <Column gap={4}>
+                <View style={localStyles.sectionHeader}>
                   <Title3>{t('Settings')}</Title3>
-                </SectionHeader>
+                </View>
                 <Card>
                   <SettingsItem
                     icon='documents-outline'
@@ -125,7 +129,7 @@ export const ProfileScreen = () => {
             </Column>
 
             {/* Sign Out */}
-            <CenteredColumn $padding={16} $gap={16}>
+            <CenteredColumn padding={16} gap={16}>
               <OutlineButton icon='log-out-outline' onPress={handleSignOut}>
                 {t('Sign Out')}
               </OutlineButton>
@@ -138,21 +142,20 @@ export const ProfileScreen = () => {
   );
 };
 
-const WalletCard = styled(Card)`
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
-`;
-
-const WalletIcon = styled.View`
-  width: 48px;
-  height: 48px;
-  border-radius: 24px;
-  background-color: ${({ theme }) => theme.colors.primary}20;
-  align-items: center;
-  justify-content: center;
-`;
-
-const SectionHeader = styled.View`
-  padding: 0 20px;
-`;
+const localStyles = StyleSheet.create({
+  walletCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  walletIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionHeader: {
+    paddingHorizontal: 20,
+  },
+});

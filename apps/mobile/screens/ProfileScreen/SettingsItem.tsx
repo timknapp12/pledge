@@ -1,26 +1,7 @@
-import { useTheme } from 'styled-components/native';
-import styled from 'styled-components/native';
+import { Pressable, View, StyleSheet } from 'react-native';
+import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { Body, BodySecondary, Row } from '@/components';
-
-const SettingsRow = styled.Pressable`
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 0;
-  border-bottom-width: 1px;
-  border-bottom-color: ${({ theme }) => theme.colors.border};
-`;
-
-const SettingsRowLast = styled(SettingsRow)`
-  border-bottom-width: 0;
-`;
-
-const SettingsLabel = styled.View`
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
-`;
 
 export type IoniconsName = keyof typeof Ionicons.glyphMap;
 
@@ -39,16 +20,25 @@ export const SettingsItem = ({
   onPress,
   isLast,
 }: SettingsItemProps) => {
-  const theme = useTheme();
-  const Container = isLast ? SettingsRowLast : SettingsRow;
+  const { theme } = useAppTheme();
 
   return (
-    <Container onPress={onPress} disabled={!onPress}>
-      <SettingsLabel>
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      style={[
+        localStyles.settingsRow,
+        !isLast && {
+          borderBottomWidth: 1,
+          borderBottomColor: theme.colors.border,
+        },
+      ]}
+    >
+      <View style={localStyles.settingsLabel}>
         <Ionicons name={icon} size={20} color={theme.colors.textSecondary} />
         <Body>{label}</Body>
-      </SettingsLabel>
-      <Row $gap={8}>
+      </View>
+      <Row gap={8}>
         {value && <BodySecondary>{value}</BodySecondary>}
         {onPress && (
           <Ionicons
@@ -58,6 +48,20 @@ export const SettingsItem = ({
           />
         )}
       </Row>
-    </Container>
+    </Pressable>
   );
 };
+
+const localStyles = StyleSheet.create({
+  settingsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+  },
+  settingsLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+});

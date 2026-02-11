@@ -1,7 +1,6 @@
-import { ActivityIndicator, RefreshControl } from 'react-native';
+import { ActivityIndicator, RefreshControl, View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from 'styled-components/native';
-import styled from 'styled-components/native';
+import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,10 +22,11 @@ import {
 } from '@/components';
 import { PastPledgeItem } from './PastPledgeItem';
 import { EmptyState } from './EmptyState';
+// TODO - add haptic feedback to nav buttons
 
 export const HistoryScreen = () => {
   const { t } = useTranslation();
-  const theme = useTheme();
+  const { theme } = useAppTheme();
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const {
@@ -41,7 +41,7 @@ export const HistoryScreen = () => {
   // Filter for past pledges (completed or forfeited)
   const pastPledges =
     allPledges?.filter(
-      (p) => p.status === 'Completed' || p.status === 'Forfeited',
+      (p) => p.status === 'Completed' || p.status === 'Forfeited'
     ) || [];
 
   // Calculate stats
@@ -54,7 +54,7 @@ export const HistoryScreen = () => {
       ? Math.round(
           (completedPledges.length /
             allPledges.filter((p) => p.status !== 'Active').length) *
-            100,
+            100
         ) || 0
       : 0;
 
@@ -73,7 +73,7 @@ export const HistoryScreen = () => {
   if (!user) {
     return (
       <ScreenContainer>
-        <CenteredColumn $gap={16}>
+        <CenteredColumn gap={16}>
           <Ionicons
             name='lock-closed-outline'
             size={64}
@@ -96,9 +96,9 @@ export const HistoryScreen = () => {
           width: '100%',
         }}
       >
-        <CenteredColumn style={{ flex: 1 }} $gap={24}>
+        <CenteredColumn style={{ flex: 1 }} gap={24}>
           {/* HEADER ROW */}
-          <Row $width='100%'>
+          <Row width='100%'>
             <Title1>{t('History')}</Title1>
           </Row>
 
@@ -112,34 +112,42 @@ export const HistoryScreen = () => {
               />
             }
           >
-            <Column style={{ flex: 1 }} $gap={24}>
+            <Column style={{ flex: 1 }} gap={24}>
               {/* Stats Section */}
-              <Column $gap={4}>
-                <SectionHeader>
+              <Column gap={4}>
+                <View style={localStyles.sectionHeader}>
                   <Title3>{t('Stats')}</Title3>
-                </SectionHeader>
-                <CenteredColumn $width='100%' style={{ flex: 1 }} $gap={8}>
+                </View>
+                <CenteredColumn width='100%' style={{ flex: 1 }} gap={8}>
                   <Card style={{ alignItems: 'center' }}>
-                    <StatValue>${formatUsdcAmount(totalPledged)}</StatValue>
-                    <StatLabel>{t('Total Pledged')}</StatLabel>
+                    <Title2 style={{ color: theme.colors.primary }}>
+                      ${formatUsdcAmount(totalPledged)}
+                    </Title2>
+                    <BodySmallSecondary style={{ marginTop: 4 }}>
+                      {t('Total Pledged')}
+                    </BodySmallSecondary>
                   </Card>
                   <Card style={{ alignItems: 'center' }}>
-                    <StatValue>{successRate}%</StatValue>
-                    <StatLabel>{t('Success Rate')}</StatLabel>
+                    <Title2 style={{ color: theme.colors.primary }}>
+                      {successRate}%
+                    </Title2>
+                    <BodySmallSecondary style={{ marginTop: 4 }}>
+                      {t('Success Rate')}
+                    </BodySmallSecondary>
                   </Card>
                 </CenteredColumn>
               </Column>
 
               {/* Past Pledges Section */}
-              <Column $gap={4}>
-                <SectionHeader>
+              <Column gap={4}>
+                <View style={localStyles.sectionHeader}>
                   <Title3>{t('Past Pledges')}</Title3>
-                </SectionHeader>
+                </View>
               </Column>
 
               {pledgesLoading ? (
                 <CenteredColumn style={{ flex: 1 }}>
-                  <Gap $gap={48} />
+                  <Gap gap={48} />
                   <ActivityIndicator
                     size='large'
                     color={theme.colors.primary}
@@ -151,7 +159,7 @@ export const HistoryScreen = () => {
                   onRetry={refetch}
                 />
               ) : pastPledges.length > 0 ? (
-                <ContentContainer>
+                <View style={localStyles.contentContainer}>
                   {pastPledges.map((pledge) => (
                     <PastPledgeItem
                       key={pledge.id}
@@ -159,7 +167,7 @@ export const HistoryScreen = () => {
                       onPress={() => handlePledgePress(pledge.id)}
                     />
                   ))}
-                </ContentContainer>
+                </View>
               ) : (
                 <EmptyState />
               )}
@@ -171,18 +179,11 @@ export const HistoryScreen = () => {
   );
 };
 
-const StatValue = styled(Title2)`
-  color: ${({ theme }) => theme.colors.primary};
-`;
-
-const StatLabel = styled(BodySmallSecondary)`
-  margin-top: 4px;
-`;
-
-const SectionHeader = styled.View`
-  padding: 0 20px;
-`;
-
-const ContentContainer = styled.View`
-  padding-bottom: 100px;
-`;
+const localStyles = StyleSheet.create({
+  sectionHeader: {
+    paddingHorizontal: 20,
+  },
+  contentContainer: {
+    paddingBottom: 100,
+  },
+});

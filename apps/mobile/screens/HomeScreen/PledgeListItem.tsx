@@ -1,6 +1,7 @@
-import { Pressable } from 'react-native';
+import { Pressable, View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import styled from 'styled-components/native';
+import { useAppTheme } from '@/theme/ThemeProvider';
+import { getStatusBgColor, getStatusTextColor } from '@/theme';
 import {
   Title3,
   BodySecondary,
@@ -11,58 +12,6 @@ import {
   Card,
 } from '@/components';
 import { formatUsdcAmount, Pledge } from '@/hooks/useSupabase';
-
-const PledgeCard = styled(Card)`
-  margin-bottom: 12px;
-`;
-
-const StatusBadge = styled.View<{ $status: string }>`
-  padding: 4px 8px;
-  border-radius: 12px;
-  background-color: ${({ theme, $status }) => {
-    switch ($status) {
-      case 'Active':
-        return theme.colors.primaryAlpha20;
-      case 'Completed':
-        return theme.colors.statusCompletedBg;
-      case 'Forfeited':
-        return theme.colors.statusForfeitedBg;
-      default:
-        return theme.colors.cardBackground;
-    }
-  }};
-`;
-
-const StatusText = styled(BodySmall)<{ $status: string }>`
-  color: ${({ theme, $status }) => {
-    switch ($status) {
-      case 'Active':
-        return theme.colors.primary;
-      case 'Completed':
-        return theme.colors.statusCompleted;
-      case 'Forfeited':
-        return theme.colors.statusForfeited;
-      default:
-        return theme.colors.text;
-    }
-  }};
-  font-weight: 600;
-`;
-
-const ProgressBar = styled.View`
-  height: 6px;
-  background-color: ${({ theme }) => theme.colors.border};
-  border-radius: 3px;
-  overflow: hidden;
-  margin-top: 12px;
-`;
-
-const ProgressFill = styled.View<{ $progress: number }>`
-  height: 100%;
-  width: ${({ $progress }) => $progress}%;
-  background-color: ${({ theme }) => theme.colors.primary};
-  border-radius: 3px;
-`;
 
 function formatDeadline(deadline: string): string {
   const date = new Date(deadline);
@@ -90,6 +39,7 @@ export interface PledgeListItemProps {
 
 export const PledgeListItem = ({ pledge, onPress }: PledgeListItemProps) => {
   const { t } = useTranslation();
+  const { theme } = useAppTheme();
 
   // Calculate progress based on time elapsed
   const startDate = new Date(pledge.start_date);
@@ -112,7 +62,7 @@ export const PledgeListItem = ({ pledge, onPress }: PledgeListItemProps) => {
 
   return (
     <Pressable onPress={onPress}>
-      <PledgeCard>
+      <Card style={localStyles.pledgeCard}>
         <Row
           style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}
         >
@@ -122,9 +72,21 @@ export const PledgeListItem = ({ pledge, onPress }: PledgeListItemProps) => {
               {formatDeadline(pledge.deadline)}
             </BodySmallSecondary>
           </Column>
-          <StatusBadge $status={pledge.status}>
-            <StatusText $status={pledge.status}>{t(pledge.status)}</StatusText>
-          </StatusBadge>
+          <View
+            style={[
+              localStyles.statusBadge,
+              { backgroundColor: getStatusBgColor(theme, pledge.status) },
+            ]}
+          >
+            <BodySmall
+              style={{
+                color: getStatusTextColor(theme, pledge.status),
+                fontWeight: '600',
+              }}
+            >
+              {t(pledge.status)}
+            </BodySmall>
+          </View>
         </Row>
 
         <Row style={{ marginTop: 12, justifyContent: 'space-between' }}>
@@ -136,10 +98,44 @@ export const PledgeListItem = ({ pledge, onPress }: PledgeListItemProps) => {
           </BodySmall>
         </Row>
 
-        <ProgressBar>
-          <ProgressFill $progress={timeProgress} />
-        </ProgressBar>
-      </PledgeCard>
+        <View
+          style={[
+            localStyles.progressBar,
+            { backgroundColor: theme.colors.border },
+          ]}
+        >
+          <View
+            style={[
+              localStyles.progressFill,
+              {
+                width: `${timeProgress}%`,
+                backgroundColor: theme.colors.primary,
+              },
+            ]}
+          />
+        </View>
+      </Card>
     </Pressable>
   );
 };
+
+const localStyles = StyleSheet.create({
+  pledgeCard: {
+    marginBottom: 12,
+  },
+  statusBadge: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+  },
+  progressBar: {
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginTop: 12,
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+});
