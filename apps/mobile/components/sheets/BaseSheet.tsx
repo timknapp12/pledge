@@ -6,6 +6,7 @@ import BottomSheet, {
   BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
 import { useThemeMode } from '@/theme/ThemeProvider';
+import { SHEET_COLORS } from '@/theme/colors';
 
 interface BaseSheetProps {
   title?: string;
@@ -14,26 +15,10 @@ interface BaseSheetProps {
   onClose?: () => void;
 }
 
-// Colors outside of styled-components context (for Portal)
-const COLORS = {
-  light: {
-    background: '#F5F5F5',
-    text: '#000000',
-    textSecondary: '#666666',
-    border: '#E0E0E0',
-  },
-  dark: {
-    background: '#1C1C1E',
-    text: '#FFFFFF',
-    textSecondary: '#8E8E93',
-    border: '#38383A',
-  },
-};
-
 export const BaseSheet = forwardRef<BottomSheet, BaseSheetProps>(
   ({ title, snapPoints = ['50%'], children, onClose }, ref) => {
     const { isDark } = useThemeMode();
-    const colors = isDark ? COLORS.dark : COLORS.light;
+    const colors = isDark ? SHEET_COLORS.dark : SHEET_COLORS.light;
 
     const renderBackdrop = useCallback(
       (props: BottomSheetBackdropProps) => (
