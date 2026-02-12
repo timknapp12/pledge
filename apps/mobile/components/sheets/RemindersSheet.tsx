@@ -45,6 +45,7 @@ export const RemindersSheet = forwardRef<BottomSheet, RemindersSheetProps>(
     const [dailyTime, setDailyTime] = useState(new Date());
     const [showTimePicker, setShowTimePicker] = useState(false);
     const [deadlineReminders, setDeadlineReminders] = useState<number[]>([]);
+    const [hasBeenOpened, setHasBeenOpened] = useState(false);
 
     useEffect(() => {
       if (value?.reminders) {
@@ -169,7 +170,9 @@ export const RemindersSheet = forwardRef<BottomSheet, RemindersSheetProps>(
         title={t('Reminders')}
         snapPoints={['55%']}
         onClose={onClose}
+        onOpen={() => setHasBeenOpened(true)}
       >
+        {hasBeenOpened && (
         <View style={styles.container}>
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
@@ -287,6 +290,7 @@ export const RemindersSheet = forwardRef<BottomSheet, RemindersSheetProps>(
             <RoundButton icon='checkmark' onPress={handleConfirm} />
           </Row>
         </View>
+        )}
       </BaseSheet>
     );
   }

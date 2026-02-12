@@ -15,6 +15,8 @@ interface BaseSheetProps {
   snapPoints?: (string | number)[];
   children: React.ReactNode;
   onClose?: () => void;
+  /** Called when sheet opens (index >= 0). Use to defer mounting heavy/picker content and avoid Android auto-open. */
+  onOpen?: () => void;
 }
 
 export const BaseSheet = forwardRef<BottomSheet, BaseSheetProps>(
@@ -25,6 +27,7 @@ export const BaseSheet = forwardRef<BottomSheet, BaseSheetProps>(
       snapPoints = ['50%'],
       children,
       onClose,
+      onOpen,
     },
     ref
   ) => {
@@ -47,11 +50,13 @@ export const BaseSheet = forwardRef<BottomSheet, BaseSheetProps>(
 
     const handleSheetChanges = useCallback(
       (index: number) => {
-        if (index === -1 && onClose) {
-          onClose();
+        if (index === -1) {
+          onClose?.();
+        } else if (index >= 0) {
+          onOpen?.();
         }
       },
-      [onClose]
+      [onClose, onOpen]
     );
 
     return (

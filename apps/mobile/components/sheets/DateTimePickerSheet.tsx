@@ -42,10 +42,17 @@ export const DateTimePickerSheet = forwardRef<
     const [pickerMode, setPickerMode] = useState<'date' | 'time'>(
       mode === 'time' ? 'time' : 'date'
     );
+    const [hasBeenOpened, setHasBeenOpened] = useState(false);
+    const [showSpinner, setShowSpinner] = useState(false);
 
     useEffect(() => {
       setSelectedDate(value);
     }, [value]);
+
+    const handleShowPicker = useCallback((newMode: 'date' | 'time') => {
+      setPickerMode(newMode);
+      setShowSpinner(true);
+    }, []);
 
     const handleDateChange = useCallback((_event: any, date?: Date) => {
       if (date) {
@@ -81,100 +88,130 @@ export const DateTimePickerSheet = forwardRef<
     };
 
     return (
-      <BaseSheet ref={ref} title={title} snapPoints={['55%']} onClose={onClose}>
-        <View style={styles.container}>
-          <Pressable style={styles.quickAction} onPress={handleSetNow}>
-            <Text style={[styles.quickActionText, { color: colors.primary }]}>
-              {t('Set to Now')}
-            </Text>
-          </Pressable>
+      <BaseSheet
+        ref={ref}
+        title={title}
+        snapPoints={['55%']}
+        onClose={onClose}
+        onOpen={() => setHasBeenOpened(true)}
+      >
+        {hasBeenOpened && (
+          <View style={styles.container}>
+            <Pressable style={styles.quickAction} onPress={handleSetNow}>
+              <Text style={[styles.quickActionText, { color: colors.primary }]}>
+                {t('Set to Now')}
+              </Text>
+            </Pressable>
 
-          {mode === 'datetime' && (
-            <View style={styles.modeSelector}>
-              <Pressable
-                style={[
-                  styles.modeButton,
-                  {
-                    backgroundColor:
-                      pickerMode === 'date'
-                        ? colors.primary
-                        : colors.cardBackground,
-                    borderColor:
-                      pickerMode === 'date' ? colors.primary : colors.border,
-                  },
-                ]}
-                onPress={() => setPickerMode('date')}
-              >
-                <Text
+            {mode === 'datetime' && (
+              <View style={styles.modeSelector}>
+                <Pressable
                   style={[
-                    styles.modeButtonText,
+                    styles.modeButton,
                     {
-                      color:
+                      backgroundColor:
                         pickerMode === 'date'
-                          ? colors.iconOnPrimary
-                          : colors.text,
+                          ? colors.primary
+                          : colors.cardBackground,
+                      borderColor:
+                        pickerMode === 'date' ? colors.primary : colors.border,
                     },
                   ]}
+                  onPress={() => handleShowPicker('date')}
                 >
-                  {formatDate(selectedDate)}
-                </Text>
-              </Pressable>
+                  <Text
+                    style={[
+                      styles.modeButtonText,
+                      {
+                        color:
+                          pickerMode === 'date'
+                            ? colors.iconOnPrimary
+                            : colors.text,
+                      },
+                    ]}
+                  >
+                    {formatDate(selectedDate)}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.modeButton,
+                    {
+                      backgroundColor:
+                        pickerMode === 'time'
+                          ? colors.primary
+                          : colors.cardBackground,
+                      borderColor:
+                        pickerMode === 'time' ? colors.primary : colors.border,
+                    },
+                  ]}
+                  onPress={() => handleShowPicker('time')}
+                >
+                  <Text
+                    style={[
+                      styles.modeButtonText,
+                      {
+                        color:
+                          pickerMode === 'time'
+                            ? colors.iconOnPrimary
+                            : colors.text,
+                      },
+                    ]}
+                  >
+                    {formatTime(selectedDate)}
+                  </Text>
+                </Pressable>
+              </View>
+            )}
+
+            {mode !== 'datetime' && (
               <Pressable
                 style={[
                   styles.modeButton,
+                  styles.singleModeButton,
                   {
-                    backgroundColor:
-                      pickerMode === 'time'
-                        ? colors.primary
-                        : colors.cardBackground,
-                    borderColor:
-                      pickerMode === 'time' ? colors.primary : colors.border,
+                    backgroundColor: colors.cardBackground,
+                    borderColor: colors.border,
                   },
                 ]}
-                onPress={() => setPickerMode('time')}
+                onPress={() => handleShowPicker(mode)}
               >
-                <Text
-                  style={[
-                    styles.modeButtonText,
-                    {
-                      color:
-                        pickerMode === 'time'
-                          ? colors.iconOnPrimary
-                          : colors.text,
-                    },
-                  ]}
-                >
-                  {formatTime(selectedDate)}
+                <Text style={[styles.modeButtonText, { color: colors.text }]}>
+                  {mode === 'date'
+                    ? formatDate(selectedDate)
+                    : formatTime(selectedDate)}
                 </Text>
               </Pressable>
-            </View>
-          )}
+            )}
 
-          <View style={styles.pickerContainer}>
-            <DateTimePicker
-              value={selectedDate}
-              mode={mode === 'datetime' ? pickerMode : mode}
-              display='spinner'
-              onChange={handleDateChange}
-              minimumDate={minimumDate}
-              maximumDate={maximumDate}
-              themeVariant={isDark ? 'dark' : 'light'}
-            />
+            {showSpinner && (
+              <View style={styles.pickerContainer}>
+                <DateTimePicker
+                  value={selectedDate}
+                  mode={mode === 'datetime' ? pickerMode : mode}
+                  display='spinner'
+                  onChange={handleDateChange}
+                  minimumDate={minimumDate}
+                  maximumDate={maximumDate}
+                  themeVariant={isDark ? 'dark' : 'light'}
+                />
+              </View>
+            )}
+
+            <Row>
+              <RoundButton
+                variant='secondary'
+                icon='close'
+                onPress={() => {
+                  if (ref && 'current' in ref && ref.current) {
+                    ref.current.close();
+                  }
+                }}
+              />
+              <RoundButton icon='checkmark' onPress={handleConfirm} />
+            </Row>
           </View>
-
-          <Row>
-            <RoundButton
-              variant='secondary'
-              icon='close'
-              onPress={() => {
-                if (ref && 'current' in ref && ref.current) {
-                  ref.current.close();
-                }
-              }}
-            />
-            <RoundButton icon='checkmark' onPress={handleConfirm} />
-          </Row>
-        </View>
+        )}
       </BaseSheet>
     );
   }
@@ -206,6 +243,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
+  },
+  singleModeButton: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   modeButtonText: {
     fontSize: 15,
