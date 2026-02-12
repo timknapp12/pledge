@@ -104,19 +104,14 @@ module.exports = {
       edgeToEdgeEnabled: true,
       softwareKeyboardLayoutMode: 'resize',
       package: packageName,
+      googleServicesFile,
     },
     plugins: [
       'expo-router',
       'expo-localization',
       'expo-secure-store',
       '@react-native-community/datetimepicker',
-      [
-        '@react-native-firebase/app',
-        {
-          android: { googleServicesFile },
-        },
-      ],
-      '@react-native-firebase/analytics',
+      '@react-native-firebase/app',
       '@react-native-firebase/crashlytics',
       [
         'expo-notifications',
