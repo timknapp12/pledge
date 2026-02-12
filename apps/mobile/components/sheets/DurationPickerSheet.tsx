@@ -38,6 +38,7 @@ export const DurationPickerSheet = forwardRef<
   const [showCustomPicker, setShowCustomPicker] = useState(
     selectedPreset === 'custom'
   );
+  const [hasBeenOpened, setHasBeenOpened] = useState(false);
 
   useEffect(() => {
     setPreset(selectedPreset);
@@ -115,9 +116,11 @@ export const DurationPickerSheet = forwardRef<
     <BaseSheet
       ref={ref}
       title={t('Duration')}
-      snapPoints={showCustomPicker ? ['70%'] : ['50%']}
+      snapPoints={hasBeenOpened && showCustomPicker ? ['70%'] : ['50%']}
       onClose={onClose}
+      onOpen={() => setHasBeenOpened(true)}
     >
+      {hasBeenOpened && (
       <View style={styles.container}>
         <View style={styles.presetRow}>
           {PRESETS.map((p) => (
@@ -233,6 +236,7 @@ export const DurationPickerSheet = forwardRef<
           <RoundButton icon='checkmark' onPress={handleConfirm} />
         </Row>
       </View>
+      )}
     </BaseSheet>
   );
 });
