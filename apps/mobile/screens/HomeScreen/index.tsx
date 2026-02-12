@@ -1,4 +1,9 @@
-import { ActivityIndicator, Pressable, RefreshControl, StyleSheet } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+} from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
@@ -69,7 +74,7 @@ export const HomeScreen = () => {
           flex: 1,
         }}
       >
-        <CenteredColumn gap={24} style={{ flex: 1 }}>
+        <CenteredColumn gap={24} flex={1}>
           {/* HEADER ROW */}
           <Row
             gap={16}
@@ -104,7 +109,7 @@ export const HomeScreen = () => {
               </BodySecondary>
             </CenteredColumn>
           ) : isError ? (
-            <CenteredColumn style={{ flex: 1, justifyContent: 'center' }}>
+            <CenteredColumn justify='center' flex={1}>
               <ErrorState
                 message={error instanceof Error ? error.message : undefined}
                 onRetry={refetch}
@@ -121,7 +126,7 @@ export const HomeScreen = () => {
                 />
               }
             >
-              <Column style={{ flex: 1 }} gap={24}>
+              <Column flex={1} gap={24}>
                 {pledges.map((pledge) => (
                   <PledgeListItem
                     key={pledge.id}

@@ -27,7 +27,7 @@ export const ConnectWalletScreen = () => {
           marginBottom: 60,
         }}
       >
-        <CenteredColumn gap={12} style={{ flex: 1, justifyContent: 'center' }}>
+        <CenteredColumn gap={12} justify='center' flex={1}>
           <Ionicons
             name='wallet-outline'
             size={64}
@@ -38,7 +38,7 @@ export const ConnectWalletScreen = () => {
           {/* // TODO - think of new copy */}
           <BodySecondary style={{ textAlign: 'center', maxWidth: 280 }}>
             {t(
-              'Stake on your goals. Connect your Solana wallet to get started.',
+              'Stake on your goals. Connect your Solana wallet to get started.'
             )}
           </BodySecondary>
         </CenteredColumn>

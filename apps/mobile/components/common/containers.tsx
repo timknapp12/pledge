@@ -1,11 +1,11 @@
-import { View, ViewProps, StyleSheet } from 'react-native';
+import { View, ViewProps, StyleSheet, type DimensionValue } from 'react-native';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { cardBorderRadius } from '@/theme';
 
 interface GapViewProps extends ViewProps {
   gap?: number;
   padding?: number;
-  width?: string;
+  width?: DimensionValue;
 }
 
 export function ScreenContainer({ style, ...props }: ViewProps) {
@@ -22,14 +22,31 @@ export function ScreenContainer({ style, ...props }: ViewProps) {
   );
 }
 
-export function Column({ gap, padding, width, style, ...props }: GapViewProps) {
+interface ColumnProps extends GapViewProps {
+  justify?: FlexJustify;
+  align?: FlexAlign;
+  flex?: number;
+}
+
+export function Column({
+  gap,
+  padding,
+  width = '100%',
+  justify,
+  align,
+  flex,
+  style,
+  ...props
+}: ColumnProps) {
   return (
     <View
       style={[
         styles.column,
+        { justifyContent: justify, alignItems: align },
         gap !== undefined && { gap },
         padding !== undefined && { padding },
-        width !== undefined && { width: width as any },
+        width !== undefined && { width },
+        flex !== undefined && { flex },
         style,
       ]}
       {...props}
@@ -40,17 +57,22 @@ export function Column({ gap, padding, width, style, ...props }: GapViewProps) {
 export function CenteredColumn({
   gap,
   padding,
-  width,
+  width = '100%',
+  justify = 'center',
+  align = 'center',
+  flex,
   style,
   ...props
-}: GapViewProps) {
+}: ColumnProps) {
   return (
     <View
       style={[
         styles.centeredColumn,
+        { justifyContent: justify, alignItems: align },
         gap !== undefined && { gap },
         padding !== undefined && { padding },
-        width !== undefined && { width: width as any },
+        width !== undefined && { width },
+        flex !== undefined && { flex },
         style,
       ]}
       {...props}
@@ -70,6 +92,7 @@ type FlexJustify =
 interface RowProps extends GapViewProps {
   justify?: FlexJustify;
   align?: FlexAlign;
+  flex?: number;
 }
 
 export function Row({
@@ -78,6 +101,7 @@ export function Row({
   width,
   justify = 'center',
   align = 'center',
+  flex,
   style,
   ...props
 }: RowProps) {
@@ -88,7 +112,8 @@ export function Row({
         { justifyContent: justify, alignItems: align },
         gap !== undefined && { gap },
         padding !== undefined && { padding },
-        width !== undefined && { width: width as any },
+        width !== undefined && { width },
+        flex !== undefined && { flex },
         style,
       ]}
       {...props}

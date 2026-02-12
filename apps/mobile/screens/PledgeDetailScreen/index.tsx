@@ -1,5 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ActivityIndicator, Alert, ScrollView, Pressable, View, StyleSheet } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  Pressable,
+  View,
+  StyleSheet,
+} from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { getStatusBgColor, getStatusTextColor } from '@/theme';
@@ -109,7 +116,7 @@ export const PledgeDetailScreen = () => {
         setCompletedTodos(completedTodos);
       }
     },
-    [completedTodos, id, updateProgress],
+    [completedTodos, id, updateProgress]
   );
 
   const calculateProgress = (): number => {
@@ -125,13 +132,13 @@ export const PledgeDetailScreen = () => {
     Alert.alert(
       t('Report Completion'),
       `${t('Completion')}: ${completionPct}%\n${t(
-        'Your Refund',
+        'Your Refund'
       )}: $${formatUsdcAmount(
         Math.round(
           pledge.stake_amount *
             (completionPct / 100) *
-            (completionPct === 100 ? 1 : 0.99),
-        ),
+            (completionPct === 100 ? 1 : 0.99)
+        )
       )}`,
       [
         { text: t('Cancel'), style: 'cancel' },
@@ -147,14 +154,14 @@ export const PledgeDetailScreen = () => {
               console.error('Report completion error:', err);
               Alert.alert(
                 t('Error'),
-                err.message || 'Failed to report completion',
+                err.message || 'Failed to report completion'
               );
             } finally {
               setIsReporting(false);
             }
           },
         },
-      ],
+      ]
     );
   };
 
@@ -169,7 +176,7 @@ export const PledgeDetailScreen = () => {
   if (isError) {
     return (
       <ScreenContainer>
-        <CenteredColumn style={{ flex: 1, justifyContent: 'center' }}>
+        <CenteredColumn flex={1}>
           <ErrorState
             message={error instanceof Error ? error.message : undefined}
             onRetry={refetch}
@@ -182,7 +189,7 @@ export const PledgeDetailScreen = () => {
   if (!pledge) {
     return (
       <ScreenContainer>
-        <CenteredColumn style={{ flex: 1, justifyContent: 'center' }}>
+        <CenteredColumn flex={1}>
           <ErrorText>{t('Pledge not found')}</ErrorText>
         </CenteredColumn>
       </ScreenContainer>
@@ -205,7 +212,7 @@ export const PledgeDetailScreen = () => {
         >
           <Ionicons name='arrow-back' size={24} color={theme.colors.text} />
         </Pressable>
-        <Column style={{ flex: 1 }}>
+        <Column flex={1}>
           <Title1 numberOfLines={1}>{pledge.name}</Title1>
         </Column>
         <View

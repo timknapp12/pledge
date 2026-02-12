@@ -70,13 +70,13 @@ export const ProfileScreen = () => {
           width: '100%',
         }}
       >
-        <CenteredColumn style={{ flex: 1 }} gap={24}>
+        <CenteredColumn flex={1} gap={24}>
           {/* HEADER ROW */}
           <Row width='100%'>
             <Title1>{t('Profile')}</Title1>
           </Row>
           <TrackedScrollView showsVerticalScrollIndicator={false}>
-            <Column style={{ flex: 1 }} gap={24}>
+            <Column flex={1} gap={24}>
               {/* Wallet Card */}
               <Card style={localStyles.walletCard}>
                 <View
