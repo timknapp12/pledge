@@ -8,7 +8,7 @@ interface GapViewProps extends ViewProps {
   width?: DimensionValue;
 }
 
-export function ScreenContainer({ style, ...props }: ViewProps) {
+export const ScreenContainer = ({ style, ...props }: ViewProps) => {
   const { theme } = useAppTheme();
   return (
     <View
@@ -28,7 +28,7 @@ interface ColumnProps extends GapViewProps {
   flex?: number;
 }
 
-export function Column({
+export const Column = ({
   gap,
   padding,
   width = '100%',
@@ -37,7 +37,7 @@ export function Column({
   flex,
   style,
   ...props
-}: ColumnProps) {
+}: ColumnProps) => {
   return (
     <View
       style={[
@@ -54,7 +54,7 @@ export function Column({
   );
 }
 
-export function CenteredColumn({
+export const CenteredColumn = ({
   gap,
   padding,
   width = '100%',
@@ -63,7 +63,7 @@ export function CenteredColumn({
   flex,
   style,
   ...props
-}: ColumnProps) {
+}: ColumnProps) => {
   return (
     <View
       style={[
@@ -95,7 +95,7 @@ interface RowProps extends GapViewProps {
   flex?: number;
 }
 
-export function Row({
+export const Row = ({
   gap = 12,
   padding,
   width,
@@ -104,7 +104,7 @@ export function Row({
   flex,
   style,
   ...props
-}: RowProps) {
+}: RowProps) => {
   return (
     <View
       style={[
@@ -121,7 +121,7 @@ export function Row({
   );
 }
 
-export function Separator({ style, ...props }: ViewProps) {
+export const Separator = ({ style, ...props }: ViewProps) => {
   const { theme } = useAppTheme();
   return (
     <View
@@ -135,7 +135,7 @@ export function Separator({ style, ...props }: ViewProps) {
   );
 }
 
-export function Card({ style, ...props }: ViewProps) {
+export const Card = ({ style, ...props }: ViewProps) => {
   const { theme } = useAppTheme();
   return (
     <View
@@ -149,7 +149,7 @@ export function Card({ style, ...props }: ViewProps) {
   );
 }
 
-export function Gap({ gap = 12, style, ...props }: GapViewProps) {
+export const Gap = ({ gap = 12, style, ...props }: GapViewProps) => {
   return <View style={[{ height: gap }, style]} {...props} />;
 }
 

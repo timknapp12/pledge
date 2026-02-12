@@ -1,5 +1,11 @@
 import { useRef, useEffect } from 'react';
-import { Animated, Pressable, LayoutChangeEvent, View, StyleSheet } from 'react-native';
+import {
+  Animated,
+  Pressable,
+  LayoutChangeEvent,
+  View,
+  StyleSheet,
+} from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { useThemeMode, ThemeMode } from '@/theme/ThemeProvider';
@@ -10,7 +16,7 @@ const OPTIONS: { mode: ThemeMode; icon: 'sun-o' | 'moon-o' | 'cog' }[] = [
   { mode: 'system', icon: 'cog' },
 ];
 
-export function ThemeSelector() {
+export const ThemeSelector = () => {
   const { theme } = useAppTheme();
   const { mode, setMode } = useThemeMode();
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -36,7 +42,10 @@ export function ThemeSelector() {
 
   return (
     <View
-      style={[styles.container, { backgroundColor: theme.colors.cardBackground }]}
+      style={[
+        styles.container,
+        { backgroundColor: theme.colors.cardBackground },
+      ]}
       onLayout={handleLayout}
     >
       <Animated.View
@@ -68,7 +77,7 @@ export function ThemeSelector() {
       ))}
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {

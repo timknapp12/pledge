@@ -27,7 +27,7 @@ export const DEFAULT_GRACE_PERIOD = 86400; // 1 day in seconds
  */
 export type Network = "localhost" | "devnet" | "mainnet";
 
-export function getClusterUrl(network: Network): string {
+export const getClusterUrl = (network: Network): string => {
   switch (network) {
     case "localhost":
       return "http://localhost:8899";
@@ -43,7 +43,7 @@ export function getClusterUrl(network: Network): string {
 /**
  * Load keypair from file
  */
-export function loadKeypair(keypairPath: string): Keypair {
+export const loadKeypair = (keypairPath: string): Keypair => {
   const resolvedPath = keypairPath.startsWith("~")
     ? keypairPath.replace("~", process.env.HOME || "")
     : keypairPath;
@@ -63,7 +63,7 @@ export function loadKeypair(keypairPath: string): Keypair {
 /**
  * Get default admin keypair path
  */
-export function getDefaultAdminKeypairPath(): string {
+export const getDefaultAdminKeypairPath = (): string => {
   // Check for local admin wallet first
   const localAdmin = path.resolve(process.cwd(), "admin-wallet.json");
   if (fs.existsSync(localAdmin)) {
@@ -81,10 +81,10 @@ export function getDefaultAdminKeypairPath(): string {
 /**
  * Initialize Anchor provider and program
  */
-export function initializeProgram(
+export const initializeProgram = (
   connection: Connection,
   wallet: Keypair
-): anchor.Program<Pledge> {
+): anchor.Program<Pledge> => {
   const provider = new anchor.AnchorProvider(
     connection,
     new anchor.Wallet(wallet),
@@ -102,7 +102,7 @@ export function initializeProgram(
 /**
  * Derive config PDA
  */
-export function deriveConfigPda(): [PublicKey, number] {
+export const deriveConfigPda = (): [PublicKey, number] => {
   return PublicKey.findProgramAddressSync(
     [Buffer.from(CONFIG_SEED)],
     PROGRAM_ID
@@ -112,10 +112,10 @@ export function deriveConfigPda(): [PublicKey, number] {
 /**
  * Derive pledge PDA
  */
-export function derivePledgePda(
+export const derivePledgePda = (
   user: PublicKey,
   createdAt: anchor.BN
-): [PublicKey, number] {
+): [PublicKey, number] => {
   return PublicKey.findProgramAddressSync(
     [
       Buffer.from(PLEDGE_SEED),
@@ -129,7 +129,7 @@ export function derivePledgePda(
 /**
  * Derive vault PDA
  */
-export function deriveVaultPda(pledge: PublicKey): [PublicKey, number] {
+export const deriveVaultPda = (pledge: PublicKey): [PublicKey, number] => {
   return PublicKey.findProgramAddressSync(
     [Buffer.from(VAULT_SEED), pledge.toBuffer()],
     PROGRAM_ID
@@ -139,14 +139,14 @@ export function deriveVaultPda(pledge: PublicKey): [PublicKey, number] {
 /**
  * Format BPS as percentage
  */
-export function formatBps(bps: number): string {
+export const formatBps = (bps: number): string => {
   return `${(bps / 100).toFixed(2)}%`;
 }
 
 /**
  * Format seconds as human readable
  */
-export function formatSeconds(seconds: number): string {
+export const formatSeconds = (seconds: number): string => {
   if (seconds < 60) return `${seconds} seconds`;
   if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes`;
   if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours`;
@@ -156,7 +156,7 @@ export function formatSeconds(seconds: number): string {
 /**
  * Format USDC amount (6 decimals)
  */
-export function formatUsdc(amount: number | bigint): string {
+export const formatUsdc = (amount: number | bigint): string => {
   const value = Number(amount) / 1_000_000;
   return `${value.toFixed(2)} USDC`;
 }
@@ -164,7 +164,7 @@ export function formatUsdc(amount: number | bigint): string {
 /**
  * Parse command line arguments
  */
-export function parseArgs(args: string[]): Record<string, string> {
+export const parseArgs = (args: string[]): Record<string, string> => {
   const result: Record<string, string> = {};
 
   for (let i = 0; i < args.length; i++) {
@@ -187,7 +187,7 @@ export function parseArgs(args: string[]): Record<string, string> {
 /**
  * Print header for script output
  */
-export function printHeader(title: string): void {
+export const printHeader = (title: string): void => {
   console.log("\n" + "=".repeat(50));
   console.log(title);
   console.log("=".repeat(50) + "\n");
@@ -196,21 +196,21 @@ export function printHeader(title: string): void {
 /**
  * Print success message
  */
-export function printSuccess(message: string): void {
+export const printSuccess = (message: string): void => {
   console.log(`\n✓ ${message}\n`);
 }
 
 /**
  * Print error message
  */
-export function printError(message: string): void {
+export const printError = (message: string): void => {
   console.error(`\n✗ ${message}\n`);
 }
 
 /**
  * Confirm action with user
  */
-export async function confirm(message: string): Promise<boolean> {
+export const confirm = async (message: string): Promise<boolean> => {
   const readline = await import("readline");
   const rl = readline.createInterface({
     input: process.stdin,

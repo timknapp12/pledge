@@ -37,7 +37,7 @@ interface RoundButtonProps extends Omit<AnimatedPressableProps, 'children'> {
   size?: number;
 }
 
-function AnimatedPressable({
+const AnimatedPressable = ({
   children,
   onPressIn,
   onPressOut,
@@ -47,7 +47,7 @@ function AnimatedPressable({
   loading = false,
   fullWidth = true,
   ...props
-}: AnimatedPressableProps) {
+}: AnimatedPressableProps) => {
   const isDisabled = disabled || loading;
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(1)).current;
@@ -128,13 +128,13 @@ function AnimatedPressable({
   );
 }
 
-export function PrimaryButton({
+export const PrimaryButton = ({
   children,
   style,
   loading = false,
   icon,
   ...props
-}: ButtonProps) {
+}: ButtonProps) => {
   const { theme } = useAppTheme();
   return (
     <AnimatedPressable loading={loading} {...props}>
@@ -169,13 +169,13 @@ export function PrimaryButton({
   );
 }
 
-export function SecondaryButton({
+export const SecondaryButton = ({
   children,
   style,
   loading = false,
   icon,
   ...props
-}: ButtonProps) {
+}: ButtonProps) => {
   const { theme } = useAppTheme();
   return (
     <AnimatedPressable loading={loading} {...props}>
@@ -216,13 +216,13 @@ export function SecondaryButton({
   );
 }
 
-export function OutlineButton({
+export const OutlineButton = ({
   children,
   style,
   loading = false,
   icon,
   ...props
-}: ButtonProps) {
+}: ButtonProps) => {
   const { theme } = useAppTheme();
   return (
     <AnimatedPressable loading={loading} {...props}>
@@ -258,14 +258,14 @@ export function OutlineButton({
 
 const ROUND_BUTTON_SIZE = 44;
 
-export function RoundButton({
+export const RoundButton = ({
   icon,
   variant = 'primary',
   size = ROUND_BUTTON_SIZE,
   style,
   loading = false,
   ...props
-}: RoundButtonProps) {
+}: RoundButtonProps) => {
   const { theme } = useAppTheme();
   const iconSize = Math.round(size * 0.5);
   const variantStyles: ViewStyle =

@@ -83,7 +83,7 @@ function uint8ArrayToBase58(uint8Array: Uint8Array): string {
   return bs58.encode(uint8Array);
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -107,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       });
     },
-    [queryClient],
+    [queryClient]
   );
 
   // Check for existing session on mount
@@ -125,7 +125,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const authenticatedClient = createAuthenticatedClient(token);
             setSupabase(authenticatedClient);
             setWalletAddress(payload.wallet_address);
-            setUser({ id: payload.sub, wallet_address: payload.wallet_address });
+            setUser({
+              id: payload.sub,
+              wallet_address: payload.wallet_address,
+            });
             // Prefetch pledges data
             prefetchPledges(authenticatedClient, payload.sub);
           } else {
@@ -181,7 +184,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const isValidLocally = nacl.sign.detached.verify(
           messageBytes,
           signatureBytes,
-          publicKeyBytes,
+          publicKeyBytes
         );
 
         if (!isValidLocally) {
@@ -206,7 +209,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error(
             'Edge function error response:',
             response.status,
-            errorText,
+            errorText
           );
           let errorMessage = 'Wallet verification failed';
           try {
@@ -268,12 +271,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
+};

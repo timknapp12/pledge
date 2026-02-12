@@ -112,7 +112,7 @@ export const cardBorderRadius = {
   borderBottomLeftRadius: 4,
 };
 
-export function getStatusBgColor(theme: AppTheme, status: string): string {
+export const getStatusBgColor = (theme: AppTheme, status: string): string => {
   switch (status) {
     case 'Active':
       return theme.colors.primaryAlpha20;
@@ -123,9 +123,9 @@ export function getStatusBgColor(theme: AppTheme, status: string): string {
     default:
       return theme.colors.cardBackground;
   }
-}
+};
 
-export function getStatusTextColor(theme: AppTheme, status: string): string {
+export const getStatusTextColor = (theme: AppTheme, status: string): string => {
   switch (status) {
     case 'Active':
       return theme.colors.primary;
@@ -136,4 +136,4 @@ export function getStatusTextColor(theme: AppTheme, status: string): string {
     default:
       return theme.colors.text;
   }
-}
+};

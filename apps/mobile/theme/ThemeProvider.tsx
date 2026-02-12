@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from 'react';
 import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { lightTheme, darkTheme, AppTheme } from './index';
@@ -20,7 +26,7 @@ interface Props {
   children: React.ReactNode;
 }
 
-export function ThemeProvider({ children }: Props) {
+export const ThemeProvider = ({ children }: Props) => {
   const systemColorScheme = useColorScheme();
   const [mode, setMode] = useState<ThemeMode>('system');
   const [isLoaded, setIsLoaded] = useState(false);
@@ -51,21 +57,27 @@ export function ThemeProvider({ children }: Props) {
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, mode, setMode: handleSetMode, isDark }}>
+    <ThemeContext.Provider
+      value={{ theme, mode, setMode: handleSetMode, isDark }}
+    >
       {children}
     </ThemeContext.Provider>
   );
-}
+};
 
-export function useAppTheme() {
+export const useAppTheme = () => {
   const context = useContext(ThemeContext);
   if (!context) {
     throw new Error('useAppTheme must be used within a ThemeProvider');
   }
   return context;
-}
+};
 
-export function useThemeMode() {
+export const useThemeMode = () => {
   const context = useAppTheme();
-  return { mode: context.mode, setMode: context.setMode, isDark: context.isDark };
-}
+  return {
+    mode: context.mode,
+    setMode: context.setMode,
+    isDark: context.isDark,
+  };
+};

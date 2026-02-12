@@ -1,11 +1,11 @@
-import * as anchor from "@coral-xyz/anchor";
-import { Program } from "@coral-xyz/anchor";
+import * as anchor from '@coral-xyz/anchor';
+import { Program } from '@coral-xyz/anchor';
 import {
   Keypair,
   PublicKey,
   SystemProgram,
   LAMPORTS_PER_SOL,
-} from "@solana/web3.js";
+} from '@solana/web3.js';
 import {
   createMint,
   createAssociatedTokenAccount,
@@ -13,8 +13,8 @@ import {
   getAssociatedTokenAddress,
   TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
-import { Pledge } from "../../target/types/pledge";
+} from '@solana/spl-token';
+import { Pledge } from '../../target/types/pledge';
 
 // Default config values matching constants.rs
 export const DEFAULT_TREASURY_SPLIT_BPS = 7000; // 70%
@@ -23,16 +23,20 @@ export const DEFAULT_EDIT_PENALTY_BPS = 1000; // 10%
 export const DEFAULT_GRACE_PERIOD = 86400; // 1 day in seconds
 
 // PDA seeds
-export const CONFIG_SEED = "config";
-export const PLEDGE_SEED = "pledge";
-export const VAULT_SEED = "vault";
+export const CONFIG_SEED = 'config';
+export const PLEDGE_SEED = 'pledge';
+export const VAULT_SEED = 'vault';
 
 // Shared test keypairs (deterministic for consistent testing)
 // These are used across all tests to ensure config PDA matches
-const SHARED_SEED = Buffer.from("shared-test-seed-for-pledge-program");
+const SHARED_SEED = Buffer.from('shared-test-seed-for-pledge-program');
 export const SHARED_ADMIN = Keypair.fromSeed(SHARED_SEED.slice(0, 32));
-export const SHARED_TREASURY = Keypair.fromSeed(Buffer.concat([SHARED_SEED.slice(0, 31), Buffer.from([1])]));
-export const SHARED_CHARITY = Keypair.fromSeed(Buffer.concat([SHARED_SEED.slice(0, 31), Buffer.from([2])]));
+export const SHARED_TREASURY = Keypair.fromSeed(
+  Buffer.concat([SHARED_SEED.slice(0, 31), Buffer.from([1])])
+);
+export const SHARED_CHARITY = Keypair.fromSeed(
+  Buffer.concat([SHARED_SEED.slice(0, 31), Buffer.from([2])])
+);
 
 // Test amounts (USDC has 6 decimals)
 export const USDC_DECIMALS = 6;
@@ -63,7 +67,7 @@ let sharedUsdcMint: PublicKey | null = null;
  * Initialize test context with program, admin, and USDC mint
  * Uses shared keypairs to ensure consistent config PDA across all tests
  */
-export async function setupTestContext(): Promise<TestContext> {
+export const setupTestContext = async (): Promise<TestContext> => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
@@ -80,12 +84,20 @@ export async function setupTestContext(): Promise<TestContext> {
     await airdrop(provider.connection, admin.publicKey, 10 * LAMPORTS_PER_SOL);
   }
 
-  const treasuryBalance = await provider.connection.getBalance(treasury.publicKey);
+  const treasuryBalance = await provider.connection.getBalance(
+    treasury.publicKey
+  );
   if (treasuryBalance < LAMPORTS_PER_SOL) {
-    await airdrop(provider.connection, treasury.publicKey, 1 * LAMPORTS_PER_SOL);
+    await airdrop(
+      provider.connection,
+      treasury.publicKey,
+      1 * LAMPORTS_PER_SOL
+    );
   }
 
-  const charityBalance = await provider.connection.getBalance(charity.publicKey);
+  const charityBalance = await provider.connection.getBalance(
+    charity.publicKey
+  );
   if (charityBalance < LAMPORTS_PER_SOL) {
     await airdrop(provider.connection, charity.publicKey, 1 * LAMPORTS_PER_SOL);
   }
@@ -123,7 +135,7 @@ export async function setupTestContext(): Promise<TestContext> {
  * Initialize the program config (skips if already initialized)
  * Always ensures treasury/charity token accounts exist for the current mint
  */
-export async function initializeConfig(ctx: TestContext): Promise<void> {
+export const initializeConfig = async (ctx: TestContext): Promise<void> => {
   // Always create treasury and charity token accounts for current mint if they don't exist
   // This is needed because each test run may create a new USDC mint
   try {
@@ -150,7 +162,9 @@ export async function initializeConfig(ctx: TestContext): Promise<void> {
 
   // Check if config already exists
   try {
-    const existingConfig = await ctx.program.account.programConfig.fetch(ctx.configPda);
+    const existingConfig = await ctx.program.account.programConfig.fetch(
+      ctx.configPda
+    );
     if (existingConfig) {
       // Config already initialized - skip
       return;
@@ -178,14 +192,18 @@ export async function initializeConfig(ctx: TestContext): Promise<void> {
 /**
  * Create a test user with USDC tokens
  */
-export async function createTestUser(
+export const createTestUser = async (
   ctx: TestContext,
   usdcAmount: number = HUNDRED_USDC
-): Promise<UserContext> {
+): Promise<UserContext> => {
   const keypair = Keypair.generate();
 
   // Airdrop SOL
-  await airdrop(ctx.provider.connection, keypair.publicKey, 5 * LAMPORTS_PER_SOL);
+  await airdrop(
+    ctx.provider.connection,
+    keypair.publicKey,
+    5 * LAMPORTS_PER_SOL
+  );
 
   // Create token account
   const tokenAccount = await createAssociatedTokenAccount(
@@ -211,73 +229,73 @@ export async function createTestUser(
 /**
  * Derive pledge PDA from user and created_at timestamp
  */
-export function derivePledgePda(
+export const derivePledgePda = (
   programId: PublicKey,
   user: PublicKey,
   createdAt: anchor.BN
-): [PublicKey, number] {
+): [PublicKey, number] => {
   return PublicKey.findProgramAddressSync(
     [
       Buffer.from(PLEDGE_SEED),
       user.toBuffer(),
-      createdAt.toArrayLike(Buffer, "le", 8),
+      createdAt.toArrayLike(Buffer, 'le', 8),
     ],
     programId
   );
-}
+};
 
 /**
  * Derive vault PDA from pledge
  */
-export function deriveVaultPda(
+export const deriveVaultPda = (
   programId: PublicKey,
   pledge: PublicKey
-): [PublicKey, number] {
+): [PublicKey, number] => {
   return PublicKey.findProgramAddressSync(
     [Buffer.from(VAULT_SEED), pledge.toBuffer()],
     programId
   );
-}
+};
 
 /**
  * Get current timestamp from the cluster
  */
-export async function getCurrentTimestamp(
+export const getCurrentTimestamp = async (
   connection: anchor.web3.Connection
-): Promise<number> {
+): Promise<number> => {
   const slot = await connection.getSlot();
   const timestamp = await connection.getBlockTime(slot);
   return timestamp || Math.floor(Date.now() / 1000);
-}
+};
 
 /**
  * Airdrop SOL to an account
  */
-export async function airdrop(
+export const airdrop = async (
   connection: anchor.web3.Connection,
   publicKey: PublicKey,
   amount: number
-): Promise<void> {
+): Promise<void> => {
   const signature = await connection.requestAirdrop(publicKey, amount);
-  await connection.confirmTransaction(signature, "confirmed");
-}
+  await connection.confirmTransaction(signature, 'confirmed');
+};
 
 /**
  * Sleep for a specified number of milliseconds
  */
-export function sleep(ms: number): Promise<void> {
+export const sleep = (ms: number): Promise<void> => {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
+};
 
 /**
  * Advance time on localnet by creating empty transactions
  * Note: This only works on localnet and is approximate
  */
-export async function advanceTime(
+export const advanceTime = async (
   connection: anchor.web3.Connection,
   payer: Keypair,
   seconds: number
-): Promise<void> {
+): Promise<void> => {
   // On localnet, each slot is ~400ms, so we need to create transactions
   // to advance the clock. This is approximate.
   const iterations = Math.ceil(seconds / 2);
@@ -291,15 +309,15 @@ export async function advanceTime(
     );
     await anchor.web3.sendAndConfirmTransaction(connection, tx, [payer]);
   }
-}
+};
 
 /**
  * Get token account balance
  */
-export async function getTokenBalance(
+export const getTokenBalance = async (
   connection: anchor.web3.Connection,
   tokenAccount: PublicKey
-): Promise<bigint> {
+): Promise<bigint> => {
   const info = await connection.getTokenAccountBalance(tokenAccount);
   return BigInt(info.value.amount);
 }
@@ -307,12 +325,16 @@ export async function getTokenBalance(
 /**
  * Create a pledge and return its PDA
  */
-export async function createPledge(
+export const createPledge = async (
   ctx: TestContext,
   user: UserContext,
   stakeAmount: number,
   deadlineOffset: number = 3600 // 1 hour from now
-): Promise<{ pledgePda: PublicKey; vaultPda: PublicKey; createdAt: anchor.BN }> {
+): Promise<{
+  pledgePda: PublicKey;
+  vaultPda: PublicKey;
+  createdAt: anchor.BN;
+}> => {
   const currentTimestamp = await getCurrentTimestamp(ctx.provider.connection);
   const createdAt = new anchor.BN(currentTimestamp);
   const deadline = new anchor.BN(currentTimestamp + deadlineOffset);
@@ -342,17 +364,17 @@ export async function createPledge(
 /**
  * Get treasury token account
  */
-export async function getTreasuryTokenAccount(
+export const getTreasuryTokenAccount = async (
   ctx: TestContext
-): Promise<PublicKey> {
+): Promise<PublicKey> => {
   return getAssociatedTokenAddress(ctx.usdcMint, ctx.treasury.publicKey);
 }
 
 /**
  * Get charity token account
  */
-export async function getCharityTokenAccount(
+export const getCharityTokenAccount = async (
   ctx: TestContext
-): Promise<PublicKey> {
+): Promise<PublicKey> => {
   return getAssociatedTokenAddress(ctx.usdcMint, ctx.charity.publicKey);
 }

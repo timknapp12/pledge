@@ -23,7 +23,7 @@ interface UseNotificationsReturn {
   requestPermission: () => Promise<boolean>;
 }
 
-export function useNotifications(): UseNotificationsReturn {
+export const useNotifications = (): UseNotificationsReturn => {
   const { supabase, user, walletAddress } = useAuth();
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
   const [permissionStatus, setPermissionStatus] =
@@ -148,10 +148,10 @@ export function useNotifications(): UseNotificationsReturn {
     registerForPushNotifications,
     requestPermission,
   };
-}
+};
 
 // Helper to schedule a local notification (for testing)
-export async function scheduleTestNotification() {
+export const scheduleTestNotification = async () => {
   await Notifications.scheduleNotificationAsync({
     content: {
       title: 'Test Notification',
@@ -163,4 +163,4 @@ export async function scheduleTestNotification() {
       seconds: 2,
     },
   });
-}
+};

@@ -320,11 +320,11 @@ interface PendingSyncOp {
   createdAt: number;
 }
 
-export async function createPledgeAtomic(
+export const createPledgeAtomic = async (
   program: Program,
   supabase: SupabaseClient,
   params: CreatePledgeParams
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string }> => {
   const pledgeKeypair = Keypair.generate();
 
   // 1. Build and send transaction
@@ -392,11 +392,11 @@ async function queueForRetry(op: PendingSyncOp): Promise<void> {
 
 ```typescript
 // lib/sync/reconcile.ts
-export async function reconcileUserPledges(
+export const reconcileUserPledges = async (
   program: Program,
   supabase: SupabaseClient,
   walletAddress: PublicKey
-): Promise<void> {
+): Promise<void> => {
   // 1. Process any pending sync operations first
   await processPendingSyncQueue(supabase);
 
@@ -493,11 +493,11 @@ Edit is the trickiest operation - user pays penalty, so we must be extra careful
 
 ```typescript
 // lib/sync/atomicOperations.ts
-export async function editPledgeAtomic(
+export const editPledgeAtomic = async (
   program: Program,
   supabase: SupabaseClient,
   params: EditPledgeParams
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string }> => {
   // Store intended edit BEFORE transaction (in case app crashes)
   const pendingEdit = {
     pledgeAddress: params.pledgeAddress,
