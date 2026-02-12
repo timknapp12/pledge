@@ -21,10 +21,20 @@ interface AnimatedPressableProps extends PressableProps {
   style?: ViewStyle;
   disabled?: boolean;
   loading?: boolean;
+  /** When false, Pressable does not take full width (e.g. for round icon buttons). Default true. */
+  fullWidth?: boolean;
 }
 
 interface ButtonProps extends AnimatedPressableProps {
   icon?: IoniconsName;
+}
+
+export type RoundButtonVariant = 'primary' | 'secondary' | 'outline';
+
+interface RoundButtonProps extends Omit<AnimatedPressableProps, 'children'> {
+  icon: IoniconsName;
+  variant?: RoundButtonVariant;
+  size?: number;
 }
 
 function AnimatedPressable({
@@ -35,6 +45,7 @@ function AnimatedPressable({
   style,
   disabled = false,
   loading = false,
+  fullWidth = true,
   ...props
 }: AnimatedPressableProps) {
   const isDisabled = disabled || loading;
@@ -97,14 +108,14 @@ function AnimatedPressable({
       onPressOut={handlePressOut}
       onPress={handlePress}
       disabled={isDisabled}
-      style={{ width: '100%' }}
+      style={fullWidth ? { width: '100%' } : undefined}
       {...props}
     >
       <Animated.View
         style={[
+          fullWidth && { width: '100%' },
           style,
           {
-            width: '100%',
             transform: [{ scale: scaleAnim }],
             opacity: opacityAnim,
           },
@@ -245,6 +256,64 @@ export function OutlineButton({
   );
 }
 
+const ROUND_BUTTON_SIZE = 44;
+
+export function RoundButton({
+  icon,
+  variant = 'primary',
+  size = ROUND_BUTTON_SIZE,
+  style,
+  loading = false,
+  ...props
+}: RoundButtonProps) {
+  const { theme } = useAppTheme();
+  const iconSize = Math.round(size * 0.5);
+  const variantStyles: ViewStyle =
+    variant === 'primary'
+      ? {
+          backgroundColor: theme.colors.buttonPrimaryBg,
+        }
+      : variant === 'secondary'
+        ? {
+            backgroundColor: 'transparent',
+            borderWidth: 1,
+            borderColor: theme.colors.buttonSecondaryBorder,
+          }
+        : {
+            backgroundColor: 'transparent',
+            borderWidth: 1,
+            borderColor: theme.colors.error,
+          };
+  const iconColor =
+    variant === 'primary'
+      ? theme.colors.buttonPrimaryText
+      : variant === 'secondary'
+        ? theme.colors.buttonSecondaryText
+        : theme.colors.error;
+  const roundStyle = StyleSheet.flatten([
+    styles.roundButton,
+    { width: size, height: size, borderRadius: size / 2 },
+    style,
+  ]) as ViewStyle;
+
+  return (
+    <AnimatedPressable
+      loading={loading}
+      fullWidth={false}
+      style={roundStyle}
+      {...props}
+    >
+      <View style={[styles.roundButtonInner, variantStyles, { width: size, height: size, borderRadius: size / 2 }]}>
+        {loading ? (
+          <ActivityIndicator size='small' color={iconColor} />
+        ) : (
+          <Ionicons name={icon} size={iconSize} color={iconColor} />
+        )}
+      </View>
+    </AnimatedPressable>
+  );
+}
+
 const styles = StyleSheet.create({
   buttonBase: {
     ...cardBorderRadius,
@@ -262,5 +331,12 @@ const styles = StyleSheet.create({
   },
   outlineButtonText: {
     fontSize: 16,
+  },
+  roundButton: {
+    alignSelf: 'center',
+  },
+  roundButtonInner: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
