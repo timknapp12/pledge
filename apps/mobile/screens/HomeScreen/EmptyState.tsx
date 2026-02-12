@@ -27,7 +27,7 @@ export const EmptyState = ({ onCreatePress }: EmptyStateProps) => {
         marginBottom: 60,
       }}
     >
-      <CenteredColumn gap={12} style={{ flex: 1, justifyContent: 'center' }}>
+      <CenteredColumn gap={12} flex={1}>
         <Ionicons
           name='flag-outline'
           size={64}
@@ -41,7 +41,7 @@ export const EmptyState = ({ onCreatePress }: EmptyStateProps) => {
         {/* // TODO - think of new copy */}
         <BodySecondary style={{ textAlign: 'center', maxWidth: 280 }}>
           {t(
-            'Create your first pledge to start achieving your goals with skin in the game.',
+            'Create your first pledge to start achieving your goals with skin in the game.'
           )}
         </BodySecondary>
       </CenteredColumn>

@@ -47,17 +47,15 @@ export const PledgeListItem = ({ pledge, onPress }: PledgeListItemProps) => {
   const now = new Date();
   const totalDays = Math.max(
     1,
-    Math.ceil(
-      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
-    ),
+    Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
   );
   const elapsedDays = Math.max(
     0,
-    Math.ceil((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)),
+    Math.ceil((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
   );
   const timeProgress = Math.min(
     100,
-    Math.round((elapsedDays / totalDays) * 100),
+    Math.round((elapsedDays / totalDays) * 100)
   );
 
   return (
@@ -66,7 +64,7 @@ export const PledgeListItem = ({ pledge, onPress }: PledgeListItemProps) => {
         <Row
           style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}
         >
-          <Column style={{ flex: 1 }}>
+          <Column flex={1}>
             <Title3>{pledge.name}</Title3>
             <BodySmallSecondary style={{ marginTop: 4 }}>
               {formatDeadline(pledge.deadline)}

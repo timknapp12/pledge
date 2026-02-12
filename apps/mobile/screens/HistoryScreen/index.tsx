@@ -1,4 +1,9 @@
-import { ActivityIndicator, RefreshControl, View, StyleSheet } from 'react-native';
+import {
+  ActivityIndicator,
+  RefreshControl,
+  View,
+  StyleSheet,
+} from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
@@ -89,14 +94,11 @@ export const HistoryScreen = () => {
 
   return (
     <ScreenContainer style={{ flex: 1 }}>
-      <Column
-        style={{
-          justifyContent: 'space-between',
-          flex: 1,
-          width: '100%',
-        }}
+      <CenteredColumn
+        flex={1}
+        style={{ justifyContent: 'space-between', flex: 1 }}
       >
-        <CenteredColumn style={{ flex: 1 }} gap={24}>
+        <CenteredColumn flex={1} gap={24}>
           {/* HEADER ROW */}
           <Row width='100%'>
             <Title1>{t('History')}</Title1>
@@ -112,13 +114,13 @@ export const HistoryScreen = () => {
               />
             }
           >
-            <Column style={{ flex: 1 }} gap={24}>
+            <Column gap={24}>
               {/* Stats Section */}
               <Column gap={4}>
                 <View style={localStyles.sectionHeader}>
                   <Title3>{t('Stats')}</Title3>
                 </View>
-                <CenteredColumn width='100%' style={{ flex: 1 }} gap={8}>
+                <CenteredColumn gap={8}>
                   <Card style={{ alignItems: 'center' }}>
                     <Title2 style={{ color: theme.colors.primary }}>
                       ${formatUsdcAmount(totalPledged)}
@@ -146,7 +148,7 @@ export const HistoryScreen = () => {
               </Column>
 
               {pledgesLoading ? (
-                <CenteredColumn style={{ flex: 1 }}>
+                <CenteredColumn>
                   <Gap gap={48} />
                   <ActivityIndicator
                     size='large'
@@ -174,7 +176,7 @@ export const HistoryScreen = () => {
             </Column>
           </TrackedScrollView>
         </CenteredColumn>
-      </Column>
+      </CenteredColumn>
     </ScreenContainer>
   );
 };

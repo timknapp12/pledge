@@ -42,6 +42,8 @@ import {
   type DurationPreset,
 } from '@/components';
 
+//TODO- fix add button
+
 const MAX_DAILY_TRACKING_DAYS = 7;
 
 export const CreatePledgeScreen = () => {
@@ -240,7 +242,7 @@ export const CreatePledgeScreen = () => {
       >
         <CenteredColumn style={{ flex: 1 }} gap={24}>
           {/* Header */}
-          <Row gap={16} width='100%'>
+          <Row gap={16} width='100%' justify='flex-start'>
             <Pressable
               onPress={() => router.back()}
               style={[
@@ -258,7 +260,7 @@ export const CreatePledgeScreen = () => {
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           >
             <ScrollView showsVerticalScrollIndicator={false}>
-              <CenteredColumn width='100%' style={{ flex: 1 }}>
+              <CenteredColumn flex={1}>
                 {/* Goal Name */}
                 <View style={localStyles.section}>
                   <FloatingLabelInput
@@ -428,7 +430,7 @@ export const CreatePledgeScreen = () => {
                         size={20}
                         color={theme.colors.textSecondary}
                       />
-                      <Column style={{ flex: 1 }}>
+                      <Column flex={1}>
                         <Body>{todo.text}</Body>
                         {showDailyTracking && todo.days && (
                           <BodySmall

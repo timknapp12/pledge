@@ -37,7 +37,7 @@ export const PastPledgeItem = ({ pledge, onPress }: PastPledgeItemProps) => {
         <Row
           style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}
         >
-          <Column style={{ flex: 1 }}>
+          <Column>
             <Title3>{pledge.name}</Title3>
             <BodySmallSecondary style={{ marginTop: 4 }}>
               {formatDate(pledge.deadline)}
