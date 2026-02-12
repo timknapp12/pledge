@@ -303,13 +303,4 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 150,
   },
-  buttonRow: {
-    flexDirection: 'row',
-    paddingTop: 16,
-    gap: 12,
-    marginTop: 'auto',
-  },
-  buttonWrapper: {
-    flex: 1,
-  },
 });
