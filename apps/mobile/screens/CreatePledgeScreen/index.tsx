@@ -65,7 +65,8 @@ export const CreatePledgeScreen = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState('');
   const [stakeAmount, setStakeAmount] = useState('');
-  const [reminderSettings, setReminderSettings] = useState<ReminderSettings | null>(null);
+  const [reminderSettings, setReminderSettings] =
+    useState<ReminderSettings | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -82,7 +83,8 @@ export const CreatePledgeScreen = () => {
   }, [startDate, endDate]);
 
   // Should show daily tracking option?
-  const showDailyTracking = durationDays > 1 && durationDays <= MAX_DAILY_TRACKING_DAYS;
+  const showDailyTracking =
+    durationDays > 1 && durationDays <= MAX_DAILY_TRACKING_DAYS;
 
   // Check if any todos have day-specific assignments
   const hasDailyAssignments = useMemo(() => {
@@ -100,32 +102,41 @@ export const CreatePledgeScreen = () => {
     setTodos((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
-  const handleStartDateConfirm = useCallback((date: Date) => {
-    setStartDate(date);
-    // Adjust end date if it's before the new start date
-    if (endDate <= date) {
-      const newEnd = new Date(date);
-      newEnd.setDate(newEnd.getDate() + 7);
-      setEndDate(newEnd);
-      setDurationPreset('1week');
-    }
-  }, [endDate]);
+  const handleStartDateConfirm = useCallback(
+    (date: Date) => {
+      setStartDate(date);
+      // Adjust end date if it's before the new start date
+      if (endDate <= date) {
+        const newEnd = new Date(date);
+        newEnd.setDate(newEnd.getDate() + 7);
+        setEndDate(newEnd);
+        setDurationPreset('1week');
+      }
+    },
+    [endDate]
+  );
 
-  const handleDurationConfirm = useCallback((end: Date, preset: DurationPreset) => {
-    setEndDate(end);
-    setDurationPreset(preset);
-    // Reset daily assignments if duration changes to outside tracking range
-    const newDurationDays = Math.ceil(
-      (end.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    if (newDurationDays <= 1 || newDurationDays > MAX_DAILY_TRACKING_DAYS) {
-      setTodos((prev) => prev.map((todo) => ({ ...todo, days: null })));
-    }
-  }, [startDate]);
+  const handleDurationConfirm = useCallback(
+    (end: Date, preset: DurationPreset) => {
+      setEndDate(end);
+      setDurationPreset(preset);
+      // Reset daily assignments if duration changes to outside tracking range
+      const newDurationDays = Math.ceil(
+        (end.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      if (newDurationDays <= 1 || newDurationDays > MAX_DAILY_TRACKING_DAYS) {
+        setTodos((prev) => prev.map((todo) => ({ ...todo, days: null })));
+      }
+    },
+    [startDate]
+  );
 
-  const handleRemindersConfirm = useCallback((settings: ReminderSettings | null) => {
-    setReminderSettings(settings);
-  }, []);
+  const handleRemindersConfirm = useCallback(
+    (settings: ReminderSettings | null) => {
+      setReminderSettings(settings);
+    },
+    []
+  );
 
   const handleDailyTodosConfirm = useCallback((updatedTodos: Todo[]) => {
     setTodos(updatedTodos);
@@ -157,11 +168,15 @@ export const CreatePledgeScreen = () => {
     if (!reminderSettings || reminderSettings.reminders.length === 0) {
       return t('None');
     }
-    const dailyReminder = reminderSettings.reminders.find((r) => r.type === 'daily');
+    const dailyReminder = reminderSettings.reminders.find(
+      (r) => r.type === 'daily'
+    );
     if (dailyReminder && dailyReminder.time) {
       return `${t('Daily at')} ${dailyReminder.time}`;
     }
-    return `${reminderSettings.reminders.length} ${t('Reminders').toLowerCase()}`;
+    return `${reminderSettings.reminders.length} ${t(
+      'Reminders'
+    ).toLowerCase()}`;
   };
 
   const getDailyTrackingLabel = (): string => {
@@ -286,7 +301,7 @@ export const CreatePledgeScreen = () => {
                           <Body>{formatTime(startDate)}</Body>
                         </View>
                         <Ionicons
-                          name="chevron-forward"
+                          name='chevron-forward'
                           size={16}
                           color={theme.colors.textSecondary}
                         />
@@ -326,7 +341,7 @@ export const CreatePledgeScreen = () => {
                           <Body>{formatDate(endDate)}</Body>
                         </View>
                         <Ionicons
-                          name="chevron-forward"
+                          name='chevron-forward'
                           size={16}
                           color={theme.colors.textSecondary}
                         />
@@ -348,14 +363,18 @@ export const CreatePledgeScreen = () => {
                         >
                           <Column>
                             <Body>{t('Track Daily')}</Body>
-                            <BodySmall style={{ color: theme.colors.textSecondary }}>
+                            <BodySmall
+                              style={{ color: theme.colors.textSecondary }}
+                            >
                               {t('Track progress each day')}
                             </BodySmall>
                           </Column>
                           <Row gap={8}>
-                            <BodySecondary>{getDailyTrackingLabel()}</BodySecondary>
+                            <BodySecondary>
+                              {getDailyTrackingLabel()}
+                            </BodySecondary>
                             <Ionicons
-                              name="chevron-forward"
+                              name='chevron-forward'
                               size={16}
                               color={theme.colors.textSecondary}
                             />
@@ -380,7 +399,7 @@ export const CreatePledgeScreen = () => {
                       <Row gap={8}>
                         <BodySecondary>{getRemindersLabel()}</BodySecondary>
                         <Ionicons
-                          name="chevron-forward"
+                          name='chevron-forward'
                           size={16}
                           color={theme.colors.textSecondary}
                         />
@@ -412,8 +431,24 @@ export const CreatePledgeScreen = () => {
                       <Column style={{ flex: 1 }}>
                         <Body>{todo.text}</Body>
                         {showDailyTracking && todo.days && (
-                          <BodySmall style={{ color: theme.colors.textSecondary }}>
-                            {todo.days.map((d) => t(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d])).join(', ')}
+                          <BodySmall
+                            style={{ color: theme.colors.textSecondary }}
+                          >
+                            {todo.days
+                              .map((d) =>
+                                t(
+                                  [
+                                    'Sun',
+                                    'Mon',
+                                    'Tue',
+                                    'Wed',
+                                    'Thu',
+                                    'Fri',
+                                    'Sat',
+                                  ][d]
+                                )
+                              )
+                              .join(', ')}
                           </BodySmall>
                         )}
                       </Column>
