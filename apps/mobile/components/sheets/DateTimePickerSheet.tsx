@@ -1,7 +1,7 @@
 import { forwardRef, useState, useCallback, useEffect } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import BottomSheet from '@gorhom/bottom-sheet';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useTranslation } from 'react-i18next';
 import { useThemeMode } from '@/theme/ThemeProvider';
 import { SHEET_COLORS } from '@/theme/colors';
@@ -39,26 +39,28 @@ export const DateTimePickerSheet = forwardRef<
     const colors = isDark ? SHEET_COLORS.dark : SHEET_COLORS.light;
 
     const [selectedDate, setSelectedDate] = useState(value);
-    const [pickerMode, setPickerMode] = useState<'date' | 'time'>(
-      mode === 'time' ? 'time' : 'date'
-    );
     const [hasBeenOpened, setHasBeenOpened] = useState(false);
-    const [showSpinner, setShowSpinner] = useState(false);
 
     useEffect(() => {
       setSelectedDate(value);
     }, [value]);
 
-    const handleShowPicker = useCallback((newMode: 'date' | 'time') => {
-      setPickerMode(newMode);
-      setShowSpinner(true);
-    }, []);
-
-    const handleDateChange = useCallback((_event: any, date?: Date) => {
-      if (date) {
-        setSelectedDate(date);
-      }
-    }, []);
+    const openPicker = useCallback(
+      (pickerMode: 'date' | 'time') => {
+        DateTimePickerAndroid.open({
+          value: selectedDate,
+          mode: pickerMode,
+          display: 'spinner',
+          minimumDate: pickerMode === 'date' ? minimumDate : undefined,
+          maximumDate: pickerMode === 'date' ? maximumDate : undefined,
+          onChange: (event, date) => {
+            if (event.type === 'dismissed' || !date) return;
+            setSelectedDate(date);
+          },
+        });
+      },
+      [selectedDate, minimumDate, maximumDate]
+    );
 
     const handleConfirm = useCallback(() => {
       onConfirm(selectedDate);
@@ -71,27 +73,25 @@ export const DateTimePickerSheet = forwardRef<
       setSelectedDate(new Date());
     }, []);
 
-    const formatDate = (date: Date) => {
-      return date.toLocaleDateString(undefined, {
+    const formatDate = (date: Date) =>
+      date.toLocaleDateString(undefined, {
         weekday: 'short',
         month: 'short',
         day: 'numeric',
         year: 'numeric',
       });
-    };
 
-    const formatTime = (date: Date) => {
-      return date.toLocaleTimeString(undefined, {
+    const formatTime = (date: Date) =>
+      date.toLocaleTimeString(undefined, {
         hour: 'numeric',
         minute: '2-digit',
       });
-    };
 
     return (
       <BaseSheet
         ref={ref}
         title={title}
-        snapPoints={['55%']}
+        snapPoints={['40%']}
         onClose={onClose}
         onOpen={() => setHasBeenOpened(true)}
       >
@@ -109,26 +109,14 @@ export const DateTimePickerSheet = forwardRef<
                   style={[
                     styles.modeButton,
                     {
-                      backgroundColor:
-                        pickerMode === 'date'
-                          ? colors.primary
-                          : colors.cardBackground,
-                      borderColor:
-                        pickerMode === 'date' ? colors.primary : colors.border,
+                      backgroundColor: colors.cardBackground,
+                      borderColor: colors.border,
                     },
                   ]}
-                  onPress={() => handleShowPicker('date')}
+                  onPress={() => openPicker('date')}
                 >
                   <Text
-                    style={[
-                      styles.modeButtonText,
-                      {
-                        color:
-                          pickerMode === 'date'
-                            ? colors.iconOnPrimary
-                            : colors.text,
-                      },
-                    ]}
+                    style={[styles.modeButtonText, { color: colors.text }]}
                   >
                     {formatDate(selectedDate)}
                   </Text>
@@ -137,26 +125,14 @@ export const DateTimePickerSheet = forwardRef<
                   style={[
                     styles.modeButton,
                     {
-                      backgroundColor:
-                        pickerMode === 'time'
-                          ? colors.primary
-                          : colors.cardBackground,
-                      borderColor:
-                        pickerMode === 'time' ? colors.primary : colors.border,
+                      backgroundColor: colors.cardBackground,
+                      borderColor: colors.border,
                     },
                   ]}
-                  onPress={() => handleShowPicker('time')}
+                  onPress={() => openPicker('time')}
                 >
                   <Text
-                    style={[
-                      styles.modeButtonText,
-                      {
-                        color:
-                          pickerMode === 'time'
-                            ? colors.iconOnPrimary
-                            : colors.text,
-                      },
-                    ]}
+                    style={[styles.modeButtonText, { color: colors.text }]}
                   >
                     {formatTime(selectedDate)}
                   </Text>
@@ -174,7 +150,7 @@ export const DateTimePickerSheet = forwardRef<
                     borderColor: colors.border,
                   },
                 ]}
-                onPress={() => handleShowPicker(mode)}
+                onPress={() => openPicker(mode)}
               >
                 <Text style={[styles.modeButtonText, { color: colors.text }]}>
                   {mode === 'date'
@@ -182,20 +158,6 @@ export const DateTimePickerSheet = forwardRef<
                     : formatTime(selectedDate)}
                 </Text>
               </Pressable>
-            )}
-
-            {showSpinner && (
-              <View style={styles.pickerContainer}>
-                <DateTimePicker
-                  value={selectedDate}
-                  mode={mode === 'datetime' ? pickerMode : mode}
-                  display='spinner'
-                  onChange={handleDateChange}
-                  minimumDate={minimumDate}
-                  maximumDate={maximumDate}
-                  themeVariant={isDark ? 'dark' : 'light'}
-                />
-              </View>
             )}
 
             <Row>
@@ -252,9 +214,5 @@ const styles = StyleSheet.create({
   modeButtonText: {
     fontSize: 15,
     fontWeight: '500',
-  },
-  pickerContainer: {
-    flex: 1,
-    justifyContent: 'center',
   },
 });
