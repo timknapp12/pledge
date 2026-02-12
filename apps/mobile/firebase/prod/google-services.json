@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "765611262272",
+    "project_id": "pledge-mainnet",
+    "storage_bucket": "pledge-mainnet.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:765611262272:android:3845c3aadc2f35b3dc7aa5",
+        "android_client_info": {
+          "package_name": "com.pledge.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAsIhsBdiHEOLEwlBTHlZOSRaXVhPXD5kw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
