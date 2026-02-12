@@ -2,7 +2,11 @@ import { useEffect, useCallback, useRef, useState } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 import { useAuth } from '../contexts/AuthContext';
-import { reconcileUserPledges, ReconciliationResult, getQueueStats } from '../lib/sync';
+import {
+  reconcileUserPledges,
+  ReconciliationResult,
+  getQueueStats,
+} from '../lib/sync';
 
 interface UseReconciliationReturn {
   isReconciling: boolean;
@@ -19,10 +23,12 @@ interface UseReconciliationReturn {
  *
  * Also provides manual reconcileNow() for on-demand sync.
  */
-export function useReconciliation(): UseReconciliationReturn {
+export const useReconciliation = (): UseReconciliationReturn => {
   const { walletAddress, supabase, user } = useAuth();
   const [isReconciling, setIsReconciling] = useState(false);
-  const [lastResult, setLastResult] = useState<ReconciliationResult | null>(null);
+  const [lastResult, setLastResult] = useState<ReconciliationResult | null>(
+    null
+  );
   const [pendingCount, setPendingCount] = useState(0);
 
   // Track if we've done initial reconciliation
@@ -81,7 +87,10 @@ export function useReconciliation(): UseReconciliationReturn {
       }
     };
 
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    const subscription = AppState.addEventListener(
+      'change',
+      handleAppStateChange
+    );
     return () => subscription.remove();
   }, [walletAddress, user, runReconciliation]);
 
@@ -117,4 +126,4 @@ export function useReconciliation(): UseReconciliationReturn {
     pendingCount,
     reconcileNow: runReconciliation,
   };
-}
+};

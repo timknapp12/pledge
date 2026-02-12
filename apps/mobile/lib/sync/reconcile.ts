@@ -29,10 +29,10 @@ import {
  * 2. Fetch on-chain pledges for user
  * 3. Compare with DB and fix discrepancies
  */
-export async function reconcileUserPledges(
+export const reconcileUserPledges = async (
   supabase: SupabaseClient,
   walletAddress: string
-): Promise<ReconciliationResult> {
+): Promise<ReconciliationResult> => {
   const result: ReconciliationResult = {
     processedQueueItems: 0,
     createdInDb: 0,
@@ -110,7 +110,7 @@ export async function reconcileUserPledges(
   }
 
   return result;
-}
+};
 
 /**
  * Process all pending sync operations from the queue
@@ -279,11 +279,17 @@ async function createRecoveredPledge(
     if (error.code === '23505') {
       return { success: true };
     }
-    return { success: false, error: `Failed to create recovered pledge: ${error.message}` };
+    return {
+      success: false,
+      error: `Failed to create recovered pledge: ${error.message}`,
+    };
   }
 
   if (__DEV__) {
-    console.log('[Reconcile] Created recovered pledge:', onChain.address.toBase58());
+    console.log(
+      '[Reconcile] Created recovered pledge:',
+      onChain.address.toBase58()
+    );
   }
 
   return { success: true };
@@ -303,11 +309,19 @@ async function updatePledgeStatus(
     .eq('on_chain_address', onChainAddress);
 
   if (error) {
-    return { success: false, error: `Failed to update status: ${error.message}` };
+    return {
+      success: false,
+      error: `Failed to update status: ${error.message}`,
+    };
   }
 
   if (__DEV__) {
-    console.log('[Reconcile] Updated pledge status:', onChainAddress, '->', status);
+    console.log(
+      '[Reconcile] Updated pledge status:',
+      onChainAddress,
+      '->',
+      status
+    );
   }
 
   return { success: true };

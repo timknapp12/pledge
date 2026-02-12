@@ -59,7 +59,7 @@ export interface Template {
 
 
 // Fetch all pledges for the current user
-export function usePledges() {
+export const usePledges = () => {
   const { supabase, walletAddress } = useAuth();
 
   return useQuery({
@@ -84,7 +84,7 @@ export function usePledges() {
 }
 
 // Fetch active pledges only (derived from usePledges to share cache)
-export function useActivePledges() {
+export const useActivePledges = () => {
   const pledgesQuery = usePledges();
 
   return {
@@ -96,7 +96,7 @@ export function useActivePledges() {
 }
 
 // Fetch a single pledge with its daily progress
-export function usePledge(pledgeId: string | null) {
+export const usePledge = (pledgeId: string | null) => {
   const { supabase, walletAddress } = useAuth();
 
   return useQuery({
@@ -118,7 +118,7 @@ export function usePledge(pledgeId: string | null) {
 }
 
 // Fetch daily progress for a pledge
-export function useDailyProgress(pledgeId: string | null, date?: string) {
+export const useDailyProgress = (pledgeId: string | null, date?: string) => {
   const { supabase, walletAddress } = useAuth();
 
   return useQuery({
@@ -146,13 +146,13 @@ export function useDailyProgress(pledgeId: string | null, date?: string) {
 }
 
 // Get today's progress for a pledge
-export function useTodayProgress(pledgeId: string | null) {
+export const useTodayProgress = (pledgeId: string | null) => {
   const today = new Date().toISOString().split('T')[0];
   return useDailyProgress(pledgeId, today);
 }
 
 // Update daily progress (check/uncheck todos)
-export function useUpdateDailyProgress() {
+export const useUpdateDailyProgress = () => {
   const { supabase } = useAuth();
   const queryClient = useQueryClient();
 
@@ -195,7 +195,7 @@ export function useUpdateDailyProgress() {
 }
 
 // Create a new pledge in the database (after on-chain creation succeeds)
-export function useCreatePledgeInDb() {
+export const useCreatePledgeInDb = () => {
   const { supabase, user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -242,7 +242,7 @@ export function useCreatePledgeInDb() {
 }
 
 // Update pledge status in database
-export function useUpdatePledgeStatus() {
+export const useUpdatePledgeStatus = () => {
   const { supabase } = useAuth();
   const queryClient = useQueryClient();
 
@@ -281,7 +281,7 @@ export function useUpdatePledgeStatus() {
 }
 
 // Fetch user's templates
-export function useTemplates() {
+export const useTemplates = () => {
   const { supabase, walletAddress } = useAuth();
 
   return useQuery({
@@ -302,7 +302,7 @@ export function useTemplates() {
 }
 
 // Create a new template
-export function useCreateTemplate() {
+export const useCreateTemplate = () => {
   const { supabase, user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -335,12 +335,12 @@ export function useCreateTemplate() {
 }
 
 // Calculate completion percentage from daily progress
-export function calculateCompletionPercentage(
+export const calculateCompletionPercentage = (
   todos: Todo[],
   dailyProgress: DailyProgress[],
   startDate: Date,
   endDate: Date
-): number {
+): number => {
   if (todos.length === 0) return 0;
 
   let totalExpectedCompletions = 0;
@@ -378,7 +378,7 @@ export function calculateCompletionPercentage(
 }
 
 // Format stake amount from lamports to USDC string
-export function formatUsdcAmount(lamports: number): string {
+export const formatUsdcAmount = (lamports: number): string => {
   const usdc = lamports / 1_000_000;
   return usdc.toLocaleString('en-US', {
     minimumFractionDigits: 2,
@@ -387,7 +387,7 @@ export function formatUsdcAmount(lamports: number): string {
 }
 
 // Parse USDC string to lamports
-export function parseUsdcToLamports(usdcString: string): number {
+export const parseUsdcToLamports = (usdcString: string): number => {
   const usdc = parseFloat(usdcString.replace(/,/g, ''));
   if (isNaN(usdc)) return 0;
   return Math.round(usdc * 1_000_000);

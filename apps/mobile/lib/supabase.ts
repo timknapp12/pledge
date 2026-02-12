@@ -3,7 +3,8 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!;
-const SUPABASE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
+const SUPABASE_PUBLISHABLE_KEY =
+  process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
 
 const AUTH_TOKEN_KEY = 'pledge_auth_token';
 
@@ -33,10 +34,13 @@ const secureStoreAdapter = {
 };
 
 // Create a basic Supabase client (used before authentication)
-export const supabaseAnon = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+export const supabaseAnon = createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY
+);
 
 // Create an authenticated Supabase client with a custom JWT
-export function createAuthenticatedClient(jwt: string): SupabaseClient {
+export const createAuthenticatedClient = (jwt: string): SupabaseClient => {
   return createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     global: {
       headers: {
@@ -44,24 +48,24 @@ export function createAuthenticatedClient(jwt: string): SupabaseClient {
       },
     },
   });
-}
+};
 
 // Store auth token securely
-export async function storeAuthToken(token: string): Promise<void> {
+export const storeAuthToken = async (token: string): Promise<void> => {
   await secureStoreAdapter.setItem(AUTH_TOKEN_KEY, token);
 }
 
 // Get stored auth token
-export async function getStoredAuthToken(): Promise<string | null> {
+export const getStoredAuthToken = async (): Promise<string | null> => {
   return await secureStoreAdapter.getItem(AUTH_TOKEN_KEY);
 }
 
 // Remove auth token
-export async function removeAuthToken(): Promise<void> {
+export const removeAuthToken = async (): Promise<void> => {
   await secureStoreAdapter.removeItem(AUTH_TOKEN_KEY);
 }
 
 // Get the Edge Function URL for verify-wallet
-export function getVerifyWalletUrl(): string {
+export const getVerifyWalletUrl = (): string => {
   return `${SUPABASE_URL}/functions/v1/verify-wallet`;
-}
+};

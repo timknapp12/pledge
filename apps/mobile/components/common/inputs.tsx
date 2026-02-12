@@ -22,7 +22,7 @@ interface FloatingLabelInputProps extends Omit<TextInputProps, 'placeholder'> {
 
 const AnimatedText = Animated.createAnimatedComponent(Text);
 
-export function FloatingLabelInput({
+export const FloatingLabelInput = ({
   label,
   value,
   onChangeText,
@@ -31,7 +31,7 @@ export function FloatingLabelInput({
   onFocus,
   onBlur,
   ...props
-}: FloatingLabelInputProps) {
+}: FloatingLabelInputProps) => {
   const { theme } = useAppTheme();
   const [isFocused, setIsFocused] = useState(false);
 
@@ -134,7 +134,7 @@ interface TextAreaProps
   minHeight?: number;
 }
 
-export function TextArea({
+export const TextArea = ({
   label,
   value,
   onChangeText,
@@ -144,7 +144,7 @@ export function TextArea({
   onFocus,
   onBlur,
   ...props
-}: TextAreaProps) {
+}: TextAreaProps) => {
   const { theme } = useAppTheme();
   const [isFocused, setIsFocused] = useState(false);
 

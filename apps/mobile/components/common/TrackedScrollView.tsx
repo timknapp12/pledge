@@ -13,14 +13,14 @@ interface TrackedScrollViewProps extends ScrollViewProps {
 
 const TAB_BAR_INSET = 60;
 
-export function TrackedScrollView({
+export const TrackedScrollView = ({
   children,
   onScrollBeginDrag,
   onScrollEndDrag,
   onMomentumScrollEnd,
   contentContainerStyle,
   ...props
-}: TrackedScrollViewProps) {
+}: TrackedScrollViewProps) => {
   const { setScrolling } = useScrollContext();
   const scrollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -32,7 +32,7 @@ export function TrackedScrollView({
       setScrolling(true);
       onScrollBeginDrag?.(e);
     },
-    [setScrolling, onScrollBeginDrag],
+    [setScrolling, onScrollBeginDrag]
   );
 
   const handleScrollEnd = useCallback(() => {
@@ -53,7 +53,7 @@ export function TrackedScrollView({
       }
       onScrollEndDrag?.(e);
     },
-    [handleScrollEnd, onScrollEndDrag],
+    [handleScrollEnd, onScrollEndDrag]
   );
 
   const handleMomentumScrollEnd = useCallback(
@@ -61,7 +61,7 @@ export function TrackedScrollView({
       handleScrollEnd();
       onMomentumScrollEnd?.(e);
     },
-    [handleScrollEnd, onMomentumScrollEnd],
+    [handleScrollEnd, onMomentumScrollEnd]
   );
 
   return (
@@ -80,4 +80,4 @@ export function TrackedScrollView({
       {children}
     </ScrollView>
   );
-}
+};

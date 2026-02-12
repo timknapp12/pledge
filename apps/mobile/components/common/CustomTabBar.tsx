@@ -95,7 +95,7 @@ function TabItem({ routeName, isFocused, onPress, onLongPress }: TabItemProps) {
   );
 }
 
-export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
+export const CustomTabBar = ({ state, navigation }: BottomTabBarProps) => {
   const { theme } = useAppTheme();
   const { isDark } = useThemeMode();
   const { isScrolling } = useScrollContext();

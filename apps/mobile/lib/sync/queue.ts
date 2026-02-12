@@ -14,11 +14,11 @@ const MAX_ATTEMPTS = 5;
 /**
  * Add an operation to the retry queue
  */
-export async function queueForRetry(
+export const queueForRetry = async (
   type: SyncOperationType,
   txSignature: string,
   data: Record<string, unknown>,
-): Promise<void> {
+): Promise<void> => {
   const op: PendingSyncOp = {
     id: `${type}_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
     type,
@@ -41,7 +41,7 @@ export async function queueForRetry(
 /**
  * Get all pending operations from the queue
  */
-export async function getPendingOperations(): Promise<PendingSyncOp[]> {
+export const getPendingOperations = async (): Promise<PendingSyncOp[]> => {
   const stored = await AsyncStorage.getItem(PENDING_SYNC_KEY);
   if (!stored) return [];
   return JSON.parse(stored);
@@ -50,7 +50,7 @@ export async function getPendingOperations(): Promise<PendingSyncOp[]> {
 /**
  * Remove a successfully processed operation from the queue
  */
-export async function removeFromQueue(opId: string): Promise<void> {
+export const removeFromQueue = async (opId: string): Promise<void> => {
   const queue = await getPendingOperations();
   const filtered = queue.filter((op) => op.id !== opId);
 
@@ -68,7 +68,7 @@ export async function removeFromQueue(opId: string): Promise<void> {
 /**
  * Update an operation's attempt count (for retry tracking)
  */
-export async function incrementAttempts(opId: string): Promise<boolean> {
+export const incrementAttempts = async (opId: string): Promise<boolean> => {
   const queue = await getPendingOperations();
   const opIndex = queue.findIndex((op) => op.id === opId);
 
@@ -96,7 +96,7 @@ export async function incrementAttempts(opId: string): Promise<boolean> {
 /**
  * Clear the entire queue (use with caution)
  */
-export async function clearQueue(): Promise<void> {
+export const clearQueue = async (): Promise<void> => {
   await AsyncStorage.removeItem(PENDING_SYNC_KEY);
   if (__DEV__) {
     console.log(`[Sync Queue] Queue cleared`);
@@ -106,11 +106,11 @@ export async function clearQueue(): Promise<void> {
 /**
  * Get queue statistics for debugging
  */
-export async function getQueueStats(): Promise<{
+export const getQueueStats = async (): Promise<{
   total: number;
   byType: Record<SyncOperationType, number>;
   oldestTimestamp: number | null;
-}> {
+}> => {
   const queue = await getPendingOperations();
 
   const byType: Record<SyncOperationType, number> = {

@@ -1,7 +1,7 @@
 import { Text, TextProps, StyleSheet } from 'react-native';
 import { useAppTheme } from '@/theme/ThemeProvider';
 
-export function Title1({ style, ...props }: TextProps) {
+export const Title1 = ({ style, ...props }: TextProps) => {
   const { theme } = useAppTheme();
   return (
     <Text
@@ -11,7 +11,7 @@ export function Title1({ style, ...props }: TextProps) {
   );
 }
 
-export function Title2({ style, ...props }: TextProps) {
+export const Title2 = ({ style, ...props }: TextProps) => {
   const { theme } = useAppTheme();
   return (
     <Text
@@ -21,7 +21,7 @@ export function Title2({ style, ...props }: TextProps) {
   );
 }
 
-export function Title3({ style, ...props }: TextProps) {
+export const Title3 = ({ style, ...props }: TextProps) => {
   const { theme } = useAppTheme();
   return (
     <Text
@@ -31,7 +31,7 @@ export function Title3({ style, ...props }: TextProps) {
   );
 }
 
-export function Body({ style, ...props }: TextProps) {
+export const Body = ({ style, ...props }: TextProps) => {
   const { theme } = useAppTheme();
   return (
     <Text
@@ -41,7 +41,7 @@ export function Body({ style, ...props }: TextProps) {
   );
 }
 
-export function BodySecondary({ style, ...props }: TextProps) {
+export const BodySecondary = ({ style, ...props }: TextProps) => {
   const { theme } = useAppTheme();
   return (
     <Text
@@ -51,7 +51,7 @@ export function BodySecondary({ style, ...props }: TextProps) {
   );
 }
 
-export function BodySmall({ style, ...props }: TextProps) {
+export const BodySmall = ({ style, ...props }: TextProps) => {
   const { theme } = useAppTheme();
   return (
     <Text
@@ -61,7 +61,7 @@ export function BodySmall({ style, ...props }: TextProps) {
   );
 }
 
-export function BodySmallSecondary({ style, ...props }: TextProps) {
+export const BodySmallSecondary = ({ style, ...props }: TextProps) => {
   const { theme } = useAppTheme();
   return (
     <Text
@@ -71,7 +71,7 @@ export function BodySmallSecondary({ style, ...props }: TextProps) {
   );
 }
 
-export function ErrorText({ style, ...props }: TextProps) {
+export const ErrorText = ({ style, ...props }: TextProps) => {
   const { theme } = useAppTheme();
   return (
     <Text
@@ -81,7 +81,7 @@ export function ErrorText({ style, ...props }: TextProps) {
   );
 }
 
-export function SuccessText({ style, ...props }: TextProps) {
+export const SuccessText = ({ style, ...props }: TextProps) => {
   const { theme } = useAppTheme();
   return (
     <Text
@@ -91,7 +91,7 @@ export function SuccessText({ style, ...props }: TextProps) {
   );
 }
 
-export function MonoText({ style, ...props }: TextProps) {
+export const MonoText = ({ style, ...props }: TextProps) => {
   const { theme } = useAppTheme();
   return (
     <Text
