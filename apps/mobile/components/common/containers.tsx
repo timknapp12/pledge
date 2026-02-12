@@ -37,7 +37,13 @@ export function Column({ gap, padding, width, style, ...props }: GapViewProps) {
   );
 }
 
-export function CenteredColumn({ gap, padding, width, style, ...props }: GapViewProps) {
+export function CenteredColumn({
+  gap,
+  padding,
+  width,
+  style,
+  ...props
+}: GapViewProps) {
   return (
     <View
       style={[
@@ -52,11 +58,34 @@ export function CenteredColumn({ gap, padding, width, style, ...props }: GapView
   );
 }
 
-export function Row({ gap, padding, width, style, ...props }: GapViewProps) {
+type FlexAlign = 'flex-start' | 'flex-end' | 'center' | 'stretch' | 'baseline';
+type FlexJustify =
+  | 'flex-start'
+  | 'flex-end'
+  | 'center'
+  | 'space-between'
+  | 'space-around'
+  | 'space-evenly';
+
+interface RowProps extends GapViewProps {
+  justify?: FlexJustify;
+  align?: FlexAlign;
+}
+
+export function Row({
+  gap = 12,
+  padding,
+  width,
+  justify = 'center',
+  align = 'center',
+  style,
+  ...props
+}: RowProps) {
   return (
     <View
       style={[
         styles.row,
+        { justifyContent: justify, alignItems: align },
         gap !== undefined && { gap },
         padding !== undefined && { padding },
         width !== undefined && { width: width as any },
@@ -119,7 +148,6 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: 'row',
-    alignItems: 'center',
   },
   separator: {
     marginVertical: 30,
