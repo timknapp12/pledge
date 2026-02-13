@@ -17,6 +17,7 @@ import {
   usePledge,
   useTodayProgress,
   useUpdateDailyProgress,
+  useUpdatePledgeStatus,
   formatUsdcAmount,
 } from '@/hooks/useSupabase';
 import { useProgram } from '@/hooks/useProgram';
@@ -82,7 +83,8 @@ export const PledgeDetailScreen = () => {
   const { data: todayProgress, isLoading: progressLoading } =
     useTodayProgress(id);
   const updateProgress = useUpdateDailyProgress();
-  const { reportCompletion } = useProgram();
+  const updatePledgeStatus = useUpdatePledgeStatus();
+  const { reportAndSettle } = useProgram();
 
   const [completedTodos, setCompletedTodos] = useState<number[]>([]);
   const [isReporting, setIsReporting] = useState(false);
@@ -125,10 +127,12 @@ export const PledgeDetailScreen = () => {
     return Math.round((completedTodos.length / pledge.todos.length) * 100);
   };
 
-  const handleReportCompletion = async () => {
+  const handleReportAndSettle = async () => {
     if (!pledge || !walletAddress) return;
 
     const completionPct = calculateProgress();
+    const finalStatus: 'Completed' | 'Forfeited' =
+      completionPct > 0 ? 'Completed' : 'Forfeited';
 
     Alert.alert(
       t('Report Completion'),
@@ -148,14 +152,23 @@ export const PledgeDetailScreen = () => {
           onPress: async () => {
             setIsReporting(true);
             try {
-              await reportCompletion(pledge.on_chain_address, completionPct);
+              const signature = await reportAndSettle(
+                pledge.on_chain_address,
+                completionPct
+              );
+              await updatePledgeStatus.mutateAsync({
+                pledgeId: pledge.id,
+                status: finalStatus,
+                completionPercentage: completionPct,
+                settleTxSignature: signature,
+              });
               refetch();
-              Alert.alert(t('Success'), t('Completion reported successfully'));
+              Alert.alert(t('Success'), t('Pledge settled successfully'));
             } catch (err: any) {
-              console.error('Report completion error:', err);
+              console.error('Report and settle error:', err);
               Alert.alert(
                 t('Error'),
-                err.message || 'Failed to report completion'
+                err.message || 'Failed to settle pledge'
               );
             } finally {
               setIsReporting(false);
@@ -198,8 +211,6 @@ export const PledgeDetailScreen = () => {
   }
 
   const progress = calculateProgress();
-  const isExpired = new Date(pledge.deadline) < new Date();
-  const canReport = pledge.status === 'Active' && isExpired;
 
   return (
     <ScreenContainer style={{ flex: 1, gap: 24, paddingBottom: 32 }}>
@@ -330,19 +341,36 @@ export const PledgeDetailScreen = () => {
 
       {pledge.status === 'Active' && (
         <CenteredColumn>
-          {canReport ? (
-            <PrimaryButton
-              onPress={handleReportCompletion}
-              disabled={isReporting}
-              loading={isReporting}
-            >
-              {t('Report Completion')}
-            </PrimaryButton>
-          ) : (
-            <BodySmallSecondary style={{ textAlign: 'center' }}>
-              {t('Complete your tasks daily. Report after deadline.')}
-            </BodySmallSecondary>
-          )}
+          <PrimaryButton
+            onPress={handleReportAndSettle}
+            disabled={isReporting}
+            loading={isReporting}
+          >
+            {t('Report Completion')}
+          </PrimaryButton>
+        </CenteredColumn>
+      )}
+
+      {pledge.status === 'Reported' && (
+        <CenteredColumn gap={8}>
+          <View
+            style={[
+              localStyles.reportedIcon,
+              { backgroundColor: theme.colors.primary },
+            ]}
+          >
+            <Ionicons
+              name='checkmark-done'
+              size={28}
+              color={theme.colors.iconOnPrimary}
+            />
+          </View>
+          <Body style={{ color: theme.colors.primary, fontWeight: '600' }}>
+            {t('Completion Reported')}
+          </Body>
+          <BodySmallSecondary style={{ textAlign: 'center' }}>
+            {t('Awaiting settlement after deadline')}
+          </BodySmallSecondary>
         </CenteredColumn>
       )}
     </ScreenContainer>
@@ -381,6 +409,13 @@ const localStyles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 8,
     borderWidth: 1,
+  },
+  reportedIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   checkboxIcon: {
     width: 24,
