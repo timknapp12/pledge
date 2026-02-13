@@ -15,7 +15,7 @@
   "No active pledges": "No active pledges",
   "Create your first pledge to start achieving your goals with skin in the game.": "Create your first pledge to start achieving your goals with skin in the game.",
   "Create Pledge": "Create Pledge",
-  "Staked": "Staked",
+  "Pledged": "Pledged",
   "tasks": "tasks",
   "Active": "Active",
   "Reported": "Reported",
@@ -33,7 +33,7 @@
   "1 Week": "1 Week",
   "1 Month": "1 Month",
   "Custom": "Custom",
-  "To-Do Items": "To-Do Items",
+  "Action Items": "Action Items",
   "Add a task": "Add a task",
   "Add Task": "Add Task",
   "Stake Amount": "Stake Amount",
@@ -131,5 +131,6 @@
   "Track Daily": "Track Daily",
   "Track progress each day": "Track progress each day",
   "Daily at": "Daily at",
-  "Custom schedule": "Custom schedule"
+  "Custom schedule": "Custom schedule",
+  "Enter a task before adding": "Enter a task before adding"
 }

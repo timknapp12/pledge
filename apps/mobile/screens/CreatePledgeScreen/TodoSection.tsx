@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { Pressable, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,6 +8,7 @@ import {
   Title3,
   Body,
   BodySmall,
+  ErrorText,
   Row,
   Column,
   FloatingLabelInput,
@@ -36,10 +39,11 @@ export const TodoSection = ({
 }: TodoSectionProps) => {
   const { t } = useTranslation();
   const { theme } = useAppTheme();
+  const [showEmptyError, setShowEmptyError] = useState(false);
 
   return (
     <View style={styles.section}>
-      <Title3 style={{ marginBottom: 12 }}>{t('To-Do Items')}</Title3>
+      <Title3 style={{ marginBottom: 12 }}>{t('Action Items')}</Title3>
 
       {todos.map((todo, index) => (
         <Row
@@ -78,19 +82,36 @@ export const TodoSection = ({
           <FloatingLabelInput
             label={t('Add a task')}
             value={newTodo}
-            onChangeText={onNewTodoChange}
+            onChangeText={(text) => {
+              if (showEmptyError) setShowEmptyError(false);
+              onNewTodoChange(text);
+            }}
             onSubmitEditing={onAddTodo}
             returnKeyType='done'
             onFocus={onInputFocus}
           />
         </View>
         <Pressable
-          onPress={onAddTodo}
+          onPress={() => {
+            try {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            } catch {}
+            if (!newTodo.trim()) {
+              setShowEmptyError(true);
+              return;
+            }
+            onAddTodo();
+          }}
           style={[styles.addButton, { backgroundColor: theme.colors.primary }]}
         >
           <Ionicons name='add' size={24} color={theme.colors.iconOnPrimary} />
         </Pressable>
       </Row>
+      {showEmptyError && (
+        <ErrorText style={{ marginTop: 4 }}>
+          {t('Enter a task before adding')}
+        </ErrorText>
+      )}
     </View>
   );
 };

@@ -62,7 +62,7 @@ export const PastPledgeItem = ({ pledge, onPress }: PastPledgeItemProps) => {
 
         <Row style={{ marginTop: 12, justifyContent: 'space-between' }}>
           <BodySecondary>
-            {t('Staked')}: ${formatUsdcAmount(pledge.stake_amount)}
+            {t('Pledged')}: ${formatUsdcAmount(pledge.stake_amount)}
           </BodySecondary>
           {pledge.completion_percentage !== null && (
             <BodySmall>

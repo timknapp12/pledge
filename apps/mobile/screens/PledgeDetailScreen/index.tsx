@@ -35,6 +35,7 @@ import {
   PrimaryButton,
   ErrorState,
   CenteredColumn,
+  ProgressBar,
 } from '@/components';
 
 function formatDeadline(deadline: string): string {
@@ -201,8 +202,8 @@ export const PledgeDetailScreen = () => {
   const canReport = pledge.status === 'Active' && isExpired;
 
   return (
-    <ScreenContainer style={{ flex: 1 }}>
-      <View style={localStyles.header}>
+    <ScreenContainer style={{ flex: 1, gap: 24, paddingBottom: 32 }}>
+      <Row>
         <Pressable
           onPress={() => router.back()}
           style={[
@@ -230,14 +231,17 @@ export const PledgeDetailScreen = () => {
             {t(pledge.status)}
           </BodySmall>
         </View>
-      </View>
+      </Row>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={localStyles.contentContainer}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={{ width: '100%' }}
+      >
+        <Column gap={24}>
           {/* Info Card */}
-          <Card style={localStyles.infoCard}>
+          <Card>
             <View style={localStyles.infoRow}>
-              <BodySecondary>{t('Staked')}</BodySecondary>
+              <BodySecondary>{t('Pledged')}</BodySecondary>
               <Body>
                 ${formatUsdcAmount(pledge.stake_amount)} {t('USDC')}
               </Body>
@@ -260,22 +264,7 @@ export const PledgeDetailScreen = () => {
                 {progress}%
               </Title3>
             </Row>
-            <View
-              style={[
-                localStyles.progressBar,
-                { backgroundColor: theme.colors.border },
-              ]}
-            >
-              <View
-                style={[
-                  localStyles.progressFill,
-                  {
-                    width: `${progress}%`,
-                    backgroundColor: theme.colors.primary,
-                  },
-                ]}
-              />
-            </View>
+            <ProgressBar progress={progress} height={12} style={{ marginTop: 8 }} />
           </View>
 
           {/* Today's Tasks */}
@@ -336,11 +325,11 @@ export const PledgeDetailScreen = () => {
               );
             })}
           </Column>
-        </View>
+        </Column>
       </ScrollView>
 
       {pledge.status === 'Active' && (
-        <View style={localStyles.buttonContainer}>
+        <CenteredColumn>
           {canReport ? (
             <PrimaryButton
               onPress={handleReportCompletion}
@@ -354,21 +343,13 @@ export const PledgeDetailScreen = () => {
               {t('Complete your tasks daily. Report after deadline.')}
             </BodySmallSecondary>
           )}
-        </View>
+        </CenteredColumn>
       )}
     </ScreenContainer>
   );
 };
 
 const localStyles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    gap: 16,
-  },
   backButton: {
     width: 40,
     height: 40,
@@ -377,17 +358,12 @@ const localStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   contentContainer: {
-    paddingTop: 0,
-    paddingHorizontal: 20,
-    paddingBottom: 100,
+    gap: 24,
   },
   statusBadge: {
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 16,
-  },
-  infoCard: {
-    marginBottom: 16,
   },
   infoRow: {
     flexDirection: 'row',
@@ -396,16 +372,6 @@ const localStyles = StyleSheet.create({
   },
   progressContainer: {
     marginBottom: 24,
-  },
-  progressBar: {
-    height: 12,
-    borderRadius: 6,
-    overflow: 'hidden',
-    marginTop: 8,
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 6,
   },
   todoItem: {
     flexDirection: 'row',
@@ -423,13 +389,5 @@ const localStyles = StyleSheet.create({
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  buttonContainer: {
-    padding: 20,
-    gap: 12,
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
   },
 });

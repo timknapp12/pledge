@@ -213,13 +213,13 @@ We use **atomic frontend operations** with **reconciliation on app load** instea
 
 ### Sync Risk Analysis
 
-| Operation | On-Chain | Database | If Tx Succeeds but DB Fails |
-|-----------|----------|----------|------------------------------|
-| Create Pledge | PledgeAccount created, USDC to vault | pledges row created | User can't see pledge in UI; funds safe; reconcile on load |
-| Check Todos | None | daily_progress updated | N/A - DB only operation |
-| Report Completion | status → Reported | status updated | Crank processes correctly using on-chain state |
-| Edit Pledge | 10% penalty transferred | todos updated | **Worst case**: User paid penalty but edit not visible; retry from local queue |
-| Crank Process | Funds distributed | status updated | Crank retries; DB eventually consistent |
+| Operation         | On-Chain                             | Database               | If Tx Succeeds but DB Fails                                                    |
+| ----------------- | ------------------------------------ | ---------------------- | ------------------------------------------------------------------------------ |
+| Create Pledge     | PledgeAccount created, USDC to vault | pledges row created    | User can't see pledge in UI; funds safe; reconcile on load                     |
+| Check Todos       | None                                 | daily_progress updated | N/A - DB only operation                                                        |
+| Report Completion | status → Reported                    | status updated         | Crank processes correctly using on-chain state                                 |
+| Edit Pledge       | 10% penalty transferred              | todos updated          | **Worst case**: User paid penalty but edit not visible; retry from local queue |
+| Crank Process     | Funds distributed                    | status updated         | Crank retries; DB eventually consistent                                        |
 
 ### Pattern: Confirm-Then-Write
 
@@ -344,17 +344,17 @@ pledge/
 
 ### Tech Stack
 
-| Layer             | Technology                                                     |
-| ----------------- | -------------------------------------------------------------- |
-| **Mobile**        | React Native (Expo), Android only, **no web components**       |
-| **UI**            | Custom components, StyleSheet + useAppTheme(), pure native (no WebViews)|
-| **Auth**          | Supabase + Sign in with Solana (MWA)                           |
-| **Wallet**        | Solana Mobile Wallet Adapter                                   |
-| **Blockchain**    | Anchor 0.31.0, @solana/web3.js v1.x, @coral-xyz/anchor v0.28.0 |
-| **RPC**           | Helius (free tier)                                             |
-| **Database**      | Supabase (Postgres)                                            |
-| **Notifications** | Supabase pg_cron + Edge Functions + Expo push notifications    |
-| **i18n**          | i18next (English + Spanish test strings)                       |
+| Layer             | Technology                                                               |
+| ----------------- | ------------------------------------------------------------------------ |
+| **Mobile**        | React Native (Expo), Android only, **no web components**                 |
+| **UI**            | Custom components, StyleSheet + useAppTheme(), pure native (no WebViews) |
+| **Auth**          | Supabase + Sign in with Solana (MWA)                                     |
+| **Wallet**        | Solana Mobile Wallet Adapter                                             |
+| **Blockchain**    | Anchor 0.31.0, @solana/web3.js v1.x, @coral-xyz/anchor v0.28.0           |
+| **RPC**           | Helius (free tier)                                                       |
+| **Database**      | Supabase (Postgres)                                                      |
+| **Notifications** | Supabase pg_cron + Edge Functions + Expo push notifications              |
+| **i18n**          | i18next (English + Spanish test strings)                                 |
 
 ### i18n (Internationalization)
 
@@ -365,7 +365,7 @@ All user-facing strings must be internationalized:
 import { useTranslation } from 'react-i18next';
 const { t } = useTranslation();
 
-<Text>{t('Maximum Amount')}</Text>
+<Text>{t('Maximum Amount')}</Text>;
 ```
 
 ```json
@@ -609,7 +609,7 @@ Enable automatic goal verification through connected accounts:
 - Hybrid goals: some tasks verified, some self-reported
 - Rate limiting considerations for API calls
 
-### Yield Earning on Staked USDC
+### Yield Earning on Pledged USDC
 
 Consider allowing staked USDC to earn yield while locked in pledges:
 

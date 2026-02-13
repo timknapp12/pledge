@@ -189,7 +189,7 @@ const localStyles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 60,
     right: 20,
     width: 56,
     height: 56,
