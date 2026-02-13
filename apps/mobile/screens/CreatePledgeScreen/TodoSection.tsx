@@ -22,6 +22,7 @@ type TodoSectionProps = {
   onNewTodoChange: (text: string) => void;
   onAddTodo: () => void;
   onRemoveTodo: (index: number) => void;
+  onInputFocus?: () => void;
 };
 
 export const TodoSection = ({
@@ -31,6 +32,7 @@ export const TodoSection = ({
   onNewTodoChange,
   onAddTodo,
   onRemoveTodo,
+  onInputFocus,
 }: TodoSectionProps) => {
   const { t } = useTranslation();
   const { theme } = useAppTheme();
@@ -79,6 +81,7 @@ export const TodoSection = ({
             onChangeText={onNewTodoChange}
             onSubmitEditing={onAddTodo}
             returnKeyType='done'
+            onFocus={onInputFocus}
           />
         </View>
         <Pressable
