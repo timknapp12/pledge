@@ -19,7 +19,7 @@ Use the `Skill` tool to invoke these when relevant:
 | `solana-dev`                     | Solana development - wallet connection, transactions, Anchor programs, testing |
 | `expo-app-design:building-ui`    | Building UI with Expo Router - styling, components, navigation, animations     |
 | `expo-app-design:data-fetching`  | Network requests, API calls, React Query, caching, offline support             |
-| `expo-app-design:tailwind-setup` | If switching to Tailwind (currently using styled-components)                   |
+| `expo-app-design:tailwind-setup` | If switching to Tailwind (currently using StyleSheet + useAppTheme)            |
 | `expo-app-design:dev-client`     | Building/distributing Expo development clients                                 |
 | `expo-deployment:cicd-workflows` | EAS workflow YAML files, CI/CD pipelines                                       |
 | `expo-deployment:deployment`     | Deploying to Play Store, web hosting                                           |
@@ -48,7 +48,7 @@ Use MCP tools for documentation and project management:
 | Layer           | Technology                                      |
 | --------------- | ----------------------------------------------- |
 | Mobile          | React Native (Expo), Android only               |
-| UI              | Custom components, styled-components            |
+| UI              | Custom components, StyleSheet + useAppTheme()   |
 | Auth            | Supabase + Sign in with Solana                  |
 | Wallet          | Solana Mobile Wallet Adapter (MWA)              |
 | Blockchain      | Anchor 0.31.0                                   |
@@ -88,6 +88,7 @@ pledge/
 ├── supabase/
 │   ├── migrations/          # Database migrations
 │   └── functions/           # Edge Functions
+├── docs/                    # Architecture docs (notifications, etc.)
 ├── scripts/                 # Admin scripts
 ├── CLAUDE.md
 ├── PRD.md
@@ -140,7 +141,7 @@ pub fn create_pledge(ctx: Context<CreatePledge>, ...) -> Result<()> {
 
 Reference: `/Users/timk/rekt-react-native` for i18n pattern
 
-- Use **styled-components** for styling
+- Use **StyleSheet.create()** + **useAppTheme()** hook for styling (no styled-components)
 - Use **Expo Router** for navigation
 - Follow existing i18n pattern with i18next + expo-localization
 - Custom UI components (no external UI library)
@@ -320,11 +321,11 @@ interface PendingSyncOp {
   createdAt: number;
 }
 
-export async function createPledgeAtomic(
+export const createPledgeAtomic = async (
   program: Program,
   supabase: SupabaseClient,
   params: CreatePledgeParams
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string }> => {
   const pledgeKeypair = Keypair.generate();
 
   // 1. Build and send transaction
@@ -392,11 +393,11 @@ async function queueForRetry(op: PendingSyncOp): Promise<void> {
 
 ```typescript
 // lib/sync/reconcile.ts
-export async function reconcileUserPledges(
+export const reconcileUserPledges = async (
   program: Program,
   supabase: SupabaseClient,
   walletAddress: PublicKey
-): Promise<void> {
+): Promise<void> => {
   // 1. Process any pending sync operations first
   await processPendingSyncQueue(supabase);
 
@@ -493,11 +494,11 @@ Edit is the trickiest operation - user pays penalty, so we must be extra careful
 
 ```typescript
 // lib/sync/atomicOperations.ts
-export async function editPledgeAtomic(
+export const editPledgeAtomic = async (
   program: Program,
   supabase: SupabaseClient,
   params: EditPledgeParams
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string }> => {
   // Store intended edit BEFORE transaction (in case app crashes)
   const pendingEdit = {
     pledgeAddress: params.pledgeAddress,
@@ -670,15 +671,18 @@ ts-node scripts/update-split.ts --treasury 70 --charity 30
 
 ```env
 # Mobile App
+# Mobile App (apps/mobile/.env)
+HELIUS_API_KEY=           # Works for both devnet and mainnet
 EXPO_PUBLIC_SUPABASE_URL=
-EXPO_PUBLIC_SUPABASE_ANON_KEY=
-EXPO_PUBLIC_HELIUS_RPC_URL=
+EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 EXPO_PUBLIC_PROGRAM_ID=
 
-# Supabase Functions
-HELIUS_API_KEY=
+# Supabase Functions (supabase/.env)
+HELIUS_API_KEY=           # Same key, used by Edge Functions
+SOLANA_NETWORK=           # 'devnet' or 'mainnet' (defaults to mainnet)
 PROGRAM_ID=
-CRANK_KEYPAIR=  # Base58 encoded
+CRANK_KEYPAIR=            # Base58 encoded
+SUPABASE_JWT_SECRET=      # For verify-wallet Edge Function
 
 # Development
 ANCHOR_PROVIDER_URL=

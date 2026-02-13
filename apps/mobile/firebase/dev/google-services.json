@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "360110066989",
+    "project_id": "pledge-devnet",
+    "storage_bucket": "pledge-devnet.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:360110066989:android:25770057e966e1832f97a4",
+        "android_client_info": {
+          "package_name": "com.pledge.dev"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAt-RqWWYeznByNORrOPrkk0CeX78D3riA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,22 +1,35 @@
 // Polyfills must be imported first
 import '../lib/polyfills';
 
+import 'react-native-reanimated';
+
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider as NavigationThemeProvider,
 } from '@react-navigation/native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import 'react-native-reanimated';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AuthProvider } from '../contexts/AuthContext';
 import { I18nProvider } from '../contexts/I18nContext';
 import { ScrollProvider } from '@/contexts/ScrollContext';
 import { ThemeProvider, useThemeMode } from '@/theme/ThemeProvider';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 2,
+    },
+  },
+});
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -57,13 +70,15 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   return (
-    <I18nProvider>
-      <AuthProvider>
-        <ThemeProvider>
-          <ThemedNavigation />
-        </ThemeProvider>
-      </AuthProvider>
-    </I18nProvider>
+    <QueryClientProvider client={queryClient}>
+      <I18nProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            <ThemedNavigation />
+          </ThemeProvider>
+        </AuthProvider>
+      </I18nProvider>
+    </QueryClientProvider>
   );
 }
 
@@ -71,12 +86,15 @@ function ThemedNavigation() {
   const { isDark } = useThemeMode();
 
   return (
-    <ScrollProvider>
-      <NavigationThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
-        </Stack>
-      </NavigationThemeProvider>
-    </ScrollProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ScrollProvider>
+        <NavigationThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
+          <StatusBar style={isDark ? 'light' : 'dark'} />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name='(tabs)' />
+          </Stack>
+        </NavigationThemeProvider>
+      </ScrollProvider>
+    </GestureHandlerRootView>
   );
 }

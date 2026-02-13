@@ -8,7 +8,7 @@ interface ScrollContextValue {
 
 const ScrollContext = createContext<ScrollContextValue | null>(null);
 
-export function ScrollProvider({ children }: { children: React.ReactNode }) {
+export const ScrollProvider = ({ children }: { children: React.ReactNode }) => {
   const isScrolling = useSharedValue(false);
 
   const setScrolling = (value: boolean) => {
@@ -20,12 +20,12 @@ export function ScrollProvider({ children }: { children: React.ReactNode }) {
       {children}
     </ScrollContext.Provider>
   );
-}
+};
 
-export function useScrollContext() {
+export const useScrollContext = () => {
   const context = useContext(ScrollContext);
   if (!context) {
     throw new Error('useScrollContext must be used within a ScrollProvider');
   }
   return context;
-}
+};

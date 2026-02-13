@@ -2,6 +2,13 @@
 // These files are executed by Deno, but our workspace TypeScript tooling
 // doesn't understand the Deno global namespace by default.
 
+// std/ resolves via deno.json import map to https://deno.land/std@0.168.0/
+declare module 'std/http/server.ts' {
+  export function serve(
+    handler: (req: Request) => Response | Promise<Response>
+  ): void;
+}
+
 declare const Deno: {
   env: {
     get(key: string): string | undefined;
@@ -10,27 +17,31 @@ declare const Deno: {
 };
 
 // Module declarations for npm: imports used via deno.json import maps
-declare module "@supabase/supabase-js" {
-  export function createClient(url: string, key: string, options?: unknown): any;
+declare module '@supabase/supabase-js' {
+  export const createClient: (
+    url: string,
+    key: string,
+    options?: unknown
+  ) => any;
 }
 
-declare module "@noble/ed25519" {
-  export function verify(
+declare module '@noble/ed25519' {
+  export const verify: (
     signature: Uint8Array,
     message: Uint8Array,
     publicKey: Uint8Array
-  ): boolean;
+  ) => boolean;
   export const etc: {
     sha512Sync: ((...m: Uint8Array[]) => Uint8Array) | undefined;
     concatBytes: (...arrays: Uint8Array[]) => Uint8Array;
   };
 }
 
-declare module "@noble/hashes/sha512" {
-  export function sha512(data: Uint8Array): Uint8Array;
+declare module '@noble/hashes/sha512' {
+  export const sha512: (data: Uint8Array) => Uint8Array;
 }
 
-declare module "bs58" {
+declare module 'bs58' {
   const bs58: {
     encode(data: Uint8Array): string;
     decode(data: string): Uint8Array;
@@ -38,7 +49,7 @@ declare module "bs58" {
   export default bs58;
 }
 
-declare module "jose" {
+declare module 'jose' {
   export class SignJWT {
     constructor(payload: Record<string, unknown>);
     setProtectedHeader(header: Record<string, string>): this;
@@ -50,4 +61,4 @@ declare module "jose" {
 }
 
 // JSR import for edge runtime types
-declare module "jsr:@supabase/functions-js/edge-runtime.d.ts" {}
+declare module 'jsr:@supabase/functions-js/edge-runtime.d.ts' {}
