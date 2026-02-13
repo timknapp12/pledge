@@ -154,19 +154,25 @@ DB fields to include for future features:
 
 ## Notifications
 
-### Triggers
+Pre-scheduled push notifications via Expo Push API. Full architecture documented in [`docs/notifications.md`](docs/notifications.md).
 
-- Reminder before deadline (user-configurable: 1 hour, 1 day, etc.)
-- Deadline reached
-- Time to report (after deadline)
+### User-Configurable Reminders (per pledge)
+
+- **Daily reminder:** Fires at a chosen time (e.g., 09:00) every day of the pledge
+- **Before-deadline reminders:** 24 hours and/or 1 hour before deadline
+
+### System Notifications (future)
+
 - Goal completed/failed confirmation
+- Streak milestones
 
-### Implementation
+### Implementation Summary
 
-- Supabase pg_cron + Edge Functions
-- User configures reminder preferences
-- Expo push notifications service
-- dev must set up firebase project for android config
+- All notification rows pre-scheduled at pledge creation (`schedule_pledge_notifications` Postgres function)
+- pg_cron fires every 2 minutes, calling `send-notification` Edge Function
+- Edge Function queries pending rows, batch-sends via Expo Push API, handles errors
+- Profile screen has a master notifications toggle (on/off)
+- Firebase project required for Android push delivery
 
 ---
 
@@ -341,7 +347,7 @@ pledge/
 | Layer             | Technology                                                     |
 | ----------------- | -------------------------------------------------------------- |
 | **Mobile**        | React Native (Expo), Android only, **no web components**       |
-| **UI**            | Custom components, styled-components, pure native (no WebViews)|
+| **UI**            | Custom components, StyleSheet + useAppTheme(), pure native (no WebViews)|
 | **Auth**          | Supabase + Sign in with Solana (MWA)                           |
 | **Wallet**        | Solana Mobile Wallet Adapter                                   |
 | **Blockchain**    | Anchor 0.31.0, @solana/web3.js v1.x, @coral-xyz/anchor v0.28.0 |
@@ -503,6 +509,9 @@ users (
   github_username text,           -- V2: for verified goals
   x_username text,                -- V2: for verified goals
   notification_preferences jsonb,
+  push_token text,                -- Expo push token
+  notifications_enabled boolean DEFAULT false,
+  timezone text DEFAULT 'America/New_York',
   created_at timestamptz
 )
 
@@ -531,6 +540,7 @@ pledges (
   status text,  -- mirrors on-chain
   completion_percentage int,
   points_earned int,
+  reminder_settings jsonb,  -- per-pledge reminder config
   created_at timestamptz
 )
 
@@ -540,6 +550,21 @@ daily_progress (
   pledge_id uuid REFERENCES pledges,
   date date,
   todos_completed jsonb,  -- [todo_index, ...]
+  created_at timestamptz
+)
+
+-- Scheduled Notifications (see docs/notifications.md)
+notifications (
+  id uuid PRIMARY KEY,
+  user_id uuid REFERENCES users,
+  pledge_id uuid REFERENCES pledges,
+  type text,              -- 'daily_reminder', 'deadline_24h', 'deadline_1h'
+  title text,
+  body text,
+  scheduled_for timestamptz,
+  sent_at timestamptz,
+  status text DEFAULT 'pending',  -- 'pending', 'sent', 'cancelled', 'failed'
+  error_message text,
   created_at timestamptz
 )
 ```

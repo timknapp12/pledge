@@ -88,6 +88,7 @@ pledge/
 ├── supabase/
 │   ├── migrations/          # Database migrations
 │   └── functions/           # Edge Functions
+├── docs/                    # Architecture docs (notifications, etc.)
 ├── scripts/                 # Admin scripts
 ├── CLAUDE.md
 ├── PRD.md
@@ -673,7 +674,7 @@ ts-node scripts/update-split.ts --treasury 70 --charity 30
 # Mobile App (apps/mobile/.env)
 HELIUS_API_KEY=           # Works for both devnet and mainnet
 EXPO_PUBLIC_SUPABASE_URL=
-EXPO_PUBLIC_SUPABASE_ANON_KEY=
+EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 EXPO_PUBLIC_PROGRAM_ID=
 
 # Supabase Functions (supabase/.env)
