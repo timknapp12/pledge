@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Platform } from 'react-native';
+import { Platform, AppState, AppStateStatus } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,6 +21,7 @@ interface UseNotificationsReturn {
   isRegistering: boolean;
   registerForPushNotifications: () => Promise<string | null>;
   requestPermission: () => Promise<boolean>;
+  disableNotifications: () => Promise<void>;
 }
 
 export const useNotifications = (): UseNotificationsReturn => {
@@ -29,7 +30,7 @@ export const useNotifications = (): UseNotificationsReturn => {
   const [permissionStatus, setPermissionStatus] =
     useState<Notifications.PermissionStatus | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
-  const hasRegisteredRef = useRef(false);
+  const appState = useRef(AppState.currentState);
 
   // Check current permission status on mount
   useEffect(() => {
@@ -37,6 +38,39 @@ export const useNotifications = (): UseNotificationsReturn => {
       setPermissionStatus(status);
     });
   }, []);
+
+  // Sync permission status when app comes to foreground
+  useEffect(() => {
+    const handleAppStateChange = async (nextState: AppStateStatus) => {
+      if (
+        appState.current.match(/inactive|background/) &&
+        nextState === 'active' &&
+        user
+      ) {
+        const { status } = await Notifications.getPermissionsAsync();
+
+        // Permission was revoked in system settings
+        if (
+          status !== 'granted' &&
+          permissionStatus === 'granted'
+        ) {
+          await supabase
+            .from('users')
+            .update({ notifications_enabled: false })
+            .eq('id', user.id);
+        }
+
+        setPermissionStatus(status);
+      }
+      appState.current = nextState;
+    };
+
+    const subscription = AppState.addEventListener(
+      'change',
+      handleAppStateChange
+    );
+    return () => subscription.remove();
+  }, [user, supabase, permissionStatus]);
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
     const { status: existingStatus } =
@@ -99,7 +133,6 @@ export const useNotifications = (): UseNotificationsReturn => {
         // Don't throw - the token is still valid locally
       } else {
         console.log('Push token registered:', token.substring(0, 20) + '...');
-        hasRegisteredRef.current = true;
       }
 
       // Set up Android notification channel
@@ -129,17 +162,29 @@ export const useNotifications = (): UseNotificationsReturn => {
     }
   }, [user, walletAddress, supabase, requestPermission]);
 
-  // Register for push notifications when user logs in (if already permitted)
-  useEffect(() => {
-    if (
-      user &&
-      walletAddress &&
-      permissionStatus === 'granted' &&
-      !hasRegisteredRef.current
-    ) {
-      registerForPushNotifications();
+  const disableNotifications = useCallback(async () => {
+    if (!user) return;
+
+    // Clear token and disable in DB
+    const { error } = await supabase
+      .from('users')
+      .update({ notifications_enabled: false, push_token: null })
+      .eq('id', user.id);
+
+    if (error) {
+      console.error('Failed to disable notifications:', error);
+      return;
     }
-  }, [user, walletAddress, permissionStatus, registerForPushNotifications]);
+
+    // Cancel all pending notifications for this user
+    await supabase
+      .from('notifications')
+      .update({ status: 'cancelled' })
+      .eq('user_id', user.id)
+      .eq('status', 'pending');
+
+    setExpoPushToken(null);
+  }, [user, supabase]);
 
   return {
     expoPushToken,
@@ -147,6 +192,7 @@ export const useNotifications = (): UseNotificationsReturn => {
     isRegistering,
     registerForPushNotifications,
     requestPermission,
+    disableNotifications,
   };
 };
 
