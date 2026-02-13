@@ -232,6 +232,19 @@ export const useCreatePledgeInDb = () => {
         .single();
 
       if (error) throw error;
+
+      // Schedule notifications if reminder settings are configured
+      if (pledge.reminder_settings?.reminders?.length) {
+        const { error: rpcError } = await supabase.rpc(
+          'schedule_pledge_notifications',
+          { p_pledge_id: data.id, p_user_id: user.id }
+        );
+        if (rpcError) {
+          console.error('Failed to schedule notifications:', rpcError);
+          // Non-fatal: pledge was created successfully
+        }
+      }
+
       return data;
     },
     onSuccess: () => {
@@ -269,6 +282,19 @@ export const useUpdatePledgeStatus = () => {
         .single();
 
       if (error) throw error;
+
+      // Cancel pending notifications when pledge is completed or forfeited
+      if (status === 'Completed' || status === 'Forfeited') {
+        const { error: cancelError } = await supabase
+          .from('notifications')
+          .update({ status: 'cancelled' })
+          .eq('pledge_id', pledgeId)
+          .eq('status', 'pending');
+        if (cancelError) {
+          console.error('Failed to cancel notifications:', cancelError);
+        }
+      }
+
       return data;
     },
     onSuccess: (_, variables) => {

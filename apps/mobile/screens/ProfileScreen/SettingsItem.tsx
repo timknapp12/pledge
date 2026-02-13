@@ -1,4 +1,4 @@
-import { Pressable, View, StyleSheet } from 'react-native';
+import { Pressable, View, Switch, StyleSheet } from 'react-native';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { Body, BodySecondary, Row } from '@/components';
@@ -10,6 +10,9 @@ export interface SettingsItemProps {
   label: string;
   value?: string;
   onPress?: () => void;
+  switchValue?: boolean;
+  onSwitchChange?: (value: boolean) => void;
+  switchDisabled?: boolean;
   isLast?: boolean;
 }
 
@@ -18,14 +21,19 @@ export const SettingsItem = ({
   label,
   value,
   onPress,
+  switchValue,
+  onSwitchChange,
+  switchDisabled,
   isLast,
 }: SettingsItemProps) => {
   const { theme } = useAppTheme();
 
+  const hasSwitch = switchValue !== undefined && onSwitchChange !== undefined;
+
   return (
     <Pressable
-      onPress={onPress}
-      disabled={!onPress}
+      onPress={hasSwitch ? undefined : onPress}
+      disabled={hasSwitch || !onPress}
       style={[
         localStyles.settingsRow,
         !isLast && {
@@ -40,12 +48,25 @@ export const SettingsItem = ({
       </View>
       <Row gap={8}>
         {value && <BodySecondary>{value}</BodySecondary>}
-        {onPress && (
-          <Ionicons
-            name='chevron-forward'
-            size={20}
-            color={theme.colors.textSecondary}
+        {hasSwitch ? (
+          <Switch
+            value={switchValue}
+            onValueChange={onSwitchChange}
+            disabled={switchDisabled}
+            trackColor={{
+              false: theme.colors.border,
+              true: theme.colors.primary,
+            }}
+            thumbColor={theme.colors.background}
           />
+        ) : (
+          onPress && (
+            <Ionicons
+              name='chevron-forward'
+              size={20}
+              color={theme.colors.textSecondary}
+            />
+          )
         )}
       </Row>
     </Pressable>

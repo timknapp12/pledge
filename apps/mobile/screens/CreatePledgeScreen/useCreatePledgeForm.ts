@@ -10,6 +10,7 @@ import {
   type ReminderSettings,
 } from '@/hooks/useSupabase';
 import { useProgram } from '@/hooks/useProgram';
+import { useNotifications } from '@/hooks/useNotifications';
 import { type DurationPreset } from '@/components';
 
 const MAX_DAILY_TRACKING_DAYS = 7;
@@ -21,6 +22,7 @@ export const useCreatePledgeForm = () => {
 
   const { createPledge, error: programError } = useProgram();
   const createPledgeInDb = useCreatePledgeInDb();
+  const { registerForPushNotifications } = useNotifications();
 
   // Form state
   const [name, setName] = useState('');
@@ -169,6 +171,11 @@ export const useCreatePledgeForm = () => {
 
       if (!result?.pledgeAddress) {
         throw new Error('Failed to create pledge on-chain');
+      }
+
+      // Ensure push token is registered before scheduling notifications
+      if (reminderSettings?.reminders?.length) {
+        await registerForPushNotifications();
       }
 
       await createPledgeInDb.mutateAsync({

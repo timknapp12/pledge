@@ -1,4 +1,10 @@
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  View,
+} from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,6 +30,8 @@ import { ScheduleCard } from './ScheduleCard';
 import { TodoSection } from './TodoSection';
 import { PledgeSummary } from './PledgeSummary';
 import { styles } from './styles';
+
+// TODO - add keyboard avoiding view for inputs
 
 export const CreatePledgeScreen = () => {
   const { t } = useTranslation();
@@ -83,10 +91,18 @@ export const CreatePledgeScreen = () => {
                   getDurationLabel={form.getDurationLabel}
                   getRemindersLabel={form.getRemindersLabel}
                   getDailyTrackingLabel={form.getDailyTrackingLabel}
-                  onStartDatePress={() => form.startDateSheetRef.current?.expand()}
-                  onDurationPress={() => form.durationSheetRef.current?.expand()}
-                  onDailyTrackingPress={() => form.dailyTodosSheetRef.current?.expand()}
-                  onRemindersPress={() => form.remindersSheetRef.current?.expand()}
+                  onStartDatePress={() =>
+                    form.startDateSheetRef.current?.expand()
+                  }
+                  onDurationPress={() =>
+                    form.durationSheetRef.current?.expand()
+                  }
+                  onDailyTrackingPress={() =>
+                    form.dailyTodosSheetRef.current?.expand()
+                  }
+                  onRemindersPress={() =>
+                    form.remindersSheetRef.current?.expand()
+                  }
                 />
 
                 <TodoSection
