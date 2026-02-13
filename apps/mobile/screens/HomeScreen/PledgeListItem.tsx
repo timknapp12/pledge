@@ -1,4 +1,4 @@
-import { Pressable, View, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { getStatusBgColor, getStatusTextColor } from '@/theme';
@@ -10,6 +10,7 @@ import {
   Column,
   Row,
   Card,
+  ProgressBar,
 } from '@/components';
 import { formatUsdcAmount, Pledge } from '@/hooks/useSupabase';
 
@@ -35,9 +36,10 @@ function formatDeadline(deadline: string): string {
 export interface PledgeListItemProps {
   pledge: Pledge;
   onPress: () => void;
+  animateKey?: number;
 }
 
-export const PledgeListItem = ({ pledge, onPress }: PledgeListItemProps) => {
+export const PledgeListItem = ({ pledge, onPress, animateKey }: PledgeListItemProps) => {
   const { t } = useTranslation();
   const { theme } = useAppTheme();
 
@@ -89,29 +91,14 @@ export const PledgeListItem = ({ pledge, onPress }: PledgeListItemProps) => {
 
         <Row style={{ marginTop: 12, justifyContent: 'space-between' }}>
           <BodySecondary>
-            {t('Staked')}: ${formatUsdcAmount(pledge.stake_amount)}
+            {t('Pledged')}: ${formatUsdcAmount(pledge.stake_amount)}
           </BodySecondary>
           <BodySmall>
             {pledge.todos?.length || 0} {t('tasks')}
           </BodySmall>
         </Row>
 
-        <View
-          style={[
-            localStyles.progressBar,
-            { backgroundColor: theme.colors.border },
-          ]}
-        >
-          <View
-            style={[
-              localStyles.progressFill,
-              {
-                width: `${timeProgress}%`,
-                backgroundColor: theme.colors.primary,
-              },
-            ]}
-          />
-        </View>
+        <ProgressBar progress={timeProgress} height={6} style={{ marginTop: 12 }} animateKey={animateKey} />
       </Card>
     </Pressable>
   );
@@ -125,15 +112,5 @@ const localStyles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 8,
     borderRadius: 12,
-  },
-  progressBar: {
-    height: 6,
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginTop: 12,
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 3,
   },
 });

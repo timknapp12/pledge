@@ -15,7 +15,7 @@
   "No active pledges": "Sin compromisos activos",
   "Create your first pledge to start achieving your goals with skin in the game.": "Crea tu primer compromiso para alcanzar tus metas con algo en juego.",
   "Create Pledge": "Crear Compromiso",
-  "Staked": "Apostado",
+  "Pledged": "Apostado",
   "tasks": "tareas",
   "Active": "Activo",
   "Reported": "Reportado",
@@ -33,7 +33,7 @@
   "1 Week": "1 Semana",
   "1 Month": "1 Mes",
   "Custom": "Personalizado",
-  "To-Do Items": "Tareas",
+  "Action Items": "Tareas",
   "Add a task": "Agregar una tarea",
   "Add Task": "Agregar Tarea",
   "Stake Amount": "Cantidad a apostar",
@@ -131,5 +131,6 @@
   "Track Daily": "Seguimiento Diario",
   "Track progress each day": "Registra progreso cada día",
   "Daily at": "Diario a las",
-  "Custom schedule": "Horario personalizado"
+  "Custom schedule": "Horario personalizado",
+  "Enter a task before adding": "Ingresa una tarea antes de agregar"
 }
