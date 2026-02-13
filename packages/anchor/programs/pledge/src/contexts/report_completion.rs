@@ -36,22 +36,8 @@ impl<'info> ReportCompletion<'info> {
             ErrorCode::InvalidCompletionPercentage
         );
 
-        // Validate current_time >= deadline (can only report after deadline)
-        require!(
-            clock.unix_timestamp >= self.pledge.deadline,
-            ErrorCode::DeadlineNotPassed
-        );
-
-        // Validate current_time <= deadline + grace_period
-        let grace_period_end = self
-            .pledge
-            .deadline
-            .checked_add(self.config.grace_period_seconds)
-            .ok_or(ErrorCode::Overflow)?;
-        require!(
-            clock.unix_timestamp <= grace_period_end,
-            ErrorCode::GracePeriodEnded
-        );
+        // No time constraints — user can report at any time (before or after deadline).
+        // The crank handles users who forget (via process_expired after grace period).
 
         // Update pledge
         self.pledge.completion_percentage = Some(completion_percentage);
