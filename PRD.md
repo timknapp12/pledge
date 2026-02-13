@@ -89,13 +89,20 @@ Pledge is a Solana mobile dApp (Android only) that enables users to set goals an
 
 ---
 
-## Reporting & Deadlines
+## Reporting & Settlement
 
-### Grace Period
+### Self-Settle (Report + Settle in One Action)
 
-- **1 day** after deadline to submit report
-- If no report after grace period: auto-forfeit via crank
-- But if all goals are checked off at time of grace period without reporting, auto-complete with full refund (no fee)
+- User can report completion and settle funds **at any time** (including before deadline)
+- Single wallet signature bundles `report_completion` + `process_completion` instructions
+- Status goes directly from Active to Completed (1-100%) or Forfeited (0%)
+- No intermediate "Reported" state for new self-settled pledges
+
+### Crank Fallback
+
+- **1-day grace period** after deadline for users who forget
+- After grace period: crank calls `process_expired` to auto-settle based on checked-off todos
+- If all goals are checked off at time of grace period without reporting, auto-complete with full refund (no fee)
 
 ### Self-Reporting
 
