@@ -2,6 +2,13 @@
 // These files are executed by Deno, but our workspace TypeScript tooling
 // doesn't understand the Deno global namespace by default.
 
+// std/ resolves via deno.json import map to https://deno.land/std@0.168.0/
+declare module 'std/http/server.ts' {
+  export function serve(
+    handler: (req: Request) => Response | Promise<Response>
+  ): void;
+}
+
 declare const Deno: {
   env: {
     get(key: string): string | undefined;
