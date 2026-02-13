@@ -5,7 +5,7 @@ import { cardBorderRadius } from '@/theme';
 interface GapViewProps extends ViewProps {
   gap?: number;
   padding?: number;
-  width?: DimensionValue;
+  width?: DimensionValue | 'auto';
 }
 
 export const ScreenContainer = ({ style, ...props }: ViewProps) => {
@@ -20,7 +20,7 @@ export const ScreenContainer = ({ style, ...props }: ViewProps) => {
       {...props}
     />
   );
-}
+};
 
 interface ColumnProps extends GapViewProps {
   justify?: FlexJustify;
@@ -52,7 +52,7 @@ export const Column = ({
       {...props}
     />
   );
-}
+};
 
 export const CenteredColumn = ({
   gap,
@@ -78,7 +78,7 @@ export const CenteredColumn = ({
       {...props}
     />
   );
-}
+};
 
 type FlexAlign = 'flex-start' | 'flex-end' | 'center' | 'stretch' | 'baseline';
 type FlexJustify =
@@ -119,7 +119,7 @@ export const Row = ({
       {...props}
     />
   );
-}
+};
 
 export const Separator = ({ style, ...props }: ViewProps) => {
   const { theme } = useAppTheme();
@@ -133,7 +133,7 @@ export const Separator = ({ style, ...props }: ViewProps) => {
       {...props}
     />
   );
-}
+};
 
 export const Card = ({ style, ...props }: ViewProps) => {
   const { theme } = useAppTheme();
@@ -147,11 +147,11 @@ export const Card = ({ style, ...props }: ViewProps) => {
       {...props}
     />
   );
-}
+};
 
 export const Gap = ({ gap = 12, style, ...props }: GapViewProps) => {
   return <View style={[{ height: gap }, style]} {...props} />;
-}
+};
 
 const styles = StyleSheet.create({
   screenContainer: {
