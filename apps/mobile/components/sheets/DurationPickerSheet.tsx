@@ -223,11 +223,12 @@ export const DurationPickerSheet = forwardRef<
                       borderColor: colors.border,
                     },
                   ]}
-                  onPress={
-                    preset === 'custom'
-                      ? () => openDatePicker(customDate)
-                      : undefined
-                  }
+                  onPress={() => {
+                    setPreset('custom');
+                    openDatePicker(
+                      preset === 'custom' ? customDate : getEndDate()
+                    );
+                  }}
                 >
                   <Text style={[styles.chipText, { color: colors.text }]}>
                     {formatDate(getEndDate())}
