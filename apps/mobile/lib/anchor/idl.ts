@@ -1,59 +1,22 @@
-// Auto-generated from packages/anchor/target/idl/pledge.json
-// Do not edit directly - regenerate with `anchor build`
+// Converted from Anchor 0.31 IDL to 0.28 format for @coral-xyz/anchor v0.28.0
+// Source: packages/anchor/target/idl/pledge.json
 
 export const IDL = {
-  address: 'PLDG12YsnCxRHa9CkWDnzkA9vsbEFpThXHR9zgnDTDp',
-  metadata: {
-    name: 'pledge',
-    version: '0.1.0',
-    spec: '0.1.0',
-    description: 'Pledge - Stake tokens on personal goals',
-  },
+  version: '0.1.0',
+  name: 'pledge',
   instructions: [
     {
       name: 'createPledge',
-      docs: ['Create a new pledge and stake tokens'],
-      discriminator: [86, 26, 21, 66, 130, 186, 102, 36],
       accounts: [
-        { name: 'user', writable: true, signer: true },
-        {
-          name: 'config',
-          pda: {
-            seeds: [{ kind: 'const', value: [99, 111, 110, 102, 105, 103] }],
-          },
-        },
-        {
-          name: 'pledge',
-          writable: true,
-          pda: {
-            seeds: [
-              { kind: 'const', value: [112, 108, 101, 100, 103, 101] },
-              { kind: 'account', path: 'user' },
-              { kind: 'arg', path: 'createdAt' },
-            ],
-          },
-        },
-        {
-          name: 'vault',
-          writable: true,
-          pda: {
-            seeds: [
-              { kind: 'const', value: [118, 97, 117, 108, 116] },
-              { kind: 'account', path: 'pledge' },
-            ],
-          },
-        },
-        { name: 'userTokenAccount', writable: true },
-        { name: 'mint' },
-        {
-          name: 'tokenProgram',
-          address: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
-        },
-        {
-          name: 'associatedTokenProgram',
-          address: 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL',
-        },
-        { name: 'systemProgram', address: '11111111111111111111111111111111' },
+        { name: 'user', isMut: true, isSigner: true },
+        { name: 'config', isMut: false, isSigner: false },
+        { name: 'pledge', isMut: true, isSigner: false },
+        { name: 'vault', isMut: true, isSigner: false },
+        { name: 'userTokenAccount', isMut: true, isSigner: false },
+        { name: 'mint', isMut: false, isSigner: false },
+        { name: 'tokenProgram', isMut: false, isSigner: false },
+        { name: 'associatedTokenProgram', isMut: false, isSigner: false },
+        { name: 'systemProgram', isMut: false, isSigner: false },
       ],
       args: [
         { name: 'stakeAmount', type: 'u64' },
@@ -63,62 +26,38 @@ export const IDL = {
     },
     {
       name: 'editPledge',
-      docs: ['Edit an existing pledge (10% penalty)'],
-      discriminator: [110, 82, 248, 164, 37, 82, 33, 87],
       accounts: [
-        { name: 'user', signer: true },
-        {
-          name: 'config',
-          pda: {
-            seeds: [{ kind: 'const', value: [99, 111, 110, 102, 105, 103] }],
-          },
-        },
-        { name: 'pledge', writable: true },
-        { name: 'vault', writable: true },
-        { name: 'treasuryTokenAccount', writable: true },
-        { name: 'charityTokenAccount', writable: true },
-        {
-          name: 'tokenProgram',
-          address: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
-        },
+        { name: 'user', isMut: false, isSigner: true },
+        { name: 'config', isMut: false, isSigner: false },
+        { name: 'pledge', isMut: true, isSigner: false },
+        { name: 'vault', isMut: true, isSigner: false },
+        { name: 'treasuryTokenAccount', isMut: true, isSigner: false },
+        { name: 'charityTokenAccount', isMut: true, isSigner: false },
+        { name: 'tokenProgram', isMut: false, isSigner: false },
       ],
       args: [{ name: 'newDeadline', type: { option: 'i64' } }],
     },
     {
       name: 'reportCompletion',
-      docs: ['Report completion percentage (user calls within grace period)'],
-      discriminator: [90, 237, 93, 35, 27, 195, 160, 21],
       accounts: [
-        { name: 'user', signer: true },
-        {
-          name: 'config',
-          pda: {
-            seeds: [{ kind: 'const', value: [99, 111, 110, 102, 105, 103] }],
-          },
-        },
-        { name: 'pledge', writable: true },
+        { name: 'user', isMut: false, isSigner: true },
+        { name: 'config', isMut: false, isSigner: false },
+        { name: 'pledge', isMut: true, isSigner: false },
       ],
       args: [{ name: 'completionPercentage', type: 'u8' }],
     },
   ],
   accounts: [
-    { name: 'pledge', discriminator: [161, 197, 121, 46, 99, 75, 169, 131] },
     {
-      name: 'programConfig',
-      discriminator: [196, 210, 90, 231, 144, 149, 140, 63],
-    },
-  ],
-  types: [
-    {
-      name: 'pledge',
+      name: 'Pledge',
       type: {
         kind: 'struct',
         fields: [
-          { name: 'user', type: 'pubkey' },
-          { name: 'mint', type: 'pubkey' },
+          { name: 'user', type: 'publicKey' },
+          { name: 'mint', type: 'publicKey' },
           { name: 'stakeAmount', type: 'u64' },
           { name: 'deadline', type: 'i64' },
-          { name: 'status', type: { defined: { name: 'pledgeStatus' } } },
+          { name: 'status', type: { defined: 'PledgeStatus' } },
           { name: 'completionPercentage', type: { option: 'u8' } },
           { name: 'reportedAt', type: { option: 'i64' } },
           { name: 'createdAt', type: 'i64' },
@@ -128,26 +67,13 @@ export const IDL = {
       },
     },
     {
-      name: 'pledgeStatus',
-      type: {
-        kind: 'enum',
-        variants: [
-          { name: 'active' },
-          { name: 'reported' },
-          { name: 'completed' },
-          { name: 'forfeited' },
-          { name: 'cancelled' },
-        ],
-      },
-    },
-    {
-      name: 'programConfig',
+      name: 'ProgramConfig',
       type: {
         kind: 'struct',
         fields: [
-          { name: 'admin', type: 'pubkey' },
-          { name: 'treasury', type: 'pubkey' },
-          { name: 'charity', type: 'pubkey' },
+          { name: 'admin', type: 'publicKey' },
+          { name: 'treasury', type: 'publicKey' },
+          { name: 'charity', type: 'publicKey' },
           { name: 'treasurySplitBps', type: 'u16' },
           { name: 'partialFeeBps', type: 'u16' },
           { name: 'editPenaltyBps', type: 'u16' },
@@ -158,43 +84,58 @@ export const IDL = {
       },
     },
   ],
+  types: [
+    {
+      name: 'PledgeStatus',
+      type: {
+        kind: 'enum',
+        variants: [
+          { name: 'Active' },
+          { name: 'Reported' },
+          { name: 'Completed' },
+          { name: 'Forfeited' },
+          { name: 'Cancelled' },
+        ],
+      },
+    },
+  ],
   errors: [
-    { code: 6000, name: 'unauthorized', msg: 'Unauthorized - not admin' },
+    { code: 6000, name: 'Unauthorized', msg: 'Unauthorized - not admin' },
     {
       code: 6001,
-      name: 'notPledgeOwner',
+      name: 'NotPledgeOwner',
       msg: 'Unauthorized - not pledge owner',
     },
-    { code: 6002, name: 'programPaused', msg: 'Program is paused' },
+    { code: 6002, name: 'ProgramPaused', msg: 'Program is paused' },
     {
       code: 6006,
-      name: 'invalidDeadline',
+      name: 'InvalidDeadline',
       msg: 'Invalid deadline - must be in the future',
     },
     {
       code: 6007,
-      name: 'invalidStakeAmount',
+      name: 'InvalidStakeAmount',
       msg: 'Invalid stake amount - must be greater than 0',
     },
-    { code: 6008, name: 'pledgeNotActive', msg: 'Pledge is not active' },
+    { code: 6008, name: 'PledgeNotActive', msg: 'Pledge is not active' },
     {
       code: 6010,
-      name: 'deadlineNotPassed',
+      name: 'DeadlineNotPassed',
       msg: 'Deadline has not passed yet',
     },
     {
       code: 6011,
-      name: 'deadlineAlreadyPassed',
+      name: 'DeadlineAlreadyPassed',
       msg: 'Deadline has already passed',
     },
     {
       code: 6013,
-      name: 'gracePeriodEnded',
+      name: 'GracePeriodEnded',
       msg: 'Grace period has ended - cannot report',
     },
     {
       code: 6014,
-      name: 'invalidCompletionPercentage',
+      name: 'InvalidCompletionPercentage',
       msg: 'Invalid completion percentage - must be 0-100',
     },
   ],
