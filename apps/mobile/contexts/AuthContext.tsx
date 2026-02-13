@@ -16,6 +16,7 @@ import {
 import { toUint8Array } from 'js-base64';
 import nacl from 'tweetnacl';
 import bs58 from 'bs58';
+import * as Localization from 'expo-localization';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   createAuthenticatedClient,
@@ -92,6 +93,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Store user timezone in Supabase
+  const storeTimezone = useCallback(
+    async (client: SupabaseClient, userId: string) => {
+      try {
+        const tz =
+          Localization.getCalendars()[0]?.timeZone ?? 'America/New_York';
+        await client
+          .from('users')
+          .update({ timezone: tz })
+          .eq('id', userId);
+      } catch (err) {
+        console.error('Failed to store timezone:', err);
+      }
+    },
+    []
+  );
+
   // Prefetch pledges data after authentication
   const prefetchPledges = useCallback(
     async (client: SupabaseClient, wallet: string) => {
@@ -129,8 +147,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               id: payload.sub,
               wallet_address: payload.wallet_address,
             });
-            // Prefetch pledges data
+            // Prefetch pledges data and sync timezone
             prefetchPledges(authenticatedClient, payload.sub);
+            storeTimezone(authenticatedClient, payload.sub);
           } else {
             // Token expired, clear it
             await removeAuthToken();
@@ -145,7 +164,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     checkExistingSession();
-  }, [prefetchPledges]);
+  }, [prefetchPledges, storeTimezone]);
 
   const connect = useCallback(async () => {
     setIsConnecting(true);
@@ -230,8 +249,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSupabase(authenticatedClient);
         setWalletAddress(walletAddr);
         setUser(userData);
-        // Prefetch pledges data
+        // Prefetch pledges data and sync timezone
         prefetchPledges(authenticatedClient, walletAddr);
+        storeTimezone(authenticatedClient, userData.id);
       });
     } catch (err: any) {
       console.error('Connection error:', err);
@@ -240,7 +260,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsConnecting(false);
     }
-  }, [prefetchPledges]);
+  }, [prefetchPledges, storeTimezone]);
 
   const disconnect = useCallback(async () => {
     try {
