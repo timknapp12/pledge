@@ -1,6 +1,9 @@
 -- Add timezone column to users
 ALTER TABLE users ADD COLUMN IF NOT EXISTS timezone text DEFAULT 'America/New_York';
 
+-- Drop unused legacy column (replaced by per-pledge reminder_settings on pledges table)
+ALTER TABLE users DROP COLUMN IF EXISTS notification_preferences;
+
 -- Create the scheduling function
 CREATE OR REPLACE FUNCTION schedule_pledge_notifications(p_pledge_id uuid, p_user_id uuid)
 RETURNS void
@@ -93,15 +96,18 @@ CREATE EXTENSION IF NOT EXISTS pg_cron;
 CREATE EXTENSION IF NOT EXISTS pg_net;
 
 -- Schedule the cron job to fire every 2 minutes
+-- NOTE: app.settings.* are not available on all Supabase projects.
+-- Replace YOUR_SUPABASE_URL and YOUR_SERVICE_ROLE_KEY with actual values
+-- from Dashboard -> Settings -> API before running.
 SELECT cron.schedule(
   'send-pending-notifications',
   '*/2 * * * *',
   $$
   SELECT net.http_post(
-    url := current_setting('app.settings.supabase_url') || '/functions/v1/send-notification',
+    url := 'YOUR_SUPABASE_URL/functions/v1/send-notification',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key')
+      'Authorization', 'Bearer YOUR_SERVICE_ROLE_KEY'
     ),
     body := '{}'::jsonb
   );

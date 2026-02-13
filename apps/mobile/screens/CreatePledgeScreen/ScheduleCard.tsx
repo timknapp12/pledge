@@ -122,8 +122,11 @@ export const ScheduleCard = ({
                 { backgroundColor: theme.colors.border },
               ]}
             />
-            <Pressable style={styles.scheduleRow} onPress={onDailyTrackingPress}>
-              <Column>
+            <Pressable
+              style={styles.scheduleRow}
+              onPress={onDailyTrackingPress}
+            >
+              <Column width='auto'>
                 <Body>{t('Track Daily')}</Body>
                 <BodySmall style={{ color: theme.colors.textSecondary }}>
                   {t('Track progress each day')}
