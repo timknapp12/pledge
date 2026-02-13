@@ -100,6 +100,7 @@
   "Time Remaining": "Tiempo Restante",
   "Complete your tasks daily. Report after deadline.": "Completa tus tareas diarias. Reporta después de la fecha límite.",
   "Completion reported successfully": "Completado reportado exitosamente",
+  "Pledge settled successfully": "Compromiso liquidado exitosamente",
   "Pledging...": "Apostando...",
   "Set to Now": "Establecer Ahora",
   "Done": "Listo",
@@ -132,5 +133,7 @@
   "Track progress each day": "Registra progreso cada día",
   "Daily at": "Diario a las",
   "Custom schedule": "Horario personalizado",
-  "Enter a task before adding": "Ingresa una tarea antes de agregar"
+  "Enter a task before adding": "Ingresa una tarea antes de agregar",
+  "Completion Reported": "Finalización Reportada",
+  "Awaiting settlement after deadline": "Esperando liquidación después del plazo"
 }

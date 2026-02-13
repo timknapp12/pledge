@@ -46,6 +46,21 @@ export const IDL = {
       ],
       args: [{ name: 'completionPercentage', type: 'u8' }],
     },
+    {
+      name: 'processCompletion',
+      accounts: [
+        { name: 'crank', isMut: false, isSigner: true },
+        { name: 'config', isMut: false, isSigner: false },
+        { name: 'pledge', isMut: true, isSigner: false },
+        { name: 'vault', isMut: true, isSigner: false },
+        { name: 'user', isMut: true, isSigner: false },
+        { name: 'userTokenAccount', isMut: true, isSigner: false },
+        { name: 'treasuryTokenAccount', isMut: true, isSigner: false },
+        { name: 'charityTokenAccount', isMut: true, isSigner: false },
+        { name: 'tokenProgram', isMut: false, isSigner: false },
+      ],
+      args: [],
+    },
   ],
   accounts: [
     {

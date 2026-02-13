@@ -90,7 +90,7 @@ export const useActivePledges = () => {
   return {
     ...pledgesQuery,
     data: pledgesQuery.data
-      ?.filter((p) => p.status === 'Active')
+      ?.filter((p) => p.status === 'Active' || p.status === 'Reported')
       .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime()),
   };
 }
@@ -264,14 +264,19 @@ export const useUpdatePledgeStatus = () => {
       pledgeId,
       status,
       completionPercentage,
+      settleTxSignature,
     }: {
       pledgeId: string;
       status: Pledge['status'];
       completionPercentage?: number;
+      settleTxSignature?: string;
     }) => {
-      const updateData: Partial<Pledge> = { status };
+      const updateData: Record<string, unknown> = { status };
       if (completionPercentage !== undefined) {
         updateData.completion_percentage = completionPercentage;
+      }
+      if (settleTxSignature) {
+        updateData.settle_tx_signature = settleTxSignature;
       }
 
       const { data, error } = await supabase

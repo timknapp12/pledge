@@ -100,6 +100,7 @@
   "Time Remaining": "Time Remaining",
   "Complete your tasks daily. Report after deadline.": "Complete your tasks daily. Report after deadline.",
   "Completion reported successfully": "Completion reported successfully",
+  "Pledge settled successfully": "Pledge settled successfully",
   "Pledging...": "Pledging...",
   "Set to Now": "Set to Now",
   "Done": "Done",
@@ -132,5 +133,7 @@
   "Track progress each day": "Track progress each day",
   "Daily at": "Daily at",
   "Custom schedule": "Custom schedule",
-  "Enter a task before adding": "Enter a task before adding"
+  "Enter a task before adding": "Enter a task before adding",
+  "Completion Reported": "Completion Reported",
+  "Awaiting settlement after deadline": "Awaiting settlement after deadline"
 }
