@@ -1,13 +1,15 @@
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
   RefreshControl,
   StyleSheet,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActivePledges } from '@/hooks/useSupabase';
 import {
@@ -39,7 +41,15 @@ export const HomeScreen = () => {
     isRefetching,
   } = useActivePledges();
 
+  const [focusCount, setFocusCount] = useState(0);
+  useFocusEffect(
+    useCallback(() => {
+      setFocusCount((c) => c + 1);
+    }, [])
+  );
+
   const handleCreatePledge = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     router.push('/create-pledge');
   };
 
@@ -132,6 +142,7 @@ export const HomeScreen = () => {
                     key={pledge.id}
                     pledge={pledge}
                     onPress={() => handlePledgePress(pledge.id)}
+                    animateKey={focusCount}
                   />
                 ))}
               </Column>
