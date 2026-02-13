@@ -1,6 +1,8 @@
+import { useRef, useCallback } from 'react';
 import {
+  Keyboard,
   KeyboardAvoidingView,
-  Platform,
+  LayoutChangeEvent,
   Pressable,
   ScrollView,
   View,
@@ -31,14 +33,32 @@ import { TodoSection } from './TodoSection';
 import { PledgeSummary } from './PledgeSummary';
 import { styles } from './styles';
 
-// TODO - add keyboard avoiding view for inputs
-
 export const CreatePledgeScreen = () => {
   const { t } = useTranslation();
   const { theme } = useAppTheme();
   const router = useRouter();
 
   const form = useCreatePledgeForm();
+  const scrollViewRef = useRef<ScrollView>(null);
+  const inputPositions = useRef<Record<string, number>>({});
+
+  const trackLayout = useCallback(
+    (key: string, e: LayoutChangeEvent) => {
+      inputPositions.current[key] = e.nativeEvent.layout.y;
+    },
+    []
+  );
+
+  const scrollToSection = useCallback((key: string) => {
+    const y = inputPositions.current[key];
+    if (y === undefined) return;
+    setTimeout(() => {
+      scrollViewRef.current?.scrollTo({
+        y: Math.max(0, y - 100),
+        animated: true,
+      });
+    }, 300);
+  }, []);
 
   return (
     <ScreenContainer style={{ flex: 1 }}>
@@ -67,9 +87,14 @@ export const CreatePledgeScreen = () => {
 
           <KeyboardAvoidingView
             style={{ flex: 1, width: '100%' }}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            behavior='padding'
+            keyboardVerticalOffset={100}
           >
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView
+              ref={scrollViewRef}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps='handled'
+            >
               <CenteredColumn flex={1}>
                 {/* Goal Name */}
                 <View style={styles.section}>
@@ -91,31 +116,44 @@ export const CreatePledgeScreen = () => {
                   getDurationLabel={form.getDurationLabel}
                   getRemindersLabel={form.getRemindersLabel}
                   getDailyTrackingLabel={form.getDailyTrackingLabel}
-                  onStartDatePress={() =>
-                    form.startDateSheetRef.current?.expand()
-                  }
-                  onDurationPress={() =>
-                    form.durationSheetRef.current?.expand()
-                  }
-                  onDailyTrackingPress={() =>
-                    form.dailyTodosSheetRef.current?.expand()
-                  }
-                  onRemindersPress={() =>
-                    form.remindersSheetRef.current?.expand()
-                  }
+                  onStartDatePress={() => {
+                    Keyboard.dismiss();
+                    form.startDateSheetRef.current?.expand();
+                  }}
+                  onDurationPress={() => {
+                    Keyboard.dismiss();
+                    form.durationSheetRef.current?.expand();
+                  }}
+                  onDailyTrackingPress={() => {
+                    Keyboard.dismiss();
+                    form.dailyTodosSheetRef.current?.expand();
+                  }}
+                  onRemindersPress={() => {
+                    Keyboard.dismiss();
+                    form.remindersSheetRef.current?.expand();
+                  }}
                 />
 
-                <TodoSection
-                  todos={form.todos}
-                  newTodo={form.newTodo}
-                  showDailyTracking={form.showDailyTracking}
-                  onNewTodoChange={form.setNewTodo}
-                  onAddTodo={form.handleAddTodo}
-                  onRemoveTodo={form.handleRemoveTodo}
-                />
+                <View
+                  style={{ width: '100%' }}
+                  onLayout={(e) => trackLayout('todo', e)}
+                >
+                  <TodoSection
+                    todos={form.todos}
+                    newTodo={form.newTodo}
+                    showDailyTracking={form.showDailyTracking}
+                    onNewTodoChange={form.setNewTodo}
+                    onAddTodo={form.handleAddTodo}
+                    onRemoveTodo={form.handleRemoveTodo}
+                    onInputFocus={() => scrollToSection('todo')}
+                  />
+                </View>
 
                 {/* Stake Amount */}
-                <View style={styles.section}>
+                <View
+                  style={styles.section}
+                  onLayout={(e) => trackLayout('stake', e)}
+                >
                   <Title3 style={{ marginBottom: 12 }}>
                     {t('Stake Amount')}
                   </Title3>
@@ -126,6 +164,7 @@ export const CreatePledgeScreen = () => {
                         value={form.stakeAmount}
                         onChangeText={form.setStakeAmount}
                         keyboardType='decimal-pad'
+                        onFocus={() => scrollToSection('stake')}
                       />
                     </View>
                   </Row>
@@ -147,20 +186,20 @@ export const CreatePledgeScreen = () => {
                 )}
               </CenteredColumn>
             </ScrollView>
-
-            <CenteredColumn gap={12} width='100%'>
-              <SecondaryButton onPress={() => router.back()}>
-                {t('Cancel')}
-              </SecondaryButton>
-              <PrimaryButton
-                onPress={form.handleCreate}
-                disabled={!form.isValid}
-                loading={form.isSubmitting}
-              >
-                {t('Create')}
-              </PrimaryButton>
-            </CenteredColumn>
           </KeyboardAvoidingView>
+
+          <CenteredColumn gap={12} width='100%'>
+            <SecondaryButton onPress={() => router.back()}>
+              {t('Cancel')}
+            </SecondaryButton>
+            <PrimaryButton
+              onPress={form.handleCreate}
+              disabled={!form.isValid}
+              loading={form.isSubmitting}
+            >
+              {t('Create')}
+            </PrimaryButton>
+          </CenteredColumn>
         </CenteredColumn>
       </Column>
 
