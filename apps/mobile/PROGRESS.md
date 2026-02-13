@@ -13,7 +13,7 @@
   - Connection setup (Helius RPC)
   - PDA derivation utilities
   - TypeScript types for accounts
-  - Transaction builders (createPledge, reportCompletion)
+  - Transaction builders (createPledge, reportCompletion, reportAndSettle)
   - MWA signing utilities
 
 - [x] **Reconciliation System**
@@ -89,8 +89,9 @@
   - Progress bar
   - Todo list with checkboxes
   - Check/uncheck saves to daily_progress
-  - Report Completion button (shows after deadline)
-  - Reports completion on-chain via MWA
+  - Report & Settle button (available any time for Active pledges)
+  - Self-settle: bundles report_completion + process_completion in one tx via MWA
+  - Status goes directly to Completed/Forfeited (skips Reported intermediate state)
 
 - [x] **Translations** ✅
   - Added all new strings to en.json and es.json
