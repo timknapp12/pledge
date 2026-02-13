@@ -11,8 +11,8 @@ export default function TabLayout() {
       tabBar={(props) => <CustomTabBar {...props} />}
     >
       <Tabs.Screen name="index" />
-      <Tabs.Screen name="two" />
-      <Tabs.Screen name="three" />
+      <Tabs.Screen name="history" />
+      <Tabs.Screen name="profile" />
     </Tabs>
   );
 }

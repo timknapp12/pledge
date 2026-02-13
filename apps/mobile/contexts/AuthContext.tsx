@@ -13,8 +13,11 @@ import {
   transact,
   Web3MobileWallet,
 } from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
-import { toUint8Array, fromUint8Array } from 'js-base64';
+import { toUint8Array } from 'js-base64';
 import nacl from 'tweetnacl';
+import bs58 from 'bs58';
+import * as Localization from 'expo-localization';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   createAuthenticatedClient,
   getStoredAuthToken,
@@ -23,6 +26,7 @@ import {
   getVerifyWalletUrl,
   supabaseAnon,
 } from '../lib/supabase';
+import { queryKeys } from '@/hooks/queryKeys';
 
 // App identity for MWA
 const APP_IDENTITY = {
@@ -77,11 +81,11 @@ function generateNonce(): string {
 
 // Convert signature Uint8Array to base58 string
 function uint8ArrayToBase58(uint8Array: Uint8Array): string {
-  const bs58 = require('bs58');
   return bs58.encode(uint8Array);
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [supabase, setSupabase] = useState<SupabaseClient>(supabaseAnon);
@@ -89,37 +93,78 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Store user timezone in Supabase
+  const storeTimezone = useCallback(
+    async (client: SupabaseClient, userId: string) => {
+      try {
+        const tz =
+          Localization.getCalendars()[0]?.timeZone ?? 'America/New_York';
+        await client
+          .from('users')
+          .update({ timezone: tz })
+          .eq('id', userId);
+      } catch (err) {
+        console.error('Failed to store timezone:', err);
+      }
+    },
+    []
+  );
+
+  // Prefetch pledges data after authentication
+  const prefetchPledges = useCallback(
+    async (client: SupabaseClient, wallet: string) => {
+      queryClient.prefetchQuery({
+        queryKey: queryKeys.pledges(wallet),
+        queryFn: async () => {
+          const { data, error } = await client
+            .from('pledges')
+            .select('*')
+            .order('created_at', { ascending: false });
+          if (error) throw error;
+          return data ?? [];
+        },
+      });
+    },
+    [queryClient]
+  );
+
   // Check for existing session on mount
   useEffect(() => {
-    checkExistingSession();
-  }, []);
+    const checkExistingSession = async () => {
+      try {
+        const token = await getStoredAuthToken();
+        if (token) {
+          // Decode token to get wallet address (without verifying - server will verify)
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const expiresAt = payload.exp * 1000;
 
-  const checkExistingSession = async () => {
-    try {
-      const token = await getStoredAuthToken();
-      if (token) {
-        // Decode token to get wallet address (without verifying - server will verify)
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const expiresAt = payload.exp * 1000;
-
-        if (Date.now() < expiresAt) {
-          // Token still valid
-          const authenticatedClient = createAuthenticatedClient(token);
-          setSupabase(authenticatedClient);
-          setWalletAddress(payload.sub);
-          setUser({ id: payload.user_id, wallet_address: payload.sub });
-        } else {
-          // Token expired, clear it
-          await removeAuthToken();
+          if (Date.now() < expiresAt) {
+            // Token still valid
+            const authenticatedClient = createAuthenticatedClient(token);
+            setSupabase(authenticatedClient);
+            setWalletAddress(payload.wallet_address);
+            setUser({
+              id: payload.sub,
+              wallet_address: payload.wallet_address,
+            });
+            // Prefetch pledges data and sync timezone
+            prefetchPledges(authenticatedClient, payload.sub);
+            storeTimezone(authenticatedClient, payload.sub);
+          } else {
+            // Token expired, clear it
+            await removeAuthToken();
+          }
         }
+      } catch (err) {
+        console.error('Error checking existing session:', err);
+        await removeAuthToken();
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      console.error('Error checking existing session:', err);
-      await removeAuthToken();
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
+
+    checkExistingSession();
+  }, [prefetchPledges, storeTimezone]);
 
   const connect = useCallback(async () => {
     setIsConnecting(true);
@@ -158,7 +203,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const isValidLocally = nacl.sign.detached.verify(
           messageBytes,
           signatureBytes,
-          publicKeyBytes,
+          publicKeyBytes
         );
 
         if (!isValidLocally) {
@@ -183,7 +228,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error(
             'Edge function error response:',
             response.status,
-            errorText,
+            errorText
           );
           let errorMessage = 'Wallet verification failed';
           try {
@@ -204,6 +249,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSupabase(authenticatedClient);
         setWalletAddress(walletAddr);
         setUser(userData);
+        // Prefetch pledges data and sync timezone
+        prefetchPledges(authenticatedClient, walletAddr);
+        storeTimezone(authenticatedClient, userData.id);
       });
     } catch (err: any) {
       console.error('Connection error:', err);
@@ -212,7 +260,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsConnecting(false);
     }
-  }, []);
+  }, [prefetchPledges, storeTimezone]);
 
   const disconnect = useCallback(async () => {
     try {
@@ -243,12 +291,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
+};

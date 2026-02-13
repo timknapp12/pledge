@@ -5,8 +5,12 @@ import {
   TextInputProps,
   ViewStyle,
   TextStyle,
+  View,
+  Text,
+  StyleSheet,
 } from 'react-native';
-import styled, { useTheme } from 'styled-components/native';
+import { useAppTheme } from '@/theme/ThemeProvider';
+import { cardBorderRadius } from '@/theme';
 
 interface FloatingLabelInputProps extends Omit<TextInputProps, 'placeholder'> {
   label: string;
@@ -16,7 +20,9 @@ interface FloatingLabelInputProps extends Omit<TextInputProps, 'placeholder'> {
   containerStyle?: ViewStyle;
 }
 
-export function FloatingLabelInput({
+const AnimatedText = Animated.createAnimatedComponent(Text);
+
+export const FloatingLabelInput = ({
   label,
   value,
   onChangeText,
@@ -25,8 +31,8 @@ export function FloatingLabelInput({
   onFocus,
   onBlur,
   ...props
-}: FloatingLabelInputProps) {
-  const theme = useTheme();
+}: FloatingLabelInputProps) => {
+  const { theme } = useAppTheme();
   const [isFocused, setIsFocused] = useState(false);
 
   // Animation value for label position (native driver compatible)
@@ -84,17 +90,20 @@ export function FloatingLabelInput({
     : theme.colors.border;
 
   return (
-    <Container style={containerStyle}>
-      <InputContainer style={{ borderColor }}>
-        <AnimatedLabel
-          style={{
-            transform: [{ translateY: labelTranslateY }, { scale: labelScale }],
-            color: labelColor,
-          }}
+    <View style={[styles.container, containerStyle]}>
+      <View style={[styles.inputContainer, { borderColor }]}>
+        <AnimatedText
+          style={[
+            styles.label,
+            {
+              transform: [{ translateY: labelTranslateY }, { scale: labelScale }],
+              color: labelColor,
+            },
+          ]}
         >
           {label}
-        </AnimatedLabel>
-        <StyledInput
+        </AnimatedText>
+        <TextInput
           value={value}
           onChangeText={onChangeText}
           onFocus={handleFocus}
@@ -102,46 +111,17 @@ export function FloatingLabelInput({
           placeholderTextColor={theme.colors.textSecondary}
           selectionColor={theme.colors.primary}
           {...props}
-          style={[{ color: theme.colors.text }, props.style as TextStyle]}
+          style={[styles.styledInput, { color: theme.colors.text }, props.style as TextStyle]}
         />
-      </InputContainer>
-      {error && <ErrorText>{error}</ErrorText>}
-    </Container>
+      </View>
+      {error && (
+        <Text style={[styles.errorText, { color: theme.colors.error }]}>
+          {error}
+        </Text>
+      )}
+    </View>
   );
 }
-
-const Container = styled.View`
-  width: 100%;
-`;
-
-const InputContainer = styled.View`
-  border-bottom-width: 2px;
-  padding: 8px;
-  padding-top: 24px;
-  padding-bottom: 4px;
-`;
-
-const Label = styled.Text`
-  position: absolute;
-  left: 0px;
-  top: 20px;
-  font-size: 16px;
-`;
-
-const AnimatedLabel = Animated.createAnimatedComponent(Label);
-
-const StyledInput = styled(TextInput)`
-  font-size: 16px;
-  padding: 0;
-  margin: 0;
-`;
-
-const ErrorText = styled.Text`
-  color: ${(props) => props.theme.colors.error};
-  font-size: 12px;
-  margin-top: 4px;
-  margin-left: 16px;
-`;
 
 // TextArea Component
 interface TextAreaProps
@@ -154,7 +134,7 @@ interface TextAreaProps
   minHeight?: number;
 }
 
-export function TextArea({
+export const TextArea = ({
   label,
   value,
   onChangeText,
@@ -164,8 +144,8 @@ export function TextArea({
   onFocus,
   onBlur,
   ...props
-}: TextAreaProps) {
-  const theme = useTheme();
+}: TextAreaProps) => {
+  const { theme } = useAppTheme();
   const [isFocused, setIsFocused] = useState(false);
 
   // Animation value for label position (native driver compatible)
@@ -223,17 +203,29 @@ export function TextArea({
     : theme.colors.border;
 
   return (
-    <Container style={containerStyle}>
-      <TextAreaContainer style={{ borderColor, minHeight }}>
-        <TextAreaLabel
-          style={{
-            transform: [{ translateY: labelTranslateY }, { scale: labelScale }],
-            color: labelColor,
-          }}
+    <View style={[styles.container, containerStyle]}>
+      <View
+        style={[
+          styles.textAreaContainer,
+          {
+            borderColor,
+            minHeight,
+            backgroundColor: theme.colors.cardBackground,
+          },
+        ]}
+      >
+        <AnimatedText
+          style={[
+            styles.textAreaLabel,
+            {
+              transform: [{ translateY: labelTranslateY }, { scale: labelScale }],
+              color: labelColor,
+            },
+          ]}
         >
           {label}
-        </TextAreaLabel>
-        <StyledTextArea
+        </AnimatedText>
+        <TextInput
           value={value}
           onChangeText={onChangeText}
           onFocus={handleFocus}
@@ -242,44 +234,60 @@ export function TextArea({
           textAlignVertical='top'
           selectionColor={theme.colors.primary}
           {...props}
-          style={[{ color: theme.colors.text }, props.style as TextStyle]}
+          style={[styles.styledTextArea, { color: theme.colors.text }, props.style as TextStyle]}
         />
-      </TextAreaContainer>
-      {error && <TextAreaErrorText>{error}</TextAreaErrorText>}
-    </Container>
+      </View>
+      {error && (
+        <Text style={[styles.errorText, { color: theme.colors.error }]}>
+          {error}
+        </Text>
+      )}
+    </View>
   );
 }
 
-const TextAreaContainer = styled.View`
-  border-width: 1.5px;
-  border-bottom-right-radius: 30px;
-  border-top-left-radius: 4px;
-  border-top-right-radius: 30px;
-  border-bottom-left-radius: 4px;
-  padding: 16px;
-  padding-top: 28px;
-  background-color: ${(props) => props.theme.colors.cardBackground};
-`;
-
-const TextAreaLabelBase = styled.Text`
-  position: absolute;
-  left: 16px;
-  top: 20px;
-  font-size: 16px;
-`;
-
-const TextAreaLabel = Animated.createAnimatedComponent(TextAreaLabelBase);
-
-const StyledTextArea = styled(TextInput)`
-  font-size: 16px;
-  padding: 0;
-  margin: 0;
-  flex: 1;
-`;
-
-const TextAreaErrorText = styled.Text`
-  color: ${(props) => props.theme.colors.error};
-  font-size: 12px;
-  margin-top: 4px;
-  margin-left: 16px;
-`;
+const styles = StyleSheet.create({
+  container: {
+    width: '100%',
+  },
+  inputContainer: {
+    borderBottomWidth: 2,
+    padding: 8,
+    paddingTop: 24,
+    paddingBottom: 4,
+  },
+  label: {
+    position: 'absolute',
+    left: 0,
+    top: 20,
+    fontSize: 16,
+  },
+  styledInput: {
+    fontSize: 16,
+    padding: 0,
+    margin: 0,
+  },
+  errorText: {
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 16,
+  },
+  textAreaContainer: {
+    borderWidth: 1.5,
+    ...cardBorderRadius,
+    padding: 16,
+    paddingTop: 28,
+  },
+  textAreaLabel: {
+    position: 'absolute',
+    left: 16,
+    top: 20,
+    fontSize: 16,
+  },
+  styledTextArea: {
+    fontSize: 16,
+    padding: 0,
+    margin: 0,
+    flex: 1,
+  },
+});

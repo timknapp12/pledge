@@ -1,8 +1,14 @@
 import { useRef, useEffect } from 'react';
-import { Animated, Pressable, LayoutChangeEvent } from 'react-native';
+import {
+  Animated,
+  Pressable,
+  LayoutChangeEvent,
+  View,
+  StyleSheet,
+} from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import styled, { useTheme } from 'styled-components/native';
-import { useThemeMode, ThemeMode } from '../../theme/ThemeProvider';
+import { useAppTheme } from '@/theme/ThemeProvider';
+import { useThemeMode, ThemeMode } from '@/theme/ThemeProvider';
 
 const OPTIONS: { mode: ThemeMode; icon: 'sun-o' | 'moon-o' | 'cog' }[] = [
   { mode: 'light', icon: 'sun-o' },
@@ -10,8 +16,8 @@ const OPTIONS: { mode: ThemeMode; icon: 'sun-o' | 'moon-o' | 'cog' }[] = [
   { mode: 'system', icon: 'cog' },
 ];
 
-export function ThemeSelector() {
-  const theme = useTheme();
+export const ThemeSelector = () => {
+  const { theme } = useAppTheme();
   const { mode, setMode } = useThemeMode();
   const slideAnim = useRef(new Animated.Value(0)).current;
   const segmentWidth = useRef(0);
@@ -35,15 +41,29 @@ export function ThemeSelector() {
   };
 
   return (
-    <Container onLayout={handleLayout}>
-      <Pill
-        style={{
-          transform: [{ translateX: slideAnim }],
-          width: `${100 / OPTIONS.length}%`,
-        }}
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: theme.colors.cardBackground },
+      ]}
+      onLayout={handleLayout}
+    >
+      <Animated.View
+        style={[
+          styles.pill,
+          {
+            backgroundColor: theme.colors.primary,
+            transform: [{ translateX: slideAnim }],
+            width: `${100 / OPTIONS.length}%`,
+          },
+        ]}
       />
       {OPTIONS.map((option) => (
-        <Segment key={option.mode} onPress={() => setMode(option.mode)}>
+        <Pressable
+          key={option.mode}
+          style={styles.segment}
+          onPress={() => setMode(option.mode)}
+        >
           <FontAwesome
             name={option.icon}
             size={20}
@@ -53,41 +73,38 @@ export function ThemeSelector() {
                 : theme.colors.textSecondary
             }
           />
-        </Segment>
+        </Pressable>
       ))}
-    </Container>
+    </View>
   );
-}
+};
 
-const Container = styled.View`
-  flex-direction: row;
-  background-color: ${(props) => props.theme.colors.cardBackground};
-  border-bottom-right-radius: 20px;
-  border-top-left-radius: 4px;
-  border-top-right-radius: 20px;
-  border-bottom-left-radius: 4px;
-  padding: 4px;
-  position: relative;
-`;
-
-const PillBase = styled.View`
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  bottom: 4px;
-  background-color: ${(props) => props.theme.colors.primary};
-  border-bottom-right-radius: 16px;
-  border-top-left-radius: 2px;
-  border-top-right-radius: 16px;
-  border-bottom-left-radius: 2px;
-`;
-
-const Pill = Animated.createAnimatedComponent(PillBase);
-
-const Segment = styled(Pressable)`
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 20px;
-  z-index: 1;
-`;
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    borderBottomRightRadius: 20,
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 20,
+    borderBottomLeftRadius: 4,
+    padding: 4,
+    position: 'relative',
+  },
+  pill: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    bottom: 4,
+    borderBottomRightRadius: 16,
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 16,
+    borderBottomLeftRadius: 2,
+  },
+  segment: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    zIndex: 1,
+  },
+});

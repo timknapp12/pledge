@@ -27,7 +27,9 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Initialize Solana connection
-    const rpcUrl = Deno.env.get('HELIUS_RPC_URL')!;
+    const heliusApiKey = Deno.env.get('HELIUS_API_KEY')!;
+    const solanaNetwork = Deno.env.get('SOLANA_NETWORK') || 'mainnet'; // 'devnet' or 'mainnet'
+    const rpcUrl = `https://${solanaNetwork}.helius-rpc.com/?api-key=${heliusApiKey}`;
     const connection = new Connection(rpcUrl);
 
     // Load crank keypair

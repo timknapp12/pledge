@@ -89,11 +89,13 @@ Deno.serve(async (req) => {
     }
 
     // Create custom JWT with Supabase-compatible claims
+    // NOTE: sub must be a UUID for auth.uid() to work
+    // wallet_address is stored as a custom claim for RLS policies
     const secret = new TextEncoder().encode(jwtSecret);
     const token = await new jose.SignJWT({
-      sub: publicKey,
+      sub: user.id, // UUID - required for auth.uid()
       role: 'authenticated',
-      user_id: user.id,
+      wallet_address: publicKey, // Custom claim for RLS policies
       aud: 'authenticated',
     })
       .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })

@@ -1,5 +1,5 @@
-// Send push notifications via Expo
-// Triggered by pg_cron for deadline reminders and other notifications
+// Send pending push notifications via Expo Push API
+// Triggered by pg_cron every 2 minutes
 
 /// <reference path="../shims.d.ts" />
 
@@ -7,14 +7,25 @@ import { serve } from 'std/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
+const BATCH_SIZE = 100;
 
-interface ExpoPushMessage {
-  to: string;
+interface NotificationRow {
+  id: string;
+  user_id: string;
+  pledge_id: string;
+  type: string;
   title: string;
   body: string;
-  data?: Record<string, any>;
-  sound?: 'default' | null;
-  badge?: number;
+  scheduled_for: string;
+  push_token: string | null;
+  notifications_enabled: boolean;
+}
+
+interface ExpoPushTicket {
+  status: 'ok' | 'error';
+  id?: string;
+  message?: string;
+  details?: { error?: string };
 }
 
 serve(async (req) => {
@@ -23,101 +34,165 @@ serve(async (req) => {
       return new Response('Method not allowed', { status: 405 });
     }
 
-    // Initialize Supabase client with service role
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const now = new Date();
+    // Query pending notifications that are due, joined with user for push_token
+    const { data: notifications, error: queryError } = await supabase
+      .from('notifications')
+      .select(`
+        id,
+        user_id,
+        pledge_id,
+        type,
+        title,
+        body,
+        scheduled_for,
+        users!inner(push_token, notifications_enabled)
+      `)
+      .eq('status', 'pending')
+      .lte('scheduled_for', new Date().toISOString())
+      .limit(BATCH_SIZE);
 
-    // Query for pledges that need notifications
-    // 1. Deadline reminders (based on user preferences)
-    // 2. Deadline reached
-    // 3. Time to report (after deadline)
-
-    // Get pledges approaching deadline (within 24 hours)
-    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    const { data: approachingPledges, error: approachingError } = await supabase
-      .from('pledges')
-      .select('*, users!inner(wallet_address, notification_preferences)')
-      .eq('status', 'Active')
-      .gte('deadline', now.toISOString())
-      .lte('deadline', tomorrow.toISOString());
-
-    if (approachingError) {
-      console.error('Error fetching approaching pledges:', approachingError);
-    }
-
-    // Get pledges past deadline (need to report)
-    const { data: pastDeadlinePledges, error: pastError } = await supabase
-      .from('pledges')
-      .select('*, users!inner(wallet_address, notification_preferences)')
-      .eq('status', 'Active')
-      .lt('deadline', now.toISOString());
-
-    if (pastError) {
-      console.error('Error fetching past deadline pledges:', pastError);
-    }
-
-    const notifications: ExpoPushMessage[] = [];
-
-    // Build notifications for approaching deadlines
-    for (const pledge of approachingPledges || []) {
-      // TODO: Get expo push token from user profile
-      // For now, skip if no push token
-      const pushToken = pledge.users?.expo_push_token;
-      if (!pushToken) continue;
-
-      const hoursUntilDeadline = Math.round(
-        (new Date(pledge.deadline).getTime() - now.getTime()) / (1000 * 60 * 60)
+    if (queryError) {
+      console.error('Query error:', queryError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to query notifications' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
-
-      notifications.push({
-        to: pushToken,
-        title: 'Pledge Deadline Approaching',
-        body: `"${pledge.name}" is due in ${hoursUntilDeadline} hours!`,
-        data: { pledgeId: pledge.id, type: 'deadline_reminder' },
-        sound: 'default',
-      });
     }
 
-    // Build notifications for past deadline (time to report)
-    for (const pledge of pastDeadlinePledges || []) {
-      const pushToken = pledge.users?.expo_push_token;
-      if (!pushToken) continue;
-
-      notifications.push({
-        to: pushToken,
-        title: 'Time to Report',
-        body: `"${pledge.name}" deadline has passed. Submit your completion report!`,
-        data: { pledgeId: pledge.id, type: 'time_to_report' },
-        sound: 'default',
-      });
+    if (!notifications || notifications.length === 0) {
+      return new Response(
+        JSON.stringify({ sent: 0, cancelled: 0 }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Send notifications via Expo
-    if (notifications.length > 0) {
-      const response = await fetch(EXPO_PUSH_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(notifications),
-      });
+    // Separate sendable vs non-sendable
+    const toSend: Array<NotificationRow & { push_token: string }> = [];
+    const toCancelIds: string[] = [];
 
-      const result = await response.json();
-      console.log('Expo push result:', result);
+    for (const n of notifications) {
+      const user = (n as any).users;
+      const token = user?.push_token;
+      const enabled = user?.notifications_enabled;
+
+      if (!token || !enabled) {
+        toCancelIds.push(n.id);
+      } else {
+        toSend.push({ ...n, push_token: token, notifications_enabled: enabled });
+      }
     }
+
+    // Cancel notifications for users with no token or disabled
+    if (toCancelIds.length > 0) {
+      await supabase
+        .from('notifications')
+        .update({ status: 'cancelled' })
+        .in('id', toCancelIds);
+    }
+
+    if (toSend.length === 0) {
+      return new Response(
+        JSON.stringify({ sent: 0, cancelled: toCancelIds.length }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Build Expo push messages
+    const messages = toSend.map((n) => ({
+      to: n.push_token,
+      title: n.title,
+      body: n.body,
+      sound: 'default' as const,
+      channelId: 'reminders',
+      data: { pledgeId: n.pledge_id, type: n.type },
+    }));
+
+    // Send to Expo Push API
+    const response = await fetch(EXPO_PUSH_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(messages),
+    });
+
+    const result = await response.json();
+    const tickets: ExpoPushTicket[] = result.data ?? [];
+
+    // Process results
+    const sentIds: string[] = [];
+    const failedUpdates: Array<{ id: string; error: string }> = [];
+    const deviceNotRegisteredUserIds: Set<string> = new Set();
+
+    for (let i = 0; i < tickets.length; i++) {
+      const ticket = tickets[i];
+      const notification = toSend[i];
+
+      if (ticket.status === 'ok') {
+        sentIds.push(notification.id);
+      } else {
+        const errorType = ticket.details?.error;
+        if (errorType === 'DeviceNotRegistered') {
+          deviceNotRegisteredUserIds.add(notification.user_id);
+          failedUpdates.push({ id: notification.id, error: 'DeviceNotRegistered' });
+        } else {
+          failedUpdates.push({
+            id: notification.id,
+            error: ticket.message || 'Unknown error',
+          });
+        }
+      }
+    }
+
+    // Mark sent notifications
+    if (sentIds.length > 0) {
+      await supabase
+        .from('notifications')
+        .update({ status: 'sent', sent_at: new Date().toISOString() })
+        .in('id', sentIds);
+    }
+
+    // Mark failed notifications
+    for (const fail of failedUpdates) {
+      await supabase
+        .from('notifications')
+        .update({ status: 'failed', error_message: fail.error })
+        .eq('id', fail.id);
+    }
+
+    // Handle DeviceNotRegistered: clear token, disable notifications, cancel pending
+    for (const userId of deviceNotRegisteredUserIds) {
+      await supabase
+        .from('users')
+        .update({ push_token: null, notifications_enabled: false })
+        .eq('id', userId);
+
+      await supabase
+        .from('notifications')
+        .update({ status: 'cancelled' })
+        .eq('user_id', userId)
+        .eq('status', 'pending');
+    }
+
+    console.log(
+      `Notifications: ${sentIds.length} sent, ${toCancelIds.length} cancelled, ${failedUpdates.length} failed, ${deviceNotRegisteredUserIds.size} tokens invalidated`
+    );
 
     return new Response(
-      JSON.stringify({ sent: notifications.length }),
+      JSON.stringify({
+        sent: sentIds.length,
+        cancelled: toCancelIds.length,
+        failed: failedUpdates.length,
+      }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Notification error:', error);
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
-      { status: 500 }
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 });
