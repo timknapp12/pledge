@@ -45,7 +45,7 @@ export const HomeScreen = () => {
   useFocusEffect(
     useCallback(() => {
       setFocusCount((c) => c + 1);
-    }, [])
+    }, []),
   );
 
   const handleCreatePledge = () => {
