@@ -114,6 +114,7 @@
   "Deadline Reminders": "Deadline Reminders",
   "1 day before": "1 day before",
   "1 hour before": "1 hour before",
+  "hours before": "hours before",
   "Notifications Disabled": "Notifications Disabled",
   "Please enable notifications in your device settings to receive reminders.": "Please enable notifications in your device settings to receive reminders.",
   "OK": "OK",
@@ -135,5 +136,6 @@
   "Custom schedule": "Custom schedule",
   "Enter a task before adding": "Enter a task before adding",
   "Completion Reported": "Completion Reported",
-  "Awaiting settlement after deadline": "Awaiting settlement after deadline"
+  "Awaiting settlement after deadline": "Awaiting settlement after deadline",
+  "Awaiting settlement": "Awaiting settlement"
 }

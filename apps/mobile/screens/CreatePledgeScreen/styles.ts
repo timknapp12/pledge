@@ -1,5 +1,7 @@
 import { StyleSheet } from 'react-native';
 
+const valueBase = { flex: 1, minWidth: 0 };
+
 export const styles = StyleSheet.create({
   backButton: {
     width: 40,
@@ -24,6 +26,19 @@ export const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
   },
+  scheduleRowReminders: {
+    alignItems: 'flex-start',
+  },
+  scheduleRowValue: {
+    ...valueBase,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  scheduleRowValueText: valueBase,
+  scheduleRowChevron: {
+    flexShrink: 0,
+  },
   scheduleDivider: {
     height: 1,
     marginLeft: 16,
@@ -45,10 +60,21 @@ export const styles = StyleSheet.create({
   },
   summaryRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     paddingVertical: 8,
     borderBottomWidth: 1,
+    gap: 12,
+  },
+  summaryLabel: {
+    flexShrink: 0,
+  },
+  summaryValue: {
+    ...valueBase,
+    alignItems: 'flex-end',
+  },
+  summaryValueText: {
+    textAlign: 'right',
   },
   summaryRowLast: {
     borderBottomWidth: 0,

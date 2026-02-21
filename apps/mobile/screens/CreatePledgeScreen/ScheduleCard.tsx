@@ -152,16 +152,27 @@ export const ScheduleCard = ({
         />
 
         {/* Reminders */}
-        <Pressable style={styles.scheduleRow} onPress={onRemindersPress}>
-          <Body>{t('Reminders')}</Body>
-          <Row gap={8}>
-            <BodySecondary>{getRemindersLabel()}</BodySecondary>
-            <Ionicons
-              name='chevron-forward'
-              size={16}
-              color={theme.colors.textSecondary}
-            />
-          </Row>
+        <Pressable
+          style={[styles.scheduleRow, styles.scheduleRowReminders]}
+          onPress={onRemindersPress}
+        >
+          <Body style={[styles.summaryLabel, { marginRight: 12 }]}>
+            {t('Reminders')}
+          </Body>
+          <View style={styles.scheduleRowValue}>
+            <BodySecondary
+              style={[styles.scheduleRowValueText, styles.summaryValueText]}
+            >
+              {getRemindersLabel()}
+            </BodySecondary>
+            <View style={styles.scheduleRowChevron}>
+              <Ionicons
+                name='chevron-forward'
+                size={16}
+                color={theme.colors.textSecondary}
+              />
+            </View>
+          </View>
         </Pressable>
       </View>
     </View>
