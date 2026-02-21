@@ -42,12 +42,9 @@ export const CreatePledgeScreen = () => {
   const scrollViewRef = useRef<ScrollView>(null);
   const inputPositions = useRef<Record<string, number>>({});
 
-  const trackLayout = useCallback(
-    (key: string, e: LayoutChangeEvent) => {
-      inputPositions.current[key] = e.nativeEvent.layout.y;
-    },
-    []
-  );
+  const trackLayout = useCallback((key: string, e: LayoutChangeEvent) => {
+    inputPositions.current[key] = e.nativeEvent.layout.y;
+  }, []);
 
   const scrollToSection = useCallback((key: string) => {
     const y = inputPositions.current[key];

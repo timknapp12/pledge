@@ -27,26 +27,42 @@ export const PledgeSummary = ({
         <View
           style={[styles.summaryRow, { borderBottomColor: theme.colors.border }]}
         >
-          <BodySecondary>{t('Duration')}</BodySecondary>
-          <Body>{durationLabel}</Body>
+          <BodySecondary style={styles.summaryLabel}>
+            {t('Duration')}
+          </BodySecondary>
+          <View style={styles.summaryValue}>
+            <Body style={styles.summaryValueText}>{durationLabel}</Body>
+          </View>
         </View>
         <View
           style={[styles.summaryRow, { borderBottomColor: theme.colors.border }]}
         >
-          <BodySecondary>{t('Total tasks')}</BodySecondary>
-          <Body>{todoCount}</Body>
+          <BodySecondary style={styles.summaryLabel}>
+            {t('Total tasks')}
+          </BodySecondary>
+          <View style={styles.summaryValue}>
+            <Body style={styles.summaryValueText}>{todoCount}</Body>
+          </View>
         </View>
         <View
           style={[styles.summaryRow, { borderBottomColor: theme.colors.border }]}
         >
-          <BodySecondary>{t('Reminders')}</BodySecondary>
-          <Body>{remindersLabel}</Body>
+          <BodySecondary style={styles.summaryLabel}>
+            {t('Reminders')}
+          </BodySecondary>
+          <View style={styles.summaryValue}>
+            <Body style={styles.summaryValueText}>{remindersLabel}</Body>
+          </View>
         </View>
         <View style={[styles.summaryRow, styles.summaryRowLast]}>
-          <BodySecondary>{t('Stake Amount')}</BodySecondary>
-          <Body>
-            ${stakeAmount} {t('USDC')}
-          </Body>
+          <BodySecondary style={styles.summaryLabel}>
+            {t('Stake Amount')}
+          </BodySecondary>
+          <View style={styles.summaryValue}>
+            <Body style={styles.summaryValueText}>
+              ${stakeAmount} {t('USDC')}
+            </Body>
+          </View>
         </View>
       </Card>
     </View>

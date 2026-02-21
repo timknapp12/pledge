@@ -3,11 +3,11 @@ import {
   View,
   Text,
   Pressable,
-  Switch,
   Alert,
   Platform,
   StyleSheet,
 } from 'react-native';
+import { Switch } from '@/components';
 import BottomSheet from '@gorhom/bottom-sheet';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTranslation } from 'react-i18next';
@@ -85,9 +85,9 @@ export const RemindersSheet = forwardRef<BottomSheet, RemindersSheetProps>(
         Alert.alert(
           t('Notifications Disabled'),
           t(
-            'Please enable notifications in your device settings to receive reminders.'
+            'Please enable notifications in your device settings to receive reminders.',
           ),
-          [{ text: t('OK') }]
+          [{ text: t('OK') }],
         );
         return false;
       }
@@ -173,127 +173,116 @@ export const RemindersSheet = forwardRef<BottomSheet, RemindersSheetProps>(
         onOpen={() => setHasBeenOpened(true)}
       >
         {hasBeenOpened && (
-        <View style={styles.container}>
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionHeaderContent}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                    {t('Daily Reminder')}
-                  </Text>
+          <View style={styles.container}>
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionHeaderContent}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                      {t('Daily Reminder')}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.sectionSubtitle,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
+                      {t('Get reminded every day')}
+                    </Text>
+                  </View>
+                  <Switch
+                    value={dailyEnabled}
+                    onValueChange={handleDailyToggle}
+                  />
+                </View>
+              </View>
+
+              {dailyEnabled && (
+                <Pressable
+                  style={[
+                    styles.timeSelector,
+                    { backgroundColor: colors.cardBackground },
+                  ]}
+                  onPress={() => setShowTimePicker(true)}
+                >
                   <Text
                     style={[
-                      styles.sectionSubtitle,
+                      styles.timeSelectorLabel,
                       { color: colors.textSecondary },
                     ]}
                   >
-                    {t('Get reminded every day')}
+                    {t('Time')}
                   </Text>
-                </View>
-                <Switch
-                  value={dailyEnabled}
-                  onValueChange={handleDailyToggle}
-                  trackColor={{
-                    false: colors.border,
-                    true: colors.primaryAlpha40,
-                  }}
-                  thumbColor={dailyEnabled ? colors.primary : '#f4f4f4'}
-                />
-              </View>
-            </View>
+                  <View style={styles.timeSelectorValue}>
+                    <Text
+                      style={[styles.timeSelectorText, { color: colors.text }]}
+                    >
+                      {formatTime(dailyTime)}
+                    </Text>
+                    <Ionicons
+                      name='chevron-forward'
+                      size={16}
+                      color={colors.textSecondary}
+                    />
+                  </View>
+                </Pressable>
+              )}
 
-            {dailyEnabled && (
-              <Pressable
-                style={[
-                  styles.timeSelector,
-                  { backgroundColor: colors.cardBackground },
-                ]}
-                onPress={() => setShowTimePicker(true)}
-              >
-                <Text
-                  style={[
-                    styles.timeSelectorLabel,
-                    { color: colors.textSecondary },
-                  ]}
-                >
-                  {t('Time')}
-                </Text>
-                <View style={styles.timeSelectorValue}>
-                  <Text
-                    style={[styles.timeSelectorText, { color: colors.text }]}
-                  >
-                    {formatTime(dailyTime)}
-                  </Text>
-                  <Ionicons
-                    name='chevron-forward'
-                    size={16}
-                    color={colors.textSecondary}
+              {showTimePicker && (
+                <View style={styles.timePickerContainer}>
+                  <DateTimePicker
+                    value={dailyTime}
+                    mode='time'
+                    display='spinner'
+                    onChange={handleTimeChange}
+                    themeVariant={isDark ? 'dark' : 'light'}
                   />
                 </View>
-              </Pressable>
-            )}
+              )}
+            </View>
 
-            {showTimePicker && (
-              <View style={styles.timePickerContainer}>
-                <DateTimePicker
-                  value={dailyTime}
-                  mode='time'
-                  display='spinner'
-                  onChange={handleTimeChange}
-                  themeVariant={isDark ? 'dark' : 'light'}
-                />
-              </View>
-            )}
-          </View>
-
-          <View style={styles.section}>
-            <Text
-              style={[styles.sectionLabel, { color: colors.textSecondary }]}
-            >
-              {t('Deadline Reminders')}
-            </Text>
-            {DEADLINE_OPTIONS.map((option) => (
-              <View
-                key={option.hours}
-                style={[styles.optionRow, { borderBottomColor: colors.border }]}
+            <View style={styles.section}>
+              <Text
+                style={[styles.sectionLabel, { color: colors.textSecondary }]}
               >
-                <Text style={[styles.optionText, { color: colors.text }]}>
-                  {t(option.label)}
-                </Text>
-                <Switch
-                  value={deadlineReminders.includes(option.hours)}
-                  onValueChange={() => handleDeadlineToggle(option.hours)}
-                  trackColor={{
-                    false: colors.border,
-                    true: colors.primaryAlpha40,
-                  }}
-                  thumbColor={
-                    deadlineReminders.includes(option.hours)
-                      ? colors.primary
-                      : '#f4f4f4'
-                  }
-                />
-              </View>
-            ))}
-          </View>
+                {t('Deadline Reminders')}
+              </Text>
+              {DEADLINE_OPTIONS.map((option) => (
+                <View
+                  key={option.hours}
+                  style={[
+                    styles.optionRow,
+                    { borderBottomColor: colors.border },
+                  ]}
+                >
+                  <Text style={[styles.optionText, { color: colors.text }]}>
+                    {t(option.label)}
+                  </Text>
+                  <Switch
+                    value={deadlineReminders.includes(option.hours)}
+                    onValueChange={() => handleDeadlineToggle(option.hours)}
+                  />
+                </View>
+              ))}
+            </View>
 
-          <Row>
-            <RoundButton
-              variant='secondary'
-              icon='close'
-              onPress={() => {
-                if (ref && 'current' in ref && ref.current) {
-                  ref.current.close();
-                }
-              }}
-            />
-            <RoundButton icon='checkmark' onPress={handleConfirm} />
-          </Row>
-        </View>
+            <Row>
+              <RoundButton
+                variant='secondary'
+                icon='close'
+                onPress={() => {
+                  if (ref && 'current' in ref && ref.current) {
+                    ref.current.close();
+                  }
+                }}
+              />
+              <RoundButton icon='checkmark' onPress={handleConfirm} />
+            </Row>
+          </View>
         )}
       </BaseSheet>
     );
-  }
+  },
 );
 
 RemindersSheet.displayName = 'RemindersSheet';

@@ -91,21 +91,26 @@ export const TodoSection = ({
             onFocus={onInputFocus}
           />
         </View>
-        <Pressable
-          onPress={() => {
-            try {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            } catch {}
-            if (!newTodo.trim()) {
-              setShowEmptyError(true);
-              return;
-            }
-            onAddTodo();
-          }}
-          style={[styles.addButton, { backgroundColor: theme.colors.primary }]}
-        >
-          <Ionicons name='add' size={24} color={theme.colors.iconOnPrimary} />
-        </Pressable>
+        {newTodo.trim().length > 0 && (
+          <Pressable
+            onPress={() => {
+              try {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              } catch {}
+              if (!newTodo.trim()) {
+                setShowEmptyError(true);
+                return;
+              }
+              onAddTodo();
+            }}
+            style={[
+              styles.addButton,
+              { backgroundColor: theme.colors.primary },
+            ]}
+          >
+            <Ionicons name='add' size={24} color={theme.colors.iconOnPrimary} />
+          </Pressable>
+        )}
       </Row>
       {showEmptyError && (
         <ErrorText style={{ marginTop: 4 }}>

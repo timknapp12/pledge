@@ -136,19 +136,38 @@ export const useCreatePledgeForm = () => {
     return `${durationDays} ${t('days')}`;
   };
 
+  const formatReminderTime = (timeStr: string): string => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    const d = new Date();
+    d.setHours(hours ?? 0, minutes ?? 0, 0, 0);
+    return d.toLocaleTimeString(undefined, {
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  };
+
   const getRemindersLabel = (): string => {
     if (!reminderSettings || reminderSettings.reminders.length === 0) {
       return t('None');
     }
+    const parts: string[] = [];
     const dailyReminder = reminderSettings.reminders.find(
       (r) => r.type === 'daily'
     );
-    if (dailyReminder && dailyReminder.time) {
-      return `${t('Daily at')} ${dailyReminder.time}`;
+    if (dailyReminder?.time) {
+      parts.push(`${t('Daily at')} ${formatReminderTime(dailyReminder.time)}`);
     }
-    return `${reminderSettings.reminders.length} ${t(
-      'Reminders'
-    ).toLowerCase()}`;
+    const deadlineReminders = reminderSettings.reminders
+      .filter((r) => r.type === 'before_deadline' && r.hours)
+      .map((r) => {
+        if (r.hours === 24) return t('1 day before');
+        if (r.hours === 1) return t('1 hour before');
+        return `${r.hours} ${t('hours before')}`;
+      });
+    if (deadlineReminders.length > 0) {
+      parts.push(deadlineReminders.join(', '));
+    }
+    return parts.join(', ') || t('None');
   };
 
   const getDailyTrackingLabel = (): string => {

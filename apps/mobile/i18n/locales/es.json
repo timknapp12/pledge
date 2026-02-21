@@ -114,6 +114,7 @@
   "Deadline Reminders": "Recordatorios de Fecha Límite",
   "1 day before": "1 día antes",
   "1 hour before": "1 hora antes",
+  "hours before": "horas antes",
   "Notifications Disabled": "Notificaciones Desactivadas",
   "Please enable notifications in your device settings to receive reminders.": "Por favor habilita las notificaciones en la configuración de tu dispositivo para recibir recordatorios.",
   "OK": "OK",
@@ -135,5 +136,6 @@
   "Custom schedule": "Horario personalizado",
   "Enter a task before adding": "Ingresa una tarea antes de agregar",
   "Completion Reported": "Finalización Reportada",
-  "Awaiting settlement after deadline": "Esperando liquidación después del plazo"
+  "Awaiting settlement after deadline": "Esperando liquidación después del plazo",
+  "Awaiting settlement": "Esperando liquidación"
 }
