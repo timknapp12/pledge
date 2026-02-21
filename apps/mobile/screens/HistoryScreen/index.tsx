@@ -1,5 +1,7 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   RefreshControl,
   View,
   StyleSheet,
@@ -7,7 +9,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePledges, formatUsdcAmount } from '@/hooks/useSupabase';
 import {
@@ -25,9 +27,9 @@ import {
   Gap,
   ErrorState,
 } from '@/components';
+import { ProgressBar } from '@/components/common/ProgressBar';
 import { PastPledgeItem } from './PastPledgeItem';
 import { EmptyState } from './EmptyState';
-// TODO - add haptic feedback to nav buttons
 
 export const HistoryScreen = () => {
   const { t } = useTranslation();
@@ -46,7 +48,7 @@ export const HistoryScreen = () => {
   // Filter for past pledges (completed or forfeited)
   const pastPledges =
     allPledges?.filter(
-      (p) => p.status === 'Completed' || p.status === 'Forfeited'
+      (p) => p.status === 'Completed' || p.status === 'Forfeited',
     ) || [];
 
   // Calculate stats
@@ -59,9 +61,36 @@ export const HistoryScreen = () => {
       ? Math.round(
           (completedPledges.length /
             allPledges.filter((p) => p.status !== 'Active').length) *
-            100
+            100,
         ) || 0
       : 0;
+
+  const [focusCount, setFocusCount] = useState(0);
+  const [displayPledged, setDisplayPledged] = useState(0);
+  const pledgedAnim = useRef(new Animated.Value(0)).current;
+
+  useFocusEffect(
+    useCallback(() => {
+      setFocusCount((c) => c + 1);
+    }, []),
+  );
+
+  useEffect(() => {
+    pledgedAnim.setValue(0);
+    setDisplayPledged(0);
+    const listenerId = pledgedAnim.addListener(({ value }) => {
+      setDisplayPledged(value);
+    });
+    Animated.timing(pledgedAnim, {
+      toValue: totalPledged,
+      duration: 600,
+      useNativeDriver: false,
+    }).start(({ finished }) => {
+      pledgedAnim.removeListener(listenerId);
+      if (finished) setDisplayPledged(totalPledged);
+    });
+    return () => pledgedAnim.removeListener(listenerId);
+  }, [totalPledged, focusCount, pledgedAnim]);
 
   const handlePledgePress = (pledgeId: string) => {
     router.push(`/pledge/${pledgeId}`);
@@ -121,21 +150,33 @@ export const HistoryScreen = () => {
                   <Title3>{t('Stats')}</Title3>
                 </View>
                 <CenteredColumn gap={8}>
-                  <Card style={{ alignItems: 'center' }}>
+                  <Card style={{ alignItems: 'center', width: '100%', gap: 8 }}>
                     <Title2 style={{ color: theme.colors.primary }}>
-                      ${formatUsdcAmount(totalPledged)}
+                      ${formatUsdcAmount(displayPledged)}
                     </Title2>
-                    <BodySmallSecondary style={{ marginTop: 4 }}>
+                    <BodySmallSecondary>
                       {t('Total Pledged')}
                     </BodySmallSecondary>
+                    <ProgressBar
+                      progress={100}
+                      height={6}
+                      style={{ width: '100%' }}
+                      animateKey={focusCount}
+                    />
                   </Card>
-                  <Card style={{ alignItems: 'center' }}>
+                  <Card style={{ alignItems: 'center', width: '100%', gap: 8 }}>
                     <Title2 style={{ color: theme.colors.primary }}>
                       {successRate}%
                     </Title2>
-                    <BodySmallSecondary style={{ marginTop: 4 }}>
-                      {t('Success Rate')}
-                    </BodySmallSecondary>
+                    <BodySmallSecondary>{t('Success Rate')}</BodySmallSecondary>
+                    {successRate > 0 && (
+                      <ProgressBar
+                        progress={successRate}
+                        height={6}
+                        style={{ width: '100%' }}
+                        animateKey={focusCount}
+                      />
+                    )}
                   </Card>
                 </CenteredColumn>
               </Column>
