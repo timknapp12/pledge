@@ -1,17 +1,23 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Animated,
   RefreshControl,
   View,
   StyleSheet,
 } from 'react-native';
+import {
+  useSharedValue,
+  useAnimatedReaction,
+  withTiming,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePledges, formatUsdcAmount } from '@/hooks/useSupabase';
+import { getAnimatedDisplayLamports } from '@/lib/animatedAmount';
 import {
   Title1,
   Title2,
@@ -65,7 +71,8 @@ export const HistoryScreen = () => {
 
   const [focusCount, setFocusCount] = useState(0);
   const [displayPledged, setDisplayPledged] = useState(0);
-  const pledgedAnim = useRef(new Animated.Value(0)).current;
+  const pledgedProgress = useSharedValue(0);
+  const totalPledgedRef = useSharedValue(totalPledged);
 
   useFocusEffect(
     useCallback(() => {
@@ -74,21 +81,28 @@ export const HistoryScreen = () => {
   );
 
   useEffect(() => {
-    pledgedAnim.setValue(0);
+    totalPledgedRef.value = totalPledged;
+  }, [totalPledged, totalPledgedRef]);
+
+  useEffect(() => {
     setDisplayPledged(0);
-    const listenerId = pledgedAnim.addListener(({ value }) => {
-      setDisplayPledged(value);
-    });
-    Animated.timing(pledgedAnim, {
-      toValue: totalPledged,
-      duration: 600,
-      useNativeDriver: false,
-    }).start(({ finished }) => {
-      pledgedAnim.removeListener(listenerId);
-      if (finished) setDisplayPledged(totalPledged);
-    });
-    return () => pledgedAnim.removeListener(listenerId);
-  }, [totalPledged, focusCount, pledgedAnim]);
+    pledgedProgress.value = 0;
+    pledgedProgress.value = withTiming(100, { duration: 1000 });
+  }, [totalPledged, focusCount, pledgedProgress]);
+
+  const updateDisplayPledged = useCallback(
+    (progress: number, total: number) => {
+      setDisplayPledged(getAnimatedDisplayLamports(progress, total));
+    },
+    []
+  );
+
+  useAnimatedReaction(
+    () => pledgedProgress.value,
+    (progress) => {
+      scheduleOnRN(updateDisplayPledged, progress, totalPledgedRef.value);
+    }
+  );
 
   const handlePledgePress = (pledgeId: string) => {
     router.push(`/pledge/${pledgeId}`);
