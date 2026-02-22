@@ -1,5 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
-import { Animated, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { useEffect, useState } from 'react';
+import { StyleSheet, Text, View, ViewStyle } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedProps,
+  withTiming,
+  useAnimatedReaction,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import Svg, { Circle } from 'react-native-svg';
 import { useAppTheme } from '@/theme/ThemeProvider';
 
@@ -21,6 +28,8 @@ type AnimatedCircularProgressProps = {
   animateKey?: number;
 };
 
+const DURATION_MS = 1000;
+
 export const AnimatedCircularProgress = ({
   progress,
   size = 56,
@@ -34,40 +43,37 @@ export const AnimatedCircularProgress = ({
   animateKey,
 }: AnimatedCircularProgressProps) => {
   const { theme } = useAppTheme();
-  const animValue = useRef(new Animated.Value(0)).current;
   const [displayPercent, setDisplayPercent] = useState(0);
+  const progressValue = useSharedValue(0);
 
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const center = size / 2;
 
   useEffect(() => {
-    animValue.setValue(0);
+    progressValue.value = 0;
     setDisplayPercent(0);
-    const listenerId = showPercentage
-      ? animValue.addListener(({ value }) => {
-          setDisplayPercent(Math.round(value));
-        })
-      : undefined;
-    Animated.timing(animValue, {
-      toValue: Math.min(Math.max(progress, 0), 100),
-      duration: 600,
-      useNativeDriver: false,
-    }).start(({ finished }) => {
-      if (listenerId) {
-        animValue.removeListener(listenerId);
-        if (finished) setDisplayPercent(Math.round(progress));
-      }
+    const targetProgress = Math.min(Math.max(progress, 0), 100);
+    progressValue.value = withTiming(targetProgress, {
+      duration: DURATION_MS,
     });
-    return () => {
-      if (listenerId) animValue.removeListener(listenerId);
-    };
-  }, [progress, animValue, animateKey, showPercentage]);
+  }, [progress, progressValue, animateKey]);
 
-  const strokeDashoffset = animValue.interpolate({
-    inputRange: [0, 100],
-    outputRange: [circumference, 0],
-    extrapolate: 'clamp',
+  useAnimatedReaction(
+    () => Math.round(progressValue.value),
+    (value) => {
+      if (showPercentage) {
+        scheduleOnRN(setDisplayPercent, value);
+      }
+    },
+    [showPercentage]
+  );
+
+  const animatedProps = useAnimatedProps(() => {
+    const offset = circumference - (progressValue.value / 100) * circumference;
+    return {
+      strokeDashoffset: offset,
+    };
   });
 
   const fillColor = color || theme.colors.primary;
@@ -80,26 +86,24 @@ export const AnimatedCircularProgress = ({
         height={size}
         style={[styles.svg, { width: size, height: size }]}
       >
-        {/* Track */}
         <Circle
           cx={center}
           cy={center}
           r={radius}
           stroke={track}
           strokeWidth={strokeWidth}
-          fill='none'
+          fill="none"
         />
-        {/* Progress */}
         <AnimatedCircle
           cx={center}
           cy={center}
           r={radius}
           stroke={fillColor}
           strokeWidth={strokeWidth}
-          fill='none'
+          fill="none"
           strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
-          strokeLinecap='round'
+          strokeLinecap="round"
+          animatedProps={animatedProps}
         />
       </Svg>
       {showPercentage && (
@@ -133,7 +137,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   percentText: {
-    fontSize: 14,
     fontWeight: '700',
   },
 });
