@@ -38,16 +38,26 @@ export const HomeScreen = () => {
     isError,
     error,
     refetch,
-    isRefetching,
   } = useActivePledges();
 
   const [focusCount, setFocusCount] = useState(0);
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false);
+
   useFocusEffect(
     useCallback(() => {
       setFocusCount((c) => c + 1);
       refetch();
     }, [refetch]),
   );
+
+  const handleRefresh = useCallback(async () => {
+    setIsPullRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setIsPullRefreshing(false);
+    }
+  }, [refetch]);
 
   const handleCreatePledge = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -131,8 +141,8 @@ export const HomeScreen = () => {
               showsVerticalScrollIndicator={false}
               refreshControl={
                 <RefreshControl
-                  refreshing={isRefetching}
-                  onRefresh={refetch}
+                  refreshing={isPullRefreshing}
+                  onRefresh={handleRefresh}
                   tintColor={theme.colors.primary}
                 />
               }
