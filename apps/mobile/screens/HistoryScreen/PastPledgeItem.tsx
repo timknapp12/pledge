@@ -34,10 +34,8 @@ export const PastPledgeItem = ({ pledge, onPress }: PastPledgeItemProps) => {
   return (
     <Pressable onPress={onPress}>
       <Card style={localStyles.pledgeCard}>
-        <Row
-          style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}
-        >
-          <Column>
+        <Row justify='space-between' align='flex-start'>
+          <Column width='auto'>
             <Title3>{pledge.name}</Title3>
             <BodySmallSecondary style={{ marginTop: 4 }}>
               {formatDate(pledge.deadline)}
@@ -77,7 +75,6 @@ export const PastPledgeItem = ({ pledge, onPress }: PastPledgeItemProps) => {
 
 const localStyles = StyleSheet.create({
   pledgeCard: {
-    marginHorizontal: 20,
     marginBottom: 12,
   },
   statusBadge: {
