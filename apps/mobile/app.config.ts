@@ -41,8 +41,8 @@ const slug = 'pledge';
 const owner = 'timknapp12';
 let version = '0.0.1';
 const easProjectId = 'd01efb8d-0437-42d9-b4d4-971d2207ab66';
-let icon = './assets/images/P-white.png';
-let androidIcon = './assets/images/P-white.png';
+let icon = './assets/images/P-white-1024.png';
+let androidIcon = './assets/images/P-white-1024.png';
 let packageName = 'com.pledge.dev';
 let scheme = 'pledgedev';
 let env = 'development';
@@ -118,8 +118,8 @@ module.exports = {
         {
           // Note: Create a proper notification icon (96x96 white on transparent)
           // For now, using adaptive-icon as placeholder
-          icon: './assets/images/P-white.png',
-          color: '#6366f1',
+          icon: './assets/images/P-white-96.png',
+          color: '#6366F1',
         },
       ],
       [
@@ -133,7 +133,7 @@ module.exports = {
       ],
     ],
     splash: {
-      image: './assets/images/pledge-white.png',
+      image: './assets/images/pledge-white-2.png',
       resizeMode: 'contain',
       backgroundColor: '#6366F1',
     },

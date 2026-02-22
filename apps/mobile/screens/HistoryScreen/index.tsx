@@ -28,6 +28,7 @@ import {
   ErrorState,
 } from '@/components';
 import { ProgressBar } from '@/components/common/ProgressBar';
+import { AnimatedCircularProgress } from '@/components/common/AnimatedCircularProgress';
 import { PastPledgeItem } from './PastPledgeItem';
 import { EmptyState } from './EmptyState';
 
@@ -159,20 +160,33 @@ export const HistoryScreen = () => {
                       height={6}
                       style={{ width: '100%' }}
                       animateKey={focusCount}
+                      color={theme.colors.accent}
                     />
                   </Card>
-                  <Card style={{ alignItems: 'center', width: '100%', gap: 8 }}>
-                    <Title2 style={{ color: theme.colors.primary }}>
-                      {successRate}% ({completedPledges.length}/
-                      {settledPledges.length})
-                    </Title2>
-                    <BodySmallSecondary>{t('Success Rate')}</BodySmallSecondary>
+                  <Card
+                    style={{
+                      width: '100%',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <Column gap={4} width='auto'>
+                      <Title3 style={{ color: theme.colors.primary }}>
+                        ({completedPledges.length}/{settledPledges.length})
+                      </Title3>
+                      <BodySmallSecondary>
+                        {t('Success Rate')}
+                      </BodySmallSecondary>
+                    </Column>
                     {successRate > 0 && (
-                      <ProgressBar
+                      <AnimatedCircularProgress
                         progress={successRate}
-                        height={6}
-                        style={{ width: '100%' }}
+                        size={56}
+                        strokeWidth={5}
+                        showPercentage
                         animateKey={focusCount}
+                        color={theme.colors.accent}
                       />
                     )}
                   </Card>
@@ -204,6 +218,7 @@ export const HistoryScreen = () => {
                         key={pledge.id}
                         pledge={pledge}
                         onPress={() => handlePledgePress(pledge.id)}
+                        animateKey={focusCount}
                       />
                     ))}
                   </View>
