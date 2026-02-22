@@ -56,13 +56,10 @@ export const HistoryScreen = () => {
     allPledges?.reduce((sum, p) => sum + p.stake_amount, 0) || 0;
   const completedPledges =
     allPledges?.filter((p) => p.status === 'Completed') || [];
+  const settledPledges = allPledges?.filter((p) => p.status !== 'Active') || [];
   const successRate =
-    allPledges && allPledges.length > 0
-      ? Math.round(
-          (completedPledges.length /
-            allPledges.filter((p) => p.status !== 'Active').length) *
-            100,
-        ) || 0
+    settledPledges.length > 0
+      ? Math.round((completedPledges.length / settledPledges.length) * 100)
       : 0;
 
   const [focusCount, setFocusCount] = useState(0);
@@ -166,7 +163,8 @@ export const HistoryScreen = () => {
                   </Card>
                   <Card style={{ alignItems: 'center', width: '100%', gap: 8 }}>
                     <Title2 style={{ color: theme.colors.primary }}>
-                      {successRate}%
+                      {successRate}% ({completedPledges.length}/
+                      {settledPledges.length})
                     </Title2>
                     <BodySmallSecondary>{t('Success Rate')}</BodySmallSecondary>
                     {successRate > 0 && (
@@ -186,34 +184,33 @@ export const HistoryScreen = () => {
                 <View style={localStyles.sectionHeader}>
                   <Title3>{t('Past Pledges')}</Title3>
                 </View>
-              </Column>
-
-              {pledgesLoading ? (
-                <CenteredColumn>
-                  <Gap gap={48} />
-                  <ActivityIndicator
-                    size='large'
-                    color={theme.colors.primary}
-                  />
-                </CenteredColumn>
-              ) : isError ? (
-                <ErrorState
-                  message={error instanceof Error ? error.message : undefined}
-                  onRetry={refetch}
-                />
-              ) : pastPledges.length > 0 ? (
-                <View style={localStyles.contentContainer}>
-                  {pastPledges.map((pledge) => (
-                    <PastPledgeItem
-                      key={pledge.id}
-                      pledge={pledge}
-                      onPress={() => handlePledgePress(pledge.id)}
+                {pledgesLoading ? (
+                  <CenteredColumn>
+                    <Gap gap={48} />
+                    <ActivityIndicator
+                      size='large'
+                      color={theme.colors.primary}
                     />
-                  ))}
-                </View>
-              ) : (
-                <EmptyState />
-              )}
+                  </CenteredColumn>
+                ) : isError ? (
+                  <ErrorState
+                    message={error instanceof Error ? error.message : undefined}
+                    onRetry={refetch}
+                  />
+                ) : pastPledges.length > 0 ? (
+                  <View style={localStyles.contentContainer}>
+                    {pastPledges.map((pledge) => (
+                      <PastPledgeItem
+                        key={pledge.id}
+                        pledge={pledge}
+                        onPress={() => handlePledgePress(pledge.id)}
+                      />
+                    ))}
+                  </View>
+                ) : (
+                  <EmptyState />
+                )}
+              </Column>
             </Column>
           </TrackedScrollView>
         </CenteredColumn>
