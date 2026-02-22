@@ -182,11 +182,12 @@ export const HistoryScreen = () => {
                     {successRate > 0 && (
                       <AnimatedCircularProgress
                         progress={successRate}
-                        size={56}
+                        size={66}
                         strokeWidth={5}
                         showPercentage
                         animateKey={focusCount}
                         color={theme.colors.accent}
+                        textColor={theme.colors.text}
                       />
                     )}
                   </Card>
