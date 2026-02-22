@@ -11,6 +11,7 @@ supabase:
 - // TODO set up service key from firebase prod and add to expo
 - create and add CRANK_KEYPAIR to supabase/env ✅ (devnet admin: 6F1zqkPXyeJ64e4T4fpREhzgnLW3vwsdstrGqQ8BaVFz)
 - add CRANK_KEYPAIR to supabase dev and prod secrets - load with some funds
+- run script in prod to create ATAs for treasury and charity pubkeys. there is a script in scripts folder
 
 firebase:
 
