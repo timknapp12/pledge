@@ -10,6 +10,7 @@ type AnimatedCircularProgressProps = {
   size?: number;
   strokeWidth?: number;
   color?: string;
+  textColor?: string;
   trackColor?: string;
   style?: ViewStyle;
   /** Show animated percentage in center */
@@ -25,10 +26,11 @@ export const AnimatedCircularProgress = ({
   size = 56,
   strokeWidth = 5,
   color,
+  textColor,
   trackColor,
   style,
   showPercentage = false,
-  percentageFontSize = 14,
+  percentageFontSize = 16,
   animateKey,
 }: AnimatedCircularProgressProps) => {
   const { theme } = useAppTheme();
@@ -105,7 +107,7 @@ export const AnimatedCircularProgress = ({
           <Text
             style={[
               styles.percentText,
-              { color: fillColor, fontSize: percentageFontSize },
+              { color: textColor || fillColor, fontSize: percentageFontSize },
             ]}
           >
             {displayPercent}%

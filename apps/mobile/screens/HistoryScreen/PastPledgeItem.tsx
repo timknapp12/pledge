@@ -11,6 +11,7 @@ import {
   Row,
   Card,
 } from '@/components';
+import { AnimatedCircularProgress } from '@/components/common/AnimatedCircularProgress';
 import { formatUsdcAmount, Pledge } from '@/hooks/useSupabase';
 
 function formatDate(dateString: string): string {
@@ -25,9 +26,14 @@ function formatDate(dateString: string): string {
 export interface PastPledgeItemProps {
   pledge: Pledge;
   onPress: () => void;
+  animateKey?: number;
 }
 
-export const PastPledgeItem = ({ pledge, onPress }: PastPledgeItemProps) => {
+export const PastPledgeItem = ({
+  pledge,
+  onPress,
+  animateKey = 0,
+}: PastPledgeItemProps) => {
   const { t } = useTranslation();
   const { theme } = useAppTheme();
 
@@ -58,14 +64,21 @@ export const PastPledgeItem = ({ pledge, onPress }: PastPledgeItemProps) => {
           </View>
         </Row>
 
-        <Row style={{ marginTop: 12, justifyContent: 'space-between' }}>
+        <Row justify='space-between'>
           <BodySecondary>
             {t('Pledged')}: ${formatUsdcAmount(pledge.stake_amount)}
           </BodySecondary>
           {pledge.completion_percentage !== null && (
-            <BodySmall>
-              {pledge.completion_percentage}% {t('Completion')}
-            </BodySmall>
+            <AnimatedCircularProgress
+              progress={pledge.completion_percentage}
+              size={48}
+              strokeWidth={4}
+              showPercentage
+              percentageFontSize={12}
+              animateKey={animateKey}
+              color={theme.colors.primary}
+              textColor={theme.colors.text}
+            />
           )}
         </Row>
       </Card>
