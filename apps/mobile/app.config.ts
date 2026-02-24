@@ -133,7 +133,7 @@ module.exports = {
       ],
     ],
     splash: {
-      image: './assets/images/pledge-white-2.png',
+      image: './assets/images/pledge-white.png',
       resizeMode: 'contain',
       backgroundColor: '#6366F1',
     },

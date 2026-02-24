@@ -46,8 +46,7 @@ export const HomeScreen = () => {
   useFocusEffect(
     useCallback(() => {
       setFocusCount((c) => c + 1);
-      refetch();
-    }, [refetch]),
+    }, []),
   );
 
   const handleRefresh = useCallback(async () => {
