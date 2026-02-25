@@ -146,12 +146,12 @@ export interface DailyProgress {
   created_at: string;
 }
 
-// TODO: Update Template to support TaskDefinition[] for rehydrating creation form
 export interface Template {
   id: string;
   user_id: string;
   name: string;
   todos: PledgeTodos;
+  task_definitions: TaskDefinition[] | null;
   default_timeframe: string;
   created_at: string;
 }
@@ -465,6 +465,7 @@ export const useCreateTemplate = () => {
     mutationFn: async (template: {
       name: string;
       todos: PledgeTodos;
+      task_definitions: TaskDefinition[];
       default_timeframe: string;
     }) => {
       if (!user?.id) throw new Error('User not authenticated');
@@ -475,6 +476,7 @@ export const useCreateTemplate = () => {
           user_id: user.id,
           name: template.name,
           todos: template.todos,
+          task_definitions: template.task_definitions,
           default_timeframe: template.default_timeframe,
         })
         .select()
@@ -482,6 +484,26 @@ export const useCreateTemplate = () => {
 
       if (error) throw error;
       return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['templates'] });
+    },
+  });
+}
+
+// Delete a template
+export const useDeleteTemplate = () => {
+  const { supabase } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (templateId: string) => {
+      const { error } = await supabase
+        .from('templates')
+        .delete()
+        .eq('id', templateId);
+
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['templates'] });
