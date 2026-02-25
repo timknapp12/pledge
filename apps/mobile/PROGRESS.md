@@ -162,6 +162,22 @@
   - Progress calculation based on daily tasks only
   - Updated `calculateCompletionPercentage` for PledgeTodos format
 
+- [x] **StakeAmountSheet** ✅
+
+  - Bottom sheet with USDC amount input, preset buttons ($5/$10/$25/$50/$100/Max)
+  - Reads connected wallet USDC balance via `useUsdcBalance` hook
+  - Replaced inline TextInput in create pledge form with tappable card + sheet
+  - Keyboard handling: input at top, `keyboardDidHide` snap-back, dismiss on close/confirm
+
+- [x] **Templates** ✅
+
+  - Save templates from create pledge form (tasks + schedule + duration preset)
+  - Templates list screen accessible from Profile → Templates
+  - Load template into create pledge form via `?templateId=` param
+  - Delete templates with confirmation
+  - `SaveTemplateSheet` with name input, dirty state tracking
+  - DB migration: `task_definitions` column on templates table
+
 ---
 
 ## In Progress
@@ -171,6 +187,15 @@
 ---
 
 ## Session Notes
+
+### Feb 24, 2026
+
+**What was built:**
+
+- StakeAmountSheet: USDC bottom sheet with presets, wallet balance, keyboard handling
+- Templates: save/load/delete templates, SaveTemplateSheet, TemplatesScreen, dirty state tracking
+- BaseSheet auto-open guard (`useImperativeHandle` wrapper to prevent Android spurious opens)
+- Fixed `keyboardDidHide` listeners opening closed sheets (added `isOpen` ref tracking)
 
 ### Feb 23, 2026
 
@@ -208,48 +233,25 @@
 - [ ] Test daily progress persistence across days
 - [ ] Handle edge cases (network errors, wallet disconnection)
 
-### 2. StakeAmountSheet
-
-- [ ] Bottom sheet for USDC stake input (like normal crypto wallets)
-- [ ] Preset amount buttons
-- [ ] Read connected wallet USDC balance
-- [ ] "Max" button to select full balance
-- [ ] Wire into create pledge form (replace inline TextInput)
-- _Reference: `useCreatePledgeForm.ts` line 52 TODO_
-
-### 3. Templates
-
-- [ ] Save/load templates — store `TaskDefinition[]` + schedule metadata
-- [ ] Templates list screen (Profile tab "Templates" button)
-- [ ] Create template from pledge
-- [ ] Use template when creating pledge
-- [ ] Update `Template.todos` type to support `TaskDefinition[]` for rehydrating creation form
-- _Reference: `useCreatePledgeForm.ts` line 20, `useSupabase.ts` line 141 TODOs_
-
-### 4. Goal Completion Tracking
+### 2. Goal Completion Tracking
 
 - [ ] Goals are currently display-only on PledgeDetailScreen (flag icon, non-checkable)
 - [ ] Allow checking off goals and persisting state
 - [ ] Decide if goals count toward completion percentage or are separate
 
-### 5. Quick-Settle from HomeScreen
-
-- [ ] When all daily tasks checked for a single-goal pledge, allow reporting as complete directly from DailyTasksView
-- [ ] Show report/settle prompt or button inline
-
-### 6. Edit Pledge
+### 3. Edit Pledge
 
 - [ ] Edit pledge screen/modal
 - [ ] Show 10% penalty warning
 - [ ] Build editPledge transaction
 - [ ] Update DB after on-chain confirmation
 
-### 7. HomeScreen Copy
+### 4. HomeScreen Copy
 
 - [ ] Update empty state copy for `EmptyState.tsx` and `ConnectWalletScreen.tsx`
 - _Reference: TODO comments in those files_
 
-### 8. Notifications (Future)
+### 5. Notifications (Future)
 
 - [x] Firebase project setup
 - [x] Expo push notifications config
@@ -257,7 +259,7 @@
 - [x] Edge Function to send notifications
 - [ ] Crank: clear old rows from notifications table after pledge expiry
 
-### 9. Mainnet Deployment
+### 6. Mainnet Deployment
 
 - [ ] Deploy program to mainnet
 - [ ] Set `MAINNET_PROGRAM_ID` in `app.config.ts`
