@@ -150,5 +150,8 @@
   "Yesterday": "Yesterday",
   "No tasks for this day": "No tasks for this day",
   "done": "done",
-  "Goals": "Goals"
+  "Goals": "Goals",
+  "Balance": "Balance",
+  "Max": "Max",
+  "Select amount": "Select amount"
 }
