@@ -14,6 +14,8 @@ import { useRouter } from 'expo-router';
 import {
   Title1,
   Title3,
+  Body,
+  BodySecondary,
   ErrorText,
   ScreenContainer,
   Row,
@@ -25,7 +27,9 @@ import {
   DateTimePickerSheet,
   DurationPickerSheet,
   RemindersSheet,
+  StakeAmountSheet,
 } from '@/components';
+import { useUsdcBalance } from '@/hooks/useUsdcBalance';
 import { useCreatePledgeForm } from './useCreatePledgeForm';
 import { ScheduleCard } from './ScheduleCard';
 import { TodoSection } from './TodoSection';
@@ -38,6 +42,7 @@ export const CreatePledgeScreen = () => {
   const router = useRouter();
 
   const form = useCreatePledgeForm();
+  const { balance: usdcBalance, isLoading: balanceLoading } = useUsdcBalance();
   const scrollViewRef = useRef<ScrollView>(null);
   const inputPositions = useRef<Record<string, number>>({});
 
@@ -138,29 +143,43 @@ export const CreatePledgeScreen = () => {
                 </View>
 
                 {/* 4. Stake Amount */}
-                {/* TODO: Replace with StakeAmountSheet bottom sheet
-                    - Preset amounts ($5, $10, $25, $50, $100)
-                    - Connected wallet USDC balance display
-                    - "Max" button to stake full balance
-                    - Custom amount input */}
-                <View
-                  style={styles.section}
-                  onLayout={(e) => trackLayout('stake', e)}
-                >
+                <View style={styles.section}>
                   <Title3 style={{ marginBottom: 12 }}>
                     {t('Stake Amount')}
                   </Title3>
-                  <Row gap={12}>
-                    <View style={{ flex: 1 }}>
-                      <FloatingLabelInput
-                        label={t('USDC')}
-                        value={form.stakeAmount}
-                        onChangeText={form.setStakeAmount}
-                        keyboardType='decimal-pad'
-                        onFocus={() => scrollToSection('stake')}
-                      />
+                  <Pressable
+                    style={[
+                      styles.scheduleCard,
+                      { backgroundColor: theme.colors.cardBackground },
+                    ]}
+                    onPress={() => {
+                      Keyboard.dismiss();
+                      form.stakeAmountSheetRef.current?.expand();
+                    }}
+                  >
+                    <View style={styles.scheduleRow}>
+                      <BodySecondary>{t('USDC')}</BodySecondary>
+                      <Row gap={8}>
+                        <View
+                          style={[
+                            styles.dateChip,
+                            { backgroundColor: theme.colors.background },
+                          ]}
+                        >
+                          <Body>
+                            {form.stakeAmount
+                              ? `$${form.stakeAmount}`
+                              : t('Select amount')}
+                          </Body>
+                        </View>
+                        <Ionicons
+                          name='chevron-forward'
+                          size={16}
+                          color={theme.colors.textSecondary}
+                        />
+                      </Row>
                     </View>
-                  </Row>
+                  </Pressable>
                 </View>
 
                 {/* 5. Summary */}
@@ -219,6 +238,14 @@ export const CreatePledgeScreen = () => {
         ref={form.remindersSheetRef}
         value={form.reminderSettings}
         onConfirm={form.handleRemindersConfirm}
+      />
+
+      <StakeAmountSheet
+        ref={form.stakeAmountSheetRef}
+        value={form.stakeAmount}
+        walletBalance={usdcBalance}
+        balanceLoading={balanceLoading}
+        onConfirm={form.setStakeAmount}
       />
     </ScreenContainer>
   );
