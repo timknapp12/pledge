@@ -6,16 +6,18 @@ import { styles } from './styles';
 
 type PledgeSummaryProps = {
   durationLabel: string;
-  todoCount: number;
+  taskCount: number;
   remindersLabel: string;
   stakeAmount: string;
+  goalName?: string;
 };
 
 export const PledgeSummary = ({
   durationLabel,
-  todoCount,
+  taskCount,
   remindersLabel,
   stakeAmount,
+  goalName,
 }: PledgeSummaryProps) => {
   const { t } = useTranslation();
   const { theme } = useAppTheme();
@@ -24,6 +26,21 @@ export const PledgeSummary = ({
     <View style={styles.section}>
       <Title3 style={{ marginBottom: 8 }}>{t('Summary')}</Title3>
       <Card style={{ marginTop: 8 }}>
+        {goalName && (
+          <View
+            style={[
+              styles.summaryRow,
+              { borderBottomColor: theme.colors.border },
+            ]}
+          >
+            <BodySecondary style={styles.summaryLabel}>
+              {t('Goal Name')}
+            </BodySecondary>
+            <View style={styles.summaryValue}>
+              <Body style={styles.summaryValueText}>{goalName}</Body>
+            </View>
+          </View>
+        )}
         <View
           style={[styles.summaryRow, { borderBottomColor: theme.colors.border }]}
         >
@@ -41,7 +58,7 @@ export const PledgeSummary = ({
             {t('Total tasks')}
           </BodySecondary>
           <View style={styles.summaryValue}>
-            <Body style={styles.summaryValueText}>{todoCount}</Body>
+            <Body style={styles.summaryValueText}>{taskCount}</Body>
           </View>
         </View>
         <View

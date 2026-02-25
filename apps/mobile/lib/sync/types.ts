@@ -5,6 +5,8 @@
  * for retry. On app launch, we process the queue and reconcile with on-chain state.
  */
 
+import { PledgeTodos } from '@/hooks/useSupabase';
+
 export type SyncOperationType =
   | 'CREATE_PLEDGE'
   | 'REPORT_COMPLETION'
@@ -26,7 +28,7 @@ export interface CreatePledgeSyncData {
   name: string;
   stakeAmount: number; // In USDC (not lamports)
   deadline: string; // ISO timestamp
-  todos: TodoItem[];
+  todos: PledgeTodos;
   timeframeType?: string;
   startDate?: string;
   createdAt: string; // On-chain createdAt as ISO timestamp
@@ -43,12 +45,6 @@ export interface ReportCompletionSyncData {
 export interface EditPledgeSyncData {
   onChainAddress: string;
   newDeadline?: string; // ISO timestamp
-}
-
-// Todo item structure (matches Supabase schema)
-export interface TodoItem {
-  text: string;
-  days?: number[] | null; // 0-6 for specific days, null for all days
 }
 
 // Result of reconciliation

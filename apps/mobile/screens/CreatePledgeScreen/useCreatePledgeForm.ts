@@ -6,14 +6,19 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   useCreatePledgeInDb,
   parseUsdcToLamports,
-  type Todo,
+  computePledgeTodos,
+  type TaskDefinition,
+  type PledgeTodos,
   type ReminderSettings,
 } from '@/hooks/useSupabase';
 import { useProgram } from '@/hooks/useProgram';
 import { useNotifications } from '@/hooks/useNotifications';
 import { type DurationPreset } from '@/components';
 
-const MAX_DAILY_TRACKING_DAYS = 7;
+const MAX_DAILY_TRACKING_DAYS = 90;
+
+// TODO: Save/load templates — store TaskDefinition[] + schedule metadata
+// so the creation form can be rehydrated from a template.
 
 export const useCreatePledgeForm = () => {
   const { t } = useTranslation();
@@ -33,8 +38,7 @@ export const useCreatePledgeForm = () => {
     return date;
   });
   const [durationPreset, setDurationPreset] = useState<DurationPreset>('1week');
-  const [todos, setTodos] = useState<Todo[]>([]);
-  const [newTodo, setNewTodo] = useState('');
+  const [taskDefinitions, setTaskDefinitions] = useState<TaskDefinition[]>([]);
   const [stakeAmount, setStakeAmount] = useState('');
   const [reminderSettings, setReminderSettings] =
     useState<ReminderSettings | null>(null);
@@ -45,7 +49,10 @@ export const useCreatePledgeForm = () => {
   const startDateSheetRef = useRef<BottomSheet>(null);
   const durationSheetRef = useRef<BottomSheet>(null);
   const remindersSheetRef = useRef<BottomSheet>(null);
-  const dailyTodosSheetRef = useRef<BottomSheet>(null);
+  // TODO: Add stakeAmountSheetRef when StakeAmountSheet is implemented
+  // - Show preset amounts ($5, $10, $25, $50, $100)
+  // - Read connected wallet USDC balance
+  // - "Max" button to stake full balance
 
   // Computed values
   const durationDays = useMemo(() => {
@@ -53,28 +60,26 @@ export const useCreatePledgeForm = () => {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   }, [startDate, endDate]);
 
-  const showDailyTracking =
-    durationDays > 1 && durationDays <= MAX_DAILY_TRACKING_DAYS;
+  const showDailyOptions =
+    durationDays >= 2 && durationDays <= MAX_DAILY_TRACKING_DAYS;
 
-  const hasDailyAssignments = useMemo(() => {
-    return todos.some((todo) => todo.days !== null);
-  }, [todos]);
+  const pledgeTodos: PledgeTodos = useMemo(
+    () => computePledgeTodos(taskDefinitions, startDate, endDate),
+    [taskDefinitions, startDate, endDate]
+  );
 
-  const isValid =
-    name.trim() && todos.length > 0 && parseFloat(stakeAmount) > 0;
+  const isValid = taskDefinitions.length > 0 && parseFloat(stakeAmount) > 0;
 
-  // Handlers
-  const handleAddTodo = useCallback(() => {
-    if (newTodo.trim()) {
-      setTodos((prev) => [...prev, { text: newTodo.trim(), days: null }]);
-      setNewTodo('');
-    }
-  }, [newTodo]);
-
-  const handleRemoveTodo = useCallback((index: number) => {
-    setTodos((prev) => prev.filter((_, i) => i !== index));
+  // Task handlers
+  const addTaskDefinition = useCallback((def: TaskDefinition) => {
+    setTaskDefinitions((prev) => [...prev, def]);
   }, []);
 
+  const removeTaskDefinition = useCallback((index: number) => {
+    setTaskDefinitions((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  // Date handlers
   const handleStartDateConfirm = useCallback(
     (date: Date) => {
       setStartDate(date);
@@ -95,8 +100,18 @@ export const useCreatePledgeForm = () => {
       const newDurationDays = Math.ceil(
         (end.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
       );
-      if (newDurationDays <= 1 || newDurationDays > MAX_DAILY_TRACKING_DAYS) {
-        setTodos((prev) => prev.map((todo) => ({ ...todo, days: null })));
+      // If daily options become unavailable, convert daily tasks to goals
+      if (
+        newDurationDays < 2 ||
+        newDurationDays > MAX_DAILY_TRACKING_DAYS
+      ) {
+        setTaskDefinitions((prev) =>
+          prev.map((def) =>
+            def.schedule !== 'not_daily'
+              ? { ...def, schedule: 'not_daily' as const, customDays: undefined }
+              : def
+          )
+        );
       }
     },
     [startDate]
@@ -108,10 +123,6 @@ export const useCreatePledgeForm = () => {
     },
     []
   );
-
-  const handleDailyTodosConfirm = useCallback((updatedTodos: Todo[]) => {
-    setTodos(updatedTodos);
-  }, []);
 
   // Label helpers
   const formatDate = (date: Date) => {
@@ -170,13 +181,6 @@ export const useCreatePledgeForm = () => {
     return parts.join(', ') || t('None');
   };
 
-  const getDailyTrackingLabel = (): string => {
-    if (hasDailyAssignments) {
-      return t('Custom schedule');
-    }
-    return t('Every day');
-  };
-
   const handleCreate = async () => {
     if (!isValid || !walletAddress) return;
 
@@ -197,15 +201,27 @@ export const useCreatePledgeForm = () => {
         await registerForPushNotifications();
       }
 
+      // Fallback name: first task text if only one task, otherwise date range
+      let pledgeName = name.trim();
+      if (!pledgeName) {
+        if (taskDefinitions.length === 1) {
+          pledgeName = taskDefinitions[0].text;
+        } else {
+          const fmt = (d: Date) =>
+            d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+          pledgeName = `${fmt(startDate)} - ${fmt(endDate)}`;
+        }
+      }
+
       await createPledgeInDb.mutateAsync({
         on_chain_address: result.pledgeAddress.toString(),
-        name: name.trim(),
+        name: pledgeName,
         timeframe_type: durationPreset,
         start_date: startDate.toISOString(),
         end_date: endDate.toISOString(),
         deadline: endDate.toISOString(),
         stake_amount: parseUsdcToLamports(stakeAmount),
-        todos: todos,
+        todos: pledgeTodos,
         reminder_settings: reminderSettings,
       });
 
@@ -225,9 +241,7 @@ export const useCreatePledgeForm = () => {
     startDate,
     endDate,
     durationPreset,
-    todos,
-    newTodo,
-    setNewTodo,
+    taskDefinitions,
     stakeAmount,
     setStakeAmount,
     reminderSettings,
@@ -239,19 +253,19 @@ export const useCreatePledgeForm = () => {
     startDateSheetRef,
     durationSheetRef,
     remindersSheetRef,
-    dailyTodosSheetRef,
 
     // Computed
-    showDailyTracking,
+    durationDays,
+    showDailyOptions,
+    pledgeTodos,
     isValid,
 
     // Handlers
-    handleAddTodo,
-    handleRemoveTodo,
+    addTaskDefinition,
+    removeTaskDefinition,
     handleStartDateConfirm,
     handleDurationConfirm,
     handleRemindersConfirm,
-    handleDailyTodosConfirm,
     handleCreate,
 
     // Labels
@@ -259,6 +273,5 @@ export const useCreatePledgeForm = () => {
     formatTime,
     getDurationLabel,
     getRemindersLabel,
-    getDailyTrackingLabel,
   };
 };
