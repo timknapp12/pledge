@@ -1,4 +1,4 @@
-import { forwardRef, useCallback } from 'react';
+import { forwardRef, useCallback, useRef, useImperativeHandle } from 'react';
 import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import BottomSheet, {
   BottomSheetBackdrop,
@@ -35,6 +35,32 @@ export const BaseSheet = forwardRef<BottomSheet, BaseSheetProps>(
     const { height: windowHeight } = useWindowDimensions();
     const colors = isDark ? SHEET_COLORS.dark : SHEET_COLORS.light;
 
+    const innerRef = useRef<BottomSheet>(null);
+    const userTriggered = useRef(false);
+
+    // Wrap the ref so we can track user-initiated opens vs Android auto-opens.
+    // Only expand/snapToIndex called via the ref set the flag; spurious opens
+    // from the library (common on Android re-renders) get force-closed.
+    useImperativeHandle(ref, () => ({
+      expand: () => {
+        userTriggered.current = true;
+        innerRef.current?.expand();
+      },
+      snapToIndex: (index: number) => {
+        userTriggered.current = true;
+        innerRef.current?.snapToIndex(index);
+      },
+      close: () => {
+        innerRef.current?.close();
+      },
+      collapse: () => {
+        innerRef.current?.collapse();
+      },
+      forceClose: () => {
+        innerRef.current?.forceClose();
+      },
+    } as unknown as BottomSheet));
+
     const renderBackdrop = useCallback(
       (props: BottomSheetBackdropProps) => (
         <BottomSheetBackdrop
@@ -50,7 +76,13 @@ export const BaseSheet = forwardRef<BottomSheet, BaseSheetProps>(
 
     const handleSheetChanges = useCallback(
       (index: number) => {
+        if (index >= 0 && !userTriggered.current) {
+          // Spurious auto-open (Android bug) — force close
+          innerRef.current?.close();
+          return;
+        }
         if (index === -1) {
+          userTriggered.current = false;
           onClose?.();
         } else if (index >= 0) {
           onOpen?.();
@@ -61,7 +93,7 @@ export const BaseSheet = forwardRef<BottomSheet, BaseSheetProps>(
 
     return (
       <BottomSheet
-        ref={ref}
+        ref={innerRef}
         index={-1}
         snapPoints={enableDynamicSizing ? undefined : snapPoints}
         enablePanDownToClose
