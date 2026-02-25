@@ -150,5 +150,8 @@
   "Yesterday": "Ayer",
   "No tasks for this day": "Sin tareas para este día",
   "done": "hecho",
-  "Goals": "Metas"
+  "Goals": "Metas",
+  "Balance": "Saldo",
+  "Max": "Máx",
+  "Select amount": "Seleccionar monto"
 }
