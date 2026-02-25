@@ -19,6 +19,9 @@ import {
   useUpdateDailyProgress,
   useUpdatePledgeStatus,
   formatUsdcAmount,
+  getDailyTasksForDate,
+  getGoals,
+  toLocalDateStr,
 } from '@/hooks/useSupabase';
 import { useProgram } from '@/hooks/useProgram';
 import {
@@ -105,7 +108,7 @@ export const PledgeDetailScreen = () => {
 
       setCompletedTodos(newCompleted);
 
-      const today = new Date().toISOString().split('T')[0];
+      const today = toLocalDateStr(new Date());
       try {
         await updateProgress.mutateAsync({
           pledgeId: id,
@@ -121,9 +124,17 @@ export const PledgeDetailScreen = () => {
     [completedTodos, id, updateProgress]
   );
 
+  const today = toLocalDateStr(new Date());
+  const dailyTasks = pledge
+    ? getDailyTasksForDate(pledge.todos, today)
+    : [];
+  const goals = pledge ? getGoals(pledge.todos) : [];
+  // Combined list: daily tasks first, then goals — indices match todos_completed
+  const allTasks = [...dailyTasks, ...goals];
+
   const calculateProgress = (): number => {
-    if (!pledge?.todos || pledge.todos.length === 0) return 0;
-    return Math.round((completedTodos.length / pledge.todos.length) * 100);
+    if (allTasks.length === 0) return 0;
+    return Math.round((completedTodos.length / allTasks.length) * 100);
   };
 
   const handleReportAndSettle = async () => {
@@ -278,64 +289,70 @@ export const PledgeDetailScreen = () => {
             />
           </View>
 
-          {/* Today's Tasks */}
-          <Column gap={8}>
-            <Title3 style={{ marginBottom: 8 }}>{t("Today's Tasks")}</Title3>
-            {pledge.todos?.map((todo, index) => {
-              const completed = completedTodos.includes(index);
-              return (
-                <Pressable
-                  key={index}
-                  style={[
-                    localStyles.todoItem,
-                    {
-                      backgroundColor: completed
-                        ? theme.colors.primaryAlpha10
-                        : theme.colors.cardBackground,
-                      borderColor: completed
-                        ? theme.colors.primaryAlpha40
-                        : theme.colors.border,
-                    },
-                  ]}
-                  onPress={() =>
-                    pledge.status === 'Active' && handleTodoToggle(index)
-                  }
-                  disabled={pledge.status !== 'Active'}
-                >
-                  <View
+          {/* Tasks (daily + goals combined) */}
+          {allTasks.length > 0 && (
+            <Column gap={8}>
+              <Title3 style={{ marginBottom: 8 }}>
+                {t(dailyTasks.length > 0 ? "Today's Tasks" : 'Tasks')}
+              </Title3>
+              {allTasks.map((taskText, index) => {
+                const completed = completedTodos.includes(index);
+                return (
+                  <Pressable
+                    key={index}
                     style={[
-                      localStyles.checkboxIcon,
+                      localStyles.todoItem,
                       {
-                        borderColor: completed
-                          ? theme.colors.primary
-                          : theme.colors.border,
                         backgroundColor: completed
-                          ? theme.colors.primary
-                          : 'transparent',
+                          ? theme.colors.primaryAlpha10
+                          : theme.colors.cardBackground,
+                        borderColor: completed
+                          ? theme.colors.primaryAlpha40
+                          : theme.colors.border,
                       },
                     ]}
+                    onPress={() =>
+                      pledge.status === 'Active' && handleTodoToggle(index)
+                    }
+                    disabled={pledge.status !== 'Active'}
                   >
-                    {completed && (
-                      <Ionicons
-                        name='checkmark'
-                        size={16}
-                        color={theme.colors.iconOnPrimary}
-                      />
-                    )}
-                  </View>
-                  <Body
-                    style={{
-                      flex: 1,
-                      textDecorationLine: completed ? 'line-through' : 'none',
-                      opacity: completed ? 0.6 : 1,
-                    }}
-                  >
-                    {todo.text}
-                  </Body>
-                </Pressable>
-              );
-            })}
-          </Column>
+                    <View
+                      style={[
+                        localStyles.checkboxIcon,
+                        {
+                          borderColor: completed
+                            ? theme.colors.primary
+                            : theme.colors.border,
+                          backgroundColor: completed
+                            ? theme.colors.primary
+                            : 'transparent',
+                        },
+                      ]}
+                    >
+                      {completed && (
+                        <Ionicons
+                          name='checkmark'
+                          size={16}
+                          color={theme.colors.iconOnPrimary}
+                        />
+                      )}
+                    </View>
+                    <Body
+                      style={{
+                        flex: 1,
+                        textDecorationLine: completed
+                          ? 'line-through'
+                          : 'none',
+                        opacity: completed ? 0.6 : 1,
+                      }}
+                    >
+                      {taskText}
+                    </Body>
+                  </Pressable>
+                );
+              })}
+            </Column>
+          )}
         </Column>
       </ScrollView>
 
