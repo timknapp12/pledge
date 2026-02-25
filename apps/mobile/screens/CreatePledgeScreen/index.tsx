@@ -5,6 +5,7 @@ import {
   LayoutChangeEvent,
   Pressable,
   ScrollView,
+  StyleSheet,
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -28,6 +29,7 @@ import {
   DurationPickerSheet,
   RemindersSheet,
   StakeAmountSheet,
+  SaveTemplateSheet,
 } from '@/components';
 import { useUsdcBalance } from '@/hooks/useUsdcBalance';
 import { useCreatePledgeForm } from './useCreatePledgeForm';
@@ -203,6 +205,24 @@ export const CreatePledgeScreen = () => {
           </KeyboardAvoidingView>
 
           <CenteredColumn gap={12} width='100%'>
+            {form.taskDefinitions.length > 0 && form.templateDirty && (
+              <Pressable
+                onPress={() => {
+                  Keyboard.dismiss();
+                  form.saveTemplateSheetRef.current?.expand();
+                }}
+                style={localStyles.saveTemplateLink}
+              >
+                <Ionicons
+                  name='bookmark-outline'
+                  size={16}
+                  color={theme.colors.primary}
+                />
+                <Body style={{ color: theme.colors.primary }}>
+                  {t('Save as Template')}
+                </Body>
+              </Pressable>
+            )}
             <SecondaryButton onPress={() => router.back()}>
               {t('Cancel')}
             </SecondaryButton>
@@ -247,6 +267,21 @@ export const CreatePledgeScreen = () => {
         balanceLoading={balanceLoading}
         onConfirm={form.setStakeAmount}
       />
+
+      <SaveTemplateSheet
+        ref={form.saveTemplateSheetRef}
+        defaultName={form.name.trim()}
+        onSave={form.handleSaveTemplate}
+      />
     </ScreenContainer>
   );
 };
+
+const localStyles = StyleSheet.create({
+  saveTemplateLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+  },
+});

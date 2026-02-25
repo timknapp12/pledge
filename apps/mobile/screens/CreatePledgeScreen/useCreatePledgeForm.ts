@@ -1,10 +1,12 @@
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import BottomSheet from '@gorhom/bottom-sheet';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   useCreatePledgeInDb,
+  useCreateTemplate,
+  useTemplates,
   parseUsdcToLamports,
   computePledgeTodos,
   type TaskDefinition,
@@ -17,13 +19,22 @@ import { type DurationPreset } from '@/components';
 
 const MAX_DAILY_TRACKING_DAYS = 90;
 
+const DURATION_DAYS: Record<string, number> = {
+  '1day': 1,
+  '1week': 7,
+  '1month': 30,
+};
+
 export const useCreatePledgeForm = () => {
   const { t } = useTranslation();
   const router = useRouter();
+  const { templateId } = useLocalSearchParams<{ templateId?: string }>();
   const { walletAddress } = useAuth();
 
   const { createPledge, error: programError } = useProgram();
   const createPledgeInDb = useCreatePledgeInDb();
+  const createTemplate = useCreateTemplate();
+  const { data: templates } = useTemplates();
   const { registerForPushNotifications } = useNotifications();
 
   // Form state
@@ -41,12 +52,32 @@ export const useCreatePledgeForm = () => {
     useState<ReminderSettings | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [templateDirty, setTemplateDirty] = useState(false);
 
   // Bottom sheet refs
   const startDateSheetRef = useRef<BottomSheet>(null);
   const durationSheetRef = useRef<BottomSheet>(null);
   const remindersSheetRef = useRef<BottomSheet>(null);
   const stakeAmountSheetRef = useRef<BottomSheet>(null);
+  const saveTemplateSheetRef = useRef<BottomSheet>(null);
+
+  // Load template when templateId is present
+  useEffect(() => {
+    if (!templateId || !templates) return;
+    const template = templates.find((t) => t.id === templateId);
+    if (!template) return;
+
+    if (template.task_definitions) {
+      setTaskDefinitions(template.task_definitions);
+    }
+
+    const preset = (template.default_timeframe || '1week') as DurationPreset;
+    setDurationPreset(preset);
+    const days = DURATION_DAYS[preset] ?? 7;
+    const newEnd = new Date();
+    newEnd.setDate(newEnd.getDate() + days);
+    setEndDate(newEnd);
+  }, [templateId, templates]);
 
   // Computed values
   const durationDays = useMemo(() => {
@@ -67,10 +98,12 @@ export const useCreatePledgeForm = () => {
   // Task handlers
   const addTaskDefinition = useCallback((def: TaskDefinition) => {
     setTaskDefinitions((prev) => [...prev, def]);
+    setTemplateDirty(true);
   }, []);
 
   const removeTaskDefinition = useCallback((index: number) => {
     setTaskDefinitions((prev) => prev.filter((_, i) => i !== index));
+    setTemplateDirty(true);
   }, []);
 
   // Date handlers
@@ -116,6 +149,24 @@ export const useCreatePledgeForm = () => {
       setReminderSettings(settings);
     },
     []
+  );
+
+  // Save as template
+  const handleSaveTemplate = useCallback(
+    async (templateName: string) => {
+      try {
+        await createTemplate.mutateAsync({
+          name: templateName,
+          todos: pledgeTodos,
+          task_definitions: taskDefinitions,
+          default_timeframe: durationPreset,
+        });
+        setTemplateDirty(false);
+      } catch (err) {
+        console.error('Failed to save template:', err);
+      }
+    },
+    [createTemplate, pledgeTodos, taskDefinitions, durationPreset]
   );
 
   // Label helpers
@@ -248,12 +299,14 @@ export const useCreatePledgeForm = () => {
     durationSheetRef,
     remindersSheetRef,
     stakeAmountSheetRef,
+    saveTemplateSheetRef,
 
     // Computed
     durationDays,
     showDailyOptions,
     pledgeTodos,
     isValid,
+    templateDirty,
 
     // Handlers
     addTaskDefinition,
@@ -261,6 +314,7 @@ export const useCreatePledgeForm = () => {
     handleStartDateConfirm,
     handleDurationConfirm,
     handleRemindersConfirm,
+    handleSaveTemplate,
     handleCreate,
 
     // Labels
