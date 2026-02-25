@@ -40,6 +40,7 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
   const { theme } = useAppTheme();
   const router = useRouter();
   const updateProgress = useUpdateDailyProgress();
+  const localStyles = useMemo(() => createLocalStyles(theme), [theme]);
 
   // Date state: today or yesterday
   const [showYesterday, setShowYesterday] = useState(false);
@@ -152,7 +153,7 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
   }
 
   return (
-    <Column gap={16} flex={1}>
+    <Column gap={12} flex={1}>
       {/* Date toggle — only show if yesterday has tasks */}
       {hasYesterdayTasks && (
         <Row width='100%' justify='center' gap={8}>
@@ -215,7 +216,7 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
       {pledgeTaskData.map(({ pledge, tasks, completed }) => {
         const allDone = completed.length === tasks.length && tasks.length > 0;
         return (
-          <Card key={pledge.id} style={{ marginBottom: 4 }}>
+          <Card key={pledge.id}>
             {/* Pledge header — tappable to go to detail */}
             <Pressable
               onPress={() => router.push(`/pledge/${pledge.id}`)}
@@ -237,8 +238,8 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
                     localStyles.selectAllButton,
                     {
                       backgroundColor: allDone
-                        ? theme.colors.primaryAlpha10
-                        : theme.colors.background,
+                        ? theme.colors.statusCompleted
+                        : theme.colors.primaryAlpha40,
                     },
                   ]}
                 >
@@ -247,7 +248,7 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
                     size={18}
                     color={
                       allDone
-                        ? theme.colors.primary
+                        ? theme.colors.background
                         : theme.colors.textSecondary
                     }
                   />
@@ -280,9 +281,6 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
                     style={[
                       localStyles.checkbox,
                       {
-                        borderColor: isCompleted
-                          ? theme.colors.primary
-                          : theme.colors.border,
                         backgroundColor: isCompleted
                           ? theme.colors.primary
                           : 'transparent',
@@ -316,40 +314,42 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
   );
 };
 
-const localStyles = StyleSheet.create({
-  datePill: {
-    paddingVertical: 6,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-  },
-  pledgeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  selectAllButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  taskRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 4,
-    borderRadius: 8,
-    marginBottom: 2,
-  },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+const createLocalStyles = (theme: ReturnType<typeof useAppTheme>['theme']) =>
+  StyleSheet.create({
+    datePill: {
+      paddingVertical: 6,
+      paddingHorizontal: 16,
+      borderRadius: 16,
+    },
+    pledgeHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 12,
+    },
+    selectAllButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    taskRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingVertical: 10,
+      paddingHorizontal: 4,
+      borderRadius: 8,
+      marginBottom: 2,
+    },
+    checkbox: {
+      width: 22,
+      height: 22,
+      borderRadius: 6,
+      borderWidth: 2,
+      borderColor: theme.colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+  });

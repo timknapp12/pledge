@@ -12,7 +12,11 @@ import {
   Card,
   ProgressBar,
 } from '@/components';
-import { formatUsdcAmount, getTotalTaskCount, Pledge } from '@/hooks/useSupabase';
+import {
+  formatUsdcAmount,
+  getTotalTaskCount,
+  Pledge,
+} from '@/hooks/useSupabase';
 
 function formatDeadline(deadline: string): string {
   const date = new Date(deadline);
@@ -39,7 +43,11 @@ export interface PledgeListItemProps {
   animateKey?: number;
 }
 
-export const PledgeListItem = ({ pledge, onPress, animateKey }: PledgeListItemProps) => {
+export const PledgeListItem = ({
+  pledge,
+  onPress,
+  animateKey,
+}: PledgeListItemProps) => {
   const { t } = useTranslation();
   const { theme } = useAppTheme();
 
@@ -49,23 +57,23 @@ export const PledgeListItem = ({ pledge, onPress, animateKey }: PledgeListItemPr
   const now = new Date();
   const totalDays = Math.max(
     1,
-    Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+    Math.ceil(
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+    ),
   );
   const elapsedDays = Math.max(
     0,
-    Math.ceil((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+    Math.ceil((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)),
   );
   const timeProgress = Math.min(
     100,
-    Math.round((elapsedDays / totalDays) * 100)
+    Math.round((elapsedDays / totalDays) * 100),
   );
 
   return (
     <Pressable onPress={onPress}>
-      <Card style={localStyles.pledgeCard}>
-        <Row
-          style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}
-        >
+      <Card>
+        <Row justify='space-between' align='flex-start'>
           <Column flex={1}>
             <Title3>{pledge.name}</Title3>
             <BodySmallSecondary style={{ marginTop: 4 }}>
@@ -98,16 +106,18 @@ export const PledgeListItem = ({ pledge, onPress, animateKey }: PledgeListItemPr
           </BodySmall>
         </Row>
 
-        <ProgressBar progress={timeProgress} height={6} style={{ marginTop: 12 }} animateKey={animateKey} />
+        <ProgressBar
+          progress={timeProgress}
+          height={6}
+          style={{ marginTop: 12 }}
+          animateKey={animateKey}
+        />
       </Card>
     </Pressable>
   );
 };
 
 const localStyles = StyleSheet.create({
-  pledgeCard: {
-    marginBottom: 12,
-  },
   statusBadge: {
     paddingVertical: 4,
     paddingHorizontal: 8,

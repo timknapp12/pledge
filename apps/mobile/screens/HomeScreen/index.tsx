@@ -168,7 +168,7 @@ export const HomeScreen = () => {
               {viewMode === 'tasks' ? (
                 <DailyTasksView pledges={pledges} />
               ) : (
-                <Column flex={1} gap={24}>
+                <Column flex={1} gap={12}>
                   {pledges.map((pledge) => (
                     <PledgeListItem
                       key={pledge.id}
