@@ -153,5 +153,12 @@
   "Goals": "Goals",
   "Balance": "Balance",
   "Max": "Max",
-  "Select amount": "Select amount"
+  "Select amount": "Select amount",
+  "Save as Template": "Save as Template",
+  "Save Template": "Save Template",
+  "Template name": "Template name",
+  "Save your tasks and schedule as a reusable template": "Save your tasks and schedule as a reusable template",
+  "No templates yet": "No templates yet",
+  "Save a template when creating a pledge to reuse it later": "Save a template when creating a pledge to reuse it later",
+  "Delete Template": "Delete Template"
 }
