@@ -17,9 +17,6 @@ import { type DurationPreset } from '@/components';
 
 const MAX_DAILY_TRACKING_DAYS = 90;
 
-// TODO: Save/load templates — store TaskDefinition[] + schedule metadata
-// so the creation form can be rehydrated from a template.
-
 export const useCreatePledgeForm = () => {
   const { t } = useTranslation();
   const router = useRouter();
@@ -49,10 +46,7 @@ export const useCreatePledgeForm = () => {
   const startDateSheetRef = useRef<BottomSheet>(null);
   const durationSheetRef = useRef<BottomSheet>(null);
   const remindersSheetRef = useRef<BottomSheet>(null);
-  // TODO: Add stakeAmountSheetRef when StakeAmountSheet is implemented
-  // - Show preset amounts ($5, $10, $25, $50, $100)
-  // - Read connected wallet USDC balance
-  // - "Max" button to stake full balance
+  const stakeAmountSheetRef = useRef<BottomSheet>(null);
 
   // Computed values
   const durationDays = useMemo(() => {
@@ -253,6 +247,7 @@ export const useCreatePledgeForm = () => {
     startDateSheetRef,
     durationSheetRef,
     remindersSheetRef,
+    stakeAmountSheetRef,
 
     // Computed
     durationDays,
