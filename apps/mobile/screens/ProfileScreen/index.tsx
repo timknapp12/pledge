@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
+import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import {
@@ -27,6 +28,7 @@ import { SettingsItem } from './SettingsItem';
 export const ProfileScreen = () => {
   const { t } = useTranslation();
   const { theme } = useAppTheme();
+  const router = useRouter();
   const { user, walletAddress, supabase, disconnect } = useAuth();
   const {
     registerForPushNotifications,
@@ -61,7 +63,7 @@ export const ProfileScreen = () => {
   };
 
   const handleTemplates = () => {
-    // TODO: Navigate to templates screen
+    router.push('/templates');
   };
 
   const handleNotificationsToggle = useCallback(
