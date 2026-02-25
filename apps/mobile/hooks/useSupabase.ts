@@ -6,11 +6,109 @@ import { queryKeys } from './queryKeys';
 // Re-export queryKeys for backward compatibility
 export { queryKeys };
 
+// Local date string helper — avoids UTC offset issues with toISOString()
+export const toLocalDateStr = (d: Date): string => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 // Types matching Supabase schema
-export interface Todo {
-  text: string;
-  days: number[] | null; // [0-6] for specific days, null for all days
+
+export interface PledgeTodos {
+  goals: string[]; // non-daily tasks for the whole pledge
+  daily: Record<string, string[]>; // "YYYY-MM-DD" -> task texts for that day
 }
+
+// Task schedule types for creation flow
+export type TaskSchedule =
+  | 'not_daily'
+  | 'every_day'
+  | 'weekdays'
+  | 'weekends'
+  | 'custom';
+
+export interface TaskDefinition {
+  text: string;
+  schedule: TaskSchedule;
+  customDays?: number[]; // day-of-week indices for 'custom' (0=Sun)
+}
+
+// Get total task count
+export const getTotalTaskCount = (todos: PledgeTodos): number => {
+  const uniqueDailyTasks = new Set(Object.values(todos.daily).flat());
+  return todos.goals.length + uniqueDailyTasks.size;
+};
+
+// Compute PledgeTodos from task definitions and date range
+export const computePledgeTodos = (
+  taskDefs: TaskDefinition[],
+  startDate: Date,
+  endDate: Date
+): PledgeTodos => {
+  const goals: string[] = [];
+  const daily: Record<string, string[]> = {};
+
+  // Generate all dates in range (exclusive of end date)
+  const current = new Date(startDate);
+  current.setHours(0, 0, 0, 0);
+  const end = new Date(endDate);
+  end.setHours(0, 0, 0, 0);
+
+  const dates: { dateStr: string; dayOfWeek: number }[] = [];
+  while (current < end) {
+    dates.push({
+      dateStr: toLocalDateStr(current),
+      dayOfWeek: current.getDay(),
+    });
+    current.setDate(current.getDate() + 1);
+  }
+
+  for (const def of taskDefs) {
+    if (def.schedule === 'not_daily') {
+      goals.push(def.text);
+      continue;
+    }
+
+    for (const { dateStr, dayOfWeek } of dates) {
+      let include = false;
+      switch (def.schedule) {
+        case 'every_day':
+          include = true;
+          break;
+        case 'weekdays':
+          include = dayOfWeek >= 1 && dayOfWeek <= 5;
+          break;
+        case 'weekends':
+          include = dayOfWeek === 0 || dayOfWeek === 6;
+          break;
+        case 'custom':
+          include = def.customDays?.includes(dayOfWeek) ?? false;
+          break;
+      }
+      if (include) {
+        if (!daily[dateStr]) daily[dateStr] = [];
+        daily[dateStr].push(def.text);
+      }
+    }
+  }
+
+  return { goals, daily };
+};
+
+// Get daily tasks for a specific date
+export const getDailyTasksForDate = (
+  todos: PledgeTodos,
+  date: string
+): string[] => {
+  return todos.daily[date] || [];
+};
+
+// Get goals (non-daily tasks)
+export const getGoals = (todos: PledgeTodos): string[] => {
+  return todos.goals;
+};
 
 export interface ReminderConfig {
   type: 'daily' | 'before_deadline';
@@ -32,7 +130,7 @@ export interface Pledge {
   end_date: string;
   deadline: string;
   stake_amount: number; // in USDC lamports (6 decimals)
-  todos: Todo[];
+  todos: PledgeTodos;
   status: 'Active' | 'Reported' | 'Completed' | 'Forfeited';
   completion_percentage: number | null;
   points_earned: number | null;
@@ -48,11 +146,12 @@ export interface DailyProgress {
   created_at: string;
 }
 
+// TODO: Update Template to support TaskDefinition[] for rehydrating creation form
 export interface Template {
   id: string;
   user_id: string;
   name: string;
-  todos: Todo[];
+  todos: PledgeTodos;
   default_timeframe: string;
   created_at: string;
 }
@@ -147,8 +246,29 @@ export const useDailyProgress = (pledgeId: string | null, date?: string) => {
 
 // Get today's progress for a pledge
 export const useTodayProgress = (pledgeId: string | null) => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = toLocalDateStr(new Date());
   return useDailyProgress(pledgeId, today);
+}
+
+// Fetch daily progress for ALL of a user's pledges on a given date
+export const useAllDailyProgress = (date: string) => {
+  const { supabase, walletAddress } = useAuth();
+
+  return useQuery({
+    queryKey: queryKeys.allDailyProgress(walletAddress ?? '', date),
+    queryFn: async (): Promise<DailyProgress[]> => {
+      if (!walletAddress) return [];
+
+      const { data, error } = await supabase
+        .from('daily_progress')
+        .select('*')
+        .eq('date', date);
+
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!walletAddress,
+  });
 }
 
 // Update daily progress (check/uncheck todos)
@@ -190,6 +310,10 @@ export const useUpdateDailyProgress = () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.dailyProgress(variables.pledgeId),
       });
+      // Also invalidate the all-pledges daily progress cache (HomeScreen tasks view)
+      queryClient.invalidateQueries({
+        queryKey: ['allDailyProgress'],
+      });
     },
   });
 }
@@ -208,7 +332,7 @@ export const useCreatePledgeInDb = () => {
       end_date: string;
       deadline: string;
       stake_amount: number;
-      todos: Todo[];
+      todos: PledgeTodos;
       reminder_settings?: ReminderSettings | null;
     }) => {
       if (!user?.id) throw new Error('User not authenticated');
@@ -340,7 +464,7 @@ export const useCreateTemplate = () => {
   return useMutation({
     mutationFn: async (template: {
       name: string;
-      todos: Todo[];
+      todos: PledgeTodos;
       default_timeframe: string;
     }) => {
       if (!user?.id) throw new Error('User not authenticated');
@@ -365,42 +489,31 @@ export const useCreateTemplate = () => {
   });
 }
 
-// Calculate completion percentage from daily progress
+// Calculate completion percentage from daily progress.
+// Only daily tasks count toward percentage. Goals are tracked separately.
 export const calculateCompletionPercentage = (
-  todos: Todo[],
+  todos: PledgeTodos,
   dailyProgress: DailyProgress[],
   startDate: Date,
   endDate: Date
 ): number => {
-  if (todos.length === 0) return 0;
-
   let totalExpectedCompletions = 0;
   let actualCompletions = 0;
 
-  // Count days in the pledge period
   const currentDate = new Date(startDate);
   const end = new Date(endDate);
 
   while (currentDate <= end) {
-    const dayOfWeek = currentDate.getDay(); // 0 = Sunday
-    const dateStr = currentDate.toISOString().split('T')[0];
-
-    // Find progress for this day
+    const dateStr = toLocalDateStr(currentDate);
     const dayProgress = dailyProgress.find((p) => p.date === dateStr);
     const completedIndices = dayProgress?.todos_completed ?? [];
 
-    // Check each todo
-    todos.forEach((todo, index) => {
-      // If todo has specific days, check if current day is included
-      if (todo.days === null || todo.days === undefined || todo.days.includes(dayOfWeek)) {
-        totalExpectedCompletions++;
-        if (completedIndices.includes(index)) {
-          actualCompletions++;
-        }
-      }
-    });
+    const dayTasks = todos.daily[dateStr] || [];
+    totalExpectedCompletions += dayTasks.length;
+    actualCompletions += completedIndices.filter(
+      (i) => i >= 0 && i < dayTasks.length
+    ).length;
 
-    // Move to next day
     currentDate.setDate(currentDate.getDate() + 1);
   }
 

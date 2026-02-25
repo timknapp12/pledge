@@ -2,39 +2,30 @@ import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
-import { Body, BodySecondary, BodySmall, Row, Column } from '@/components';
+import { Body, BodySecondary, BodySmall, Row } from '@/components';
 import { styles } from './styles';
-import type { Todo } from '@/hooks/useSupabase';
 
 type ScheduleCardProps = {
   startDate: Date;
   endDate: Date;
-  todos: Todo[];
-  showDailyTracking: boolean;
   formatDate: (date: Date) => string;
   formatTime: (date: Date) => string;
   getDurationLabel: () => string;
   getRemindersLabel: () => string;
-  getDailyTrackingLabel: () => string;
   onStartDatePress: () => void;
   onDurationPress: () => void;
-  onDailyTrackingPress: () => void;
   onRemindersPress: () => void;
 };
 
 export const ScheduleCard = ({
   startDate,
   endDate,
-  todos,
-  showDailyTracking,
   formatDate,
   formatTime,
   getDurationLabel,
   getRemindersLabel,
-  getDailyTrackingLabel,
   onStartDatePress,
   onDurationPress,
-  onDailyTrackingPress,
   onRemindersPress,
 }: ScheduleCardProps) => {
   const { t } = useTranslation();
@@ -112,37 +103,6 @@ export const ScheduleCard = ({
             />
           </Row>
         </Pressable>
-
-        {/* Daily Tracking - only for 2-7 day pledges */}
-        {showDailyTracking && todos.length > 0 && (
-          <>
-            <View
-              style={[
-                styles.scheduleDivider,
-                { backgroundColor: theme.colors.border },
-              ]}
-            />
-            <Pressable
-              style={styles.scheduleRow}
-              onPress={onDailyTrackingPress}
-            >
-              <Column width='auto'>
-                <Body>{t('Track Daily')}</Body>
-                <BodySmall style={{ color: theme.colors.textSecondary }}>
-                  {t('Track progress each day')}
-                </BodySmall>
-              </Column>
-              <Row gap={8}>
-                <BodySecondary>{getDailyTrackingLabel()}</BodySecondary>
-                <Ionicons
-                  name='chevron-forward'
-                  size={16}
-                  color={theme.colors.textSecondary}
-                />
-              </Row>
-            </Pressable>
-          </>
-        )}
 
         <View
           style={[

@@ -25,7 +25,6 @@ import {
   DateTimePickerSheet,
   DurationPickerSheet,
   RemindersSheet,
-  DailyTodosSheet,
 } from '@/components';
 import { useCreatePledgeForm } from './useCreatePledgeForm';
 import { ScheduleCard } from './ScheduleCard';
@@ -93,26 +92,14 @@ export const CreatePledgeScreen = () => {
               keyboardShouldPersistTaps='handled'
             >
               <CenteredColumn flex={1}>
-                {/* Goal Name */}
-                <View style={styles.section}>
-                  <FloatingLabelInput
-                    label={t('Goal Name')}
-                    value={form.name}
-                    onChangeText={form.setName}
-                    autoFocus
-                  />
-                </View>
-
+                {/* 1. Schedule (start date, duration, reminders) */}
                 <ScheduleCard
                   startDate={form.startDate}
                   endDate={form.endDate}
-                  todos={form.todos}
-                  showDailyTracking={form.showDailyTracking}
                   formatDate={form.formatDate}
                   formatTime={form.formatTime}
                   getDurationLabel={form.getDurationLabel}
                   getRemindersLabel={form.getRemindersLabel}
-                  getDailyTrackingLabel={form.getDailyTrackingLabel}
                   onStartDatePress={() => {
                     Keyboard.dismiss();
                     form.startDateSheetRef.current?.expand();
@@ -121,32 +108,41 @@ export const CreatePledgeScreen = () => {
                     Keyboard.dismiss();
                     form.durationSheetRef.current?.expand();
                   }}
-                  onDailyTrackingPress={() => {
-                    Keyboard.dismiss();
-                    form.dailyTodosSheetRef.current?.expand();
-                  }}
                   onRemindersPress={() => {
                     Keyboard.dismiss();
                     form.remindersSheetRef.current?.expand();
                   }}
                 />
 
+                {/* 2. Action Items (tasks with inline schedule presets) */}
                 <View
                   style={{ width: '100%' }}
                   onLayout={(e) => trackLayout('todo', e)}
                 >
                   <TodoSection
-                    todos={form.todos}
-                    newTodo={form.newTodo}
-                    showDailyTracking={form.showDailyTracking}
-                    onNewTodoChange={form.setNewTodo}
-                    onAddTodo={form.handleAddTodo}
-                    onRemoveTodo={form.handleRemoveTodo}
+                    taskDefinitions={form.taskDefinitions}
+                    showDailyOptions={form.showDailyOptions}
+                    onAddTask={form.addTaskDefinition}
+                    onRemoveTask={form.removeTaskDefinition}
                     onInputFocus={() => scrollToSection('todo')}
                   />
                 </View>
 
-                {/* Stake Amount */}
+                {/* 3. Goal Name (optional) */}
+                <View style={styles.section}>
+                  <FloatingLabelInput
+                    label={t('Goal Name (optional)')}
+                    value={form.name}
+                    onChangeText={form.setName}
+                  />
+                </View>
+
+                {/* 4. Stake Amount */}
+                {/* TODO: Replace with StakeAmountSheet bottom sheet
+                    - Preset amounts ($5, $10, $25, $50, $100)
+                    - Connected wallet USDC balance display
+                    - "Max" button to stake full balance
+                    - Custom amount input */}
                 <View
                   style={styles.section}
                   onLayout={(e) => trackLayout('stake', e)}
@@ -167,12 +163,14 @@ export const CreatePledgeScreen = () => {
                   </Row>
                 </View>
 
+                {/* 5. Summary */}
                 {form.isValid && (
                   <PledgeSummary
                     durationLabel={form.getDurationLabel()}
-                    todoCount={form.todos.length}
+                    taskCount={form.taskDefinitions.length}
                     remindersLabel={form.getRemindersLabel()}
                     stakeAmount={form.stakeAmount}
+                    goalName={form.name.trim() || undefined}
                   />
                 )}
 
@@ -222,16 +220,6 @@ export const CreatePledgeScreen = () => {
         value={form.reminderSettings}
         onConfirm={form.handleRemindersConfirm}
       />
-
-      {form.showDailyTracking && (
-        <DailyTodosSheet
-          ref={form.dailyTodosSheetRef}
-          todos={form.todos}
-          startDate={form.startDate}
-          endDate={form.endDate}
-          onConfirm={form.handleDailyTodosConfirm}
-        />
-      )}
     </ScreenContainer>
   );
 };

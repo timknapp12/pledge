@@ -12,7 +12,7 @@ import {
   Card,
   ProgressBar,
 } from '@/components';
-import { formatUsdcAmount, Pledge } from '@/hooks/useSupabase';
+import { formatUsdcAmount, getTotalTaskCount, Pledge } from '@/hooks/useSupabase';
 
 function formatDeadline(deadline: string): string {
   const date = new Date(deadline);
@@ -94,7 +94,7 @@ export const PledgeListItem = ({ pledge, onPress, animateKey }: PledgeListItemPr
             {t('Pledged')}: ${formatUsdcAmount(pledge.stake_amount)}
           </BodySecondary>
           <BodySmall>
-            {pledge.todos?.length || 0} {t('tasks')}
+            {pledge.todos ? getTotalTaskCount(pledge.todos) : 0} {t('tasks')}
           </BodySmall>
         </Row>
 
