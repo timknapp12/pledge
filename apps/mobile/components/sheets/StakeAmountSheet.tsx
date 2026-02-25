@@ -1,4 +1,4 @@
-import { forwardRef, useState, useCallback, useEffect } from 'react';
+import { forwardRef, useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, Pressable, StyleSheet, Keyboard } from 'react-native';
 import BottomSheet, { BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { useTranslation } from 'react-i18next';
@@ -25,15 +25,17 @@ export const StakeAmountSheet = forwardRef<BottomSheet, StakeAmountSheetProps>(
 
     const [amount, setAmount] = useState(value);
     const [hasBeenOpened, setHasBeenOpened] = useState(false);
+    const isOpen = useRef(false);
 
     useEffect(() => {
       setAmount(value);
     }, [value]);
 
-    // Snap sheet back to original position when keyboard dismisses
+    // Snap sheet back to original position when keyboard dismisses,
+    // but only if this sheet is actually open.
     useEffect(() => {
       const sub = Keyboard.addListener('keyboardDidHide', () => {
-        if (ref && 'current' in ref && ref.current) {
+        if (isOpen.current && ref && 'current' in ref && ref.current) {
           ref.current.snapToIndex(0);
         }
       });
@@ -54,6 +56,7 @@ export const StakeAmountSheet = forwardRef<BottomSheet, StakeAmountSheetProps>(
     }, [walletBalance]);
 
     const closeSheet = useCallback(() => {
+      isOpen.current = false;
       Keyboard.dismiss();
       if (ref && 'current' in ref && ref.current) {
         ref.current.close();
@@ -84,10 +87,14 @@ export const StakeAmountSheet = forwardRef<BottomSheet, StakeAmountSheetProps>(
         enableDynamicSizing={false}
         snapPoints={['50%']}
         onClose={() => {
+          isOpen.current = false;
           Keyboard.dismiss();
           onClose?.();
         }}
-        onOpen={() => setHasBeenOpened(true)}
+        onOpen={() => {
+          isOpen.current = true;
+          setHasBeenOpened(true);
+        }}
       >
         {hasBeenOpened && (
           <View style={localStyles.container}>
