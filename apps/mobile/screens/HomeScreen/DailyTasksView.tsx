@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/theme/ThemeProvider';
@@ -13,6 +13,7 @@ import {
   Column,
   Row,
   Card,
+  Checkbox,
 } from '@/components';
 import {
   type Pledge,
@@ -40,7 +41,6 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
   const { theme } = useAppTheme();
   const router = useRouter();
   const updateProgress = useUpdateDailyProgress();
-  const localStyles = useMemo(() => createLocalStyles(theme), [theme]);
 
   // Date state: today or yesterday
   const [showYesterday, setShowYesterday] = useState(false);
@@ -159,7 +159,7 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
         <Row width='100%' justify='center' gap={8}>
           <Pressable
             style={[
-              localStyles.datePill,
+              styles.datePill,
               {
                 backgroundColor: !showYesterday
                   ? theme.colors.primary
@@ -181,7 +181,7 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
           </Pressable>
           <Pressable
             style={[
-              localStyles.datePill,
+              styles.datePill,
               {
                 backgroundColor: showYesterday
                   ? theme.colors.primary
@@ -220,7 +220,7 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
             {/* Pledge header — tappable to go to detail */}
             <Pressable
               onPress={() => router.push(`/pledge/${pledge.id}`)}
-              style={localStyles.pledgeHeader}
+              style={styles.pledgeHeader}
             >
               <Column flex={1} width='auto'>
                 <Title3 numberOfLines={1}>{pledge.name}</Title3>
@@ -235,7 +235,7 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
                     handleSelectAll(pledge.id, tasks.length, completed)
                   }
                   style={[
-                    localStyles.selectAllButton,
+                    styles.selectAllButton,
                     {
                       backgroundColor: allDone
                         ? theme.colors.statusCompleted
@@ -268,7 +268,7 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
                 <Pressable
                   key={index}
                   style={[
-                    localStyles.taskRow,
+                    styles.taskRow,
                     {
                       backgroundColor: isCompleted
                         ? theme.colors.primaryAlpha10
@@ -277,24 +277,7 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
                   ]}
                   onPress={() => handleToggle(pledge.id, index, completed)}
                 >
-                  <View
-                    style={[
-                      localStyles.checkbox,
-                      {
-                        backgroundColor: isCompleted
-                          ? theme.colors.primary
-                          : 'transparent',
-                      },
-                    ]}
-                  >
-                    {isCompleted && (
-                      <Ionicons
-                        name='checkmark'
-                        size={14}
-                        color={theme.colors.iconOnPrimary}
-                      />
-                    )}
-                  </View>
+                  <Checkbox checked={isCompleted} />
                   <Body
                     style={{
                       flex: 1,
@@ -314,42 +297,32 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
   );
 };
 
-const createLocalStyles = (theme: ReturnType<typeof useAppTheme>['theme']) =>
-  StyleSheet.create({
-    datePill: {
-      paddingVertical: 6,
-      paddingHorizontal: 16,
-      borderRadius: 16,
-    },
-    pledgeHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginBottom: 12,
-    },
-    selectAllButton: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    taskRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-      paddingVertical: 10,
-      paddingHorizontal: 4,
-      borderRadius: 8,
-      marginBottom: 2,
-    },
-    checkbox: {
-      width: 22,
-      height: 22,
-      borderRadius: 6,
-      borderWidth: 2,
-      borderColor: theme.colors.primary,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-  });
+const styles = StyleSheet.create({
+  datePill: {
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+  },
+  pledgeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  selectAllButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  taskRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    borderRadius: 8,
+    marginBottom: 2,
+  },
+});

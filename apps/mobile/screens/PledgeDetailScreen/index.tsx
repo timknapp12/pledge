@@ -39,6 +39,7 @@ import {
   ErrorState,
   CenteredColumn,
   ProgressBar,
+  Checkbox,
 } from '@/components';
 
 function formatDeadline(deadline: string): string {
@@ -225,7 +226,7 @@ export const PledgeDetailScreen = () => {
         <Pressable
           onPress={() => router.back()}
           style={[
-            localStyles.backButton,
+            styles.backButton,
             { backgroundColor: theme.colors.cardBackground },
           ]}
         >
@@ -236,7 +237,7 @@ export const PledgeDetailScreen = () => {
         </Column>
         <View
           style={[
-            localStyles.statusBadge,
+            styles.statusBadge,
             { backgroundColor: getStatusBgColor(theme, pledge.status) },
           ]}
         >
@@ -258,24 +259,24 @@ export const PledgeDetailScreen = () => {
         <Column gap={24}>
           {/* Info Card */}
           <Card>
-            <View style={localStyles.infoRow}>
+            <View style={styles.infoRow}>
               <BodySecondary>{t('Pledged')}</BodySecondary>
               <Body>
                 ${formatUsdcAmount(pledge.stake_amount)} {t('USDC')}
               </Body>
             </View>
-            <View style={localStyles.infoRow}>
+            <View style={styles.infoRow}>
               <BodySecondary>{t('Deadline')}</BodySecondary>
               <Body>{formatDeadline(pledge.deadline)}</Body>
             </View>
-            <View style={localStyles.infoRow}>
+            <View style={styles.infoRow}>
               <BodySecondary>{t('Time Remaining')}</BodySecondary>
               <Body>{formatTimeRemaining(pledge.deadline)}</Body>
             </View>
           </Card>
 
           {/* Progress */}
-          <View style={localStyles.progressContainer}>
+          <View style={styles.progressContainer}>
             <Row style={{ justifyContent: 'space-between' }}>
               <Title3>{t('Progress')}</Title3>
               <Title3 style={{ color: theme.colors.primary }}>
@@ -301,7 +302,7 @@ export const PledgeDetailScreen = () => {
                   <Pressable
                     key={index}
                     style={[
-                      localStyles.todoItem,
+                      styles.todoItem,
                       {
                         backgroundColor: completed
                           ? theme.colors.primaryAlpha10
@@ -316,27 +317,7 @@ export const PledgeDetailScreen = () => {
                     }
                     disabled={pledge.status !== 'Active'}
                   >
-                    <View
-                      style={[
-                        localStyles.checkboxIcon,
-                        {
-                          borderColor: completed
-                            ? theme.colors.primary
-                            : theme.colors.border,
-                          backgroundColor: completed
-                            ? theme.colors.primary
-                            : 'transparent',
-                        },
-                      ]}
-                    >
-                      {completed && (
-                        <Ionicons
-                          name='checkmark'
-                          size={16}
-                          color={theme.colors.iconOnPrimary}
-                        />
-                      )}
-                    </View>
+                    <Checkbox checked={completed} />
                     <Body
                       style={{
                         flex: 1,
@@ -371,7 +352,7 @@ export const PledgeDetailScreen = () => {
   );
 };
 
-const localStyles = StyleSheet.create({
+const styles = StyleSheet.create({
   backButton: {
     width: 40,
     height: 40,
@@ -403,13 +384,5 @@ const localStyles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 8,
     borderWidth: 1,
-  },
-  checkboxIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });
