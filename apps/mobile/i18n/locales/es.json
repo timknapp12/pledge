@@ -137,5 +137,18 @@
   "Enter a task before adding": "Ingresa una tarea antes de agregar",
   "Completion Reported": "Finalización Reportada",
   "Awaiting settlement after deadline": "Esperando liquidación después del plazo",
-  "Awaiting settlement": "Esperando liquidación"
+  "Awaiting settlement": "Esperando liquidación",
+  "Schedule": "Horario",
+  "Not daily": "No diario",
+  "Weekdays": "Entre semana",
+  "Weekends": "Fines de semana",
+  "Goal Name (optional)": "Nombre del objetivo (opcional)",
+  "Month": "Mes",
+  "Tasks": "Tareas",
+  "Pledges": "Compromisos",
+  "Today": "Hoy",
+  "Yesterday": "Ayer",
+  "No tasks for this day": "Sin tareas para este día",
+  "done": "hecho",
+  "Goals": "Metas"
 }

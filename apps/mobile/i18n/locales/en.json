@@ -137,5 +137,18 @@
   "Enter a task before adding": "Enter a task before adding",
   "Completion Reported": "Completion Reported",
   "Awaiting settlement after deadline": "Awaiting settlement after deadline",
-  "Awaiting settlement": "Awaiting settlement"
+  "Awaiting settlement": "Awaiting settlement",
+  "Schedule": "Schedule",
+  "Not daily": "Not daily",
+  "Weekdays": "Weekdays",
+  "Weekends": "Weekends",
+  "Goal Name (optional)": "Goal Name (optional)",
+  "Month": "Month",
+  "Tasks": "Tasks",
+  "Pledges": "Pledges",
+  "Today": "Today",
+  "Yesterday": "Yesterday",
+  "No tasks for this day": "No tasks for this day",
+  "done": "done",
+  "Goals": "Goals"
 }
