@@ -153,5 +153,12 @@
   "Goals": "Metas",
   "Balance": "Saldo",
   "Max": "Máx",
-  "Select amount": "Seleccionar monto"
+  "Select amount": "Seleccionar monto",
+  "Save as Template": "Guardar como Plantilla",
+  "Save Template": "Guardar Plantilla",
+  "Template name": "Nombre de plantilla",
+  "Save your tasks and schedule as a reusable template": "Guarda tus tareas y horario como plantilla reutilizable",
+  "No templates yet": "Aún no hay plantillas",
+  "Save a template when creating a pledge to reuse it later": "Guarda una plantilla al crear un compromiso para reutilizarla después",
+  "Delete Template": "Eliminar Plantilla"
 }
