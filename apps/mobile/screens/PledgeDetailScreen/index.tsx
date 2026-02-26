@@ -15,9 +15,10 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   usePledge,
-  useTodayProgress,
+  useDailyProgress,
   useUpdateDailyProgress,
   useUpdatePledgeStatus,
+  calculateCompletionPercentage,
   formatUsdcAmount,
   getDailyTasksForDate,
   getGoals,
@@ -83,8 +84,8 @@ export const PledgeDetailScreen = () => {
     error,
     refetch,
   } = usePledge(id);
-  const { data: todayProgress, isLoading: progressLoading } =
-    useTodayProgress(id);
+  const { data: allProgress, isLoading: progressLoading } =
+    useDailyProgress(id);
   const updateProgress = useUpdateDailyProgress();
   const updatePledgeStatus = useUpdatePledgeStatus();
   const { reportAndSettle } = useProgram();
@@ -94,11 +95,13 @@ export const PledgeDetailScreen = () => {
   const [isReporting, setIsReporting] = useState(false);
 
   // Initialize completed todos from today's progress
+  const today = toLocalDateStr(new Date());
   useEffect(() => {
-    if (todayProgress && todayProgress.length > 0) {
-      setCompletedTodos(todayProgress[0].todos_completed || []);
+    if (allProgress) {
+      const todayRecord = allProgress.find((p) => p.date === today);
+      setCompletedTodos(todayRecord?.todos_completed || []);
     }
-  }, [todayProgress]);
+  }, [allProgress, today]);
 
   const handleTodoToggle = useCallback(
     async (index: number) => {
@@ -126,15 +129,33 @@ export const PledgeDetailScreen = () => {
     [completedTodos, id, updateProgress],
   );
 
-  const today = toLocalDateStr(new Date());
   const dailyTasks = pledge ? getDailyTasksForDate(pledge.todos, today) : [];
   const goals = pledge ? getGoals(pledge.todos) : [];
   // Combined list: daily tasks first, then goals — indices match todos_completed
   const allTasks = [...dailyTasks, ...goals];
 
   const taskProgress = (): number => {
-    if (allTasks.length === 0) return 0;
-    return Math.round((completedTodos.length / allTasks.length) * 100);
+    if (!pledge || !allProgress) return 0;
+    // Build progress array with today's local state for immediate feedback
+    const progressWithLocalState = allProgress.map((p) =>
+      p.date === today ? { ...p, todos_completed: completedTodos } : p
+    );
+    // If no record for today yet but user has checked items, add it
+    if (completedTodos.length > 0 && !allProgress.find((p) => p.date === today)) {
+      progressWithLocalState.push({
+        id: '',
+        pledge_id: pledge.id,
+        date: today,
+        todos_completed: completedTodos,
+        created_at: '',
+      });
+    }
+    return calculateCompletionPercentage(
+      pledge.todos,
+      progressWithLocalState,
+      new Date(pledge.start_date),
+      new Date(pledge.end_date)
+    );
   };
 
   const progress = overrideProgress ?? taskProgress();
