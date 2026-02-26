@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import { useThemeMode } from '@/theme/ThemeProvider';
 import { SHEET_COLORS } from '@/theme/colors';
 import { BaseSheet } from './BaseSheet';
-import { RoundButton, Row } from '../common';
 
 interface DateTimePickerSheetProps {
   title: string;
@@ -62,12 +61,10 @@ export const DateTimePickerSheet = forwardRef<
       [selectedDate, minimumDate, maximumDate]
     );
 
-    const handleConfirm = useCallback(() => {
+    const handleClose = useCallback(() => {
       onConfirm(selectedDate);
-      if (ref && 'current' in ref && ref.current) {
-        ref.current.close();
-      }
-    }, [selectedDate, onConfirm, ref]);
+      onClose?.();
+    }, [selectedDate, onConfirm, onClose]);
 
     const handleSetNow = useCallback(() => {
       setSelectedDate(new Date());
@@ -92,7 +89,7 @@ export const DateTimePickerSheet = forwardRef<
         ref={ref}
         title={title}
         snapPoints={['40%']}
-        onClose={onClose}
+        onClose={handleClose}
         onOpen={() => setHasBeenOpened(true)}
       >
         {hasBeenOpened && (
@@ -160,18 +157,6 @@ export const DateTimePickerSheet = forwardRef<
               </Pressable>
             )}
 
-            <Row>
-              <RoundButton
-                variant='secondary'
-                icon='close'
-                onPress={() => {
-                  if (ref && 'current' in ref && ref.current) {
-                    ref.current.close();
-                  }
-                }}
-              />
-              <RoundButton icon='checkmark' onPress={handleConfirm} />
-            </Row>
           </View>
         )}
       </BaseSheet>
