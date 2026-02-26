@@ -1,12 +1,5 @@
 import { forwardRef, useState, useCallback, useEffect } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  Alert,
-  Platform,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, Pressable, Platform, StyleSheet } from 'react-native';
 import { Switch } from '@/components/common';
 import BottomSheet from '@gorhom/bottom-sheet';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -15,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useThemeMode } from '@/theme/ThemeProvider';
 import { SHEET_COLORS } from '@/theme/colors';
 import { BaseSheet } from './BaseSheet';
-import { RoundButton, Row } from '../common';
+import { useAlert } from '@/components/common/Alert';
 import {
   type ReminderConfig,
   type ReminderSettings,
@@ -38,8 +31,8 @@ export const RemindersSheet = forwardRef<BottomSheet, RemindersSheetProps>(
     const { t } = useTranslation();
     const { isDark } = useThemeMode();
     const colors = isDark ? SHEET_COLORS.dark : SHEET_COLORS.light;
-    const { registerForPushNotifications, permissionStatus } =
-      useNotifications();
+    const { alert } = useAlert();
+    const { isEnabled, registerForPushNotifications } = useNotifications();
 
     const [dailyEnabled, setDailyEnabled] = useState(false);
     const [dailyTime, setDailyTime] = useState(new Date());
@@ -72,27 +65,30 @@ export const RemindersSheet = forwardRef<BottomSheet, RemindersSheetProps>(
       }
     }, [value]);
 
-    const ensureNotificationsEnabled = async (): Promise<boolean> => {
-      // If already granted, we're good
-      if (permissionStatus === 'granted') {
-        return true;
+    const ensureNotificationsEnabled = (): Promise<boolean> => {
+      // If already enabled at app level, we're good
+      if (isEnabled) {
+        return Promise.resolve(true);
       }
 
-      // Register for push notifications (handles permission request + token storage)
-      const token = await registerForPushNotifications();
-
-      if (!token) {
-        Alert.alert(
-          t('Notifications Disabled'),
-          t(
-            'Please enable notifications in your device settings to receive reminders.',
+      return new Promise((resolve) => {
+        alert({
+          title: t('Notifications Disabled'),
+          message: t(
+            'Enable notifications to receive reminders for your pledges.',
           ),
-          [{ text: t('OK') }],
-        );
-        return false;
-      }
-
-      return true;
+          buttons: [
+            { text: t('Cancel'), style: 'cancel', onPress: () => resolve(false) },
+            {
+              text: t('Enable'),
+              onPress: async () => {
+                const token = await registerForPushNotifications();
+                resolve(!!token);
+              },
+            },
+          ],
+        });
+      });
     };
 
     const handleDailyToggle = async (enabled: boolean) => {
@@ -138,7 +134,7 @@ export const RemindersSheet = forwardRef<BottomSheet, RemindersSheetProps>(
         .padStart(2, '0')}`;
     };
 
-    const handleConfirm = useCallback(() => {
+    const handleClose = useCallback(() => {
       const reminders: ReminderConfig[] = [];
 
       if (dailyEnabled) {
@@ -158,18 +154,15 @@ export const RemindersSheet = forwardRef<BottomSheet, RemindersSheetProps>(
       const settings: ReminderSettings | null =
         reminders.length > 0 ? { reminders } : null;
       onConfirm(settings);
-
-      if (ref && 'current' in ref && ref.current) {
-        ref.current.close();
-      }
-    }, [dailyEnabled, dailyTime, deadlineReminders, onConfirm, ref]);
+      onClose?.();
+    }, [dailyEnabled, dailyTime, deadlineReminders, onConfirm, onClose]);
 
     return (
       <BaseSheet
         ref={ref}
         title={t('Reminders')}
         snapPoints={['55%']}
-        onClose={onClose}
+        onClose={handleClose}
         onOpen={() => setHasBeenOpened(true)}
       >
         {hasBeenOpened && (
@@ -265,19 +258,6 @@ export const RemindersSheet = forwardRef<BottomSheet, RemindersSheetProps>(
                 </View>
               ))}
             </View>
-
-            <Row>
-              <RoundButton
-                variant='secondary'
-                icon='close'
-                onPress={() => {
-                  if (ref && 'current' in ref && ref.current) {
-                    ref.current.close();
-                  }
-                }}
-              />
-              <RoundButton icon='checkmark' onPress={handleConfirm} />
-            </Row>
           </View>
         )}
       </BaseSheet>

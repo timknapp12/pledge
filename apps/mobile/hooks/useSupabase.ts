@@ -523,8 +523,16 @@ export const calculateCompletionPercentage = (
   let actualCompletions = 0;
 
   const currentDate = new Date(startDate);
-  const end = new Date(endDate);
+  currentDate.setHours(0, 0, 0, 0);
+  // Don't count future days — cap at today
+  const now = new Date();
+  now.setHours(23, 59, 59, 999);
+  const end = new Date(Math.min(endDate.getTime(), now.getTime()));
 
+  const goalCount = todos.goals.length;
+  const todayStr = toLocalDateStr(new Date());
+
+  // Count daily tasks per day
   while (currentDate <= end) {
     const dateStr = toLocalDateStr(currentDate);
     const dayProgress = dailyProgress.find((p) => p.date === dateStr);
@@ -537,6 +545,17 @@ export const calculateCompletionPercentage = (
     ).length;
 
     currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  // Goals count once — completion stored in today's progress after daily task indices
+  if (goalCount > 0) {
+    totalExpectedCompletions += goalCount;
+    const todayProgress = dailyProgress.find((p) => p.date === todayStr);
+    const todayDayTasks = todos.daily[todayStr] || [];
+    const completedIndices = todayProgress?.todos_completed ?? [];
+    actualCompletions += completedIndices.filter(
+      (i) => i >= todayDayTasks.length && i < todayDayTasks.length + goalCount
+    ).length;
   }
 
   if (totalExpectedCompletions === 0) return 0;

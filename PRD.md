@@ -74,12 +74,6 @@ Pledge is a Solana mobile dApp (Android only) that enables users to set goals an
 - Percentages adjustable by admin
 - Charity wallet is hardcoded, admin-controlled
 
-### Edit Penalty
-
-- Users can edit goals after pledging
-- **10% of stake** sent to treasury/charity as penalty
-- verify that is is successful on chain before updating db
-
 ### Partial Completion
 
 - Users can claim partial refund based on completion percentage

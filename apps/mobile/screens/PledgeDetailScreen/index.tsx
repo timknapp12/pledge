@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   ScrollView,
   Pressable,
   View,
@@ -15,9 +14,10 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   usePledge,
-  useTodayProgress,
+  useDailyProgress,
   useUpdateDailyProgress,
   useUpdatePledgeStatus,
+  calculateCompletionPercentage,
   formatUsdcAmount,
   getDailyTasksForDate,
   getGoals,
@@ -38,8 +38,9 @@ import {
   PrimaryButton,
   ErrorState,
   CenteredColumn,
-  ProgressBar,
+  Slider,
   Checkbox,
+  useAlert,
 } from '@/components';
 
 function formatDeadline(deadline: string): string {
@@ -83,21 +84,25 @@ export const PledgeDetailScreen = () => {
     error,
     refetch,
   } = usePledge(id);
-  const { data: todayProgress, isLoading: progressLoading } =
-    useTodayProgress(id);
+  const { data: allProgress, isLoading: progressLoading } =
+    useDailyProgress(id);
   const updateProgress = useUpdateDailyProgress();
   const updatePledgeStatus = useUpdatePledgeStatus();
   const { reportAndSettle } = useProgram();
 
+  const { alert } = useAlert();
   const [completedTodos, setCompletedTodos] = useState<number[]>([]);
+  const [overrideProgress, setOverrideProgress] = useState<number | null>(null);
   const [isReporting, setIsReporting] = useState(false);
 
   // Initialize completed todos from today's progress
+  const today = toLocalDateStr(new Date());
   useEffect(() => {
-    if (todayProgress && todayProgress.length > 0) {
-      setCompletedTodos(todayProgress[0].todos_completed || []);
+    if (allProgress) {
+      const todayRecord = allProgress.find((p) => p.date === today);
+      setCompletedTodos(todayRecord?.todos_completed || []);
     }
-  }, [todayProgress]);
+  }, [allProgress, today]);
 
   const handleTodoToggle = useCallback(
     async (index: number) => {
@@ -122,41 +127,64 @@ export const PledgeDetailScreen = () => {
         setCompletedTodos(completedTodos);
       }
     },
-    [completedTodos, id, updateProgress]
+    [completedTodos, id, updateProgress],
   );
 
-  const today = toLocalDateStr(new Date());
-  const dailyTasks = pledge
-    ? getDailyTasksForDate(pledge.todos, today)
-    : [];
+  const dailyTasks = pledge ? getDailyTasksForDate(pledge.todos, today) : [];
   const goals = pledge ? getGoals(pledge.todos) : [];
   // Combined list: daily tasks first, then goals — indices match todos_completed
   const allTasks = [...dailyTasks, ...goals];
 
-  const calculateProgress = (): number => {
-    if (allTasks.length === 0) return 0;
-    return Math.round((completedTodos.length / allTasks.length) * 100);
+  const taskProgress = (): number => {
+    if (!pledge || !allProgress) return 0;
+    // Build progress array with today's local state for immediate feedback
+    const progressWithLocalState = allProgress.map((p) =>
+      p.date === today ? { ...p, todos_completed: completedTodos } : p
+    );
+    // If no record for today yet but user has checked items, add it
+    if (completedTodos.length > 0 && !allProgress.find((p) => p.date === today)) {
+      progressWithLocalState.push({
+        id: '',
+        pledge_id: pledge.id,
+        date: today,
+        todos_completed: completedTodos,
+        created_at: '',
+      });
+    }
+    return calculateCompletionPercentage(
+      pledge.todos,
+      progressWithLocalState,
+      new Date(pledge.start_date),
+      new Date(pledge.end_date)
+    );
   };
+
+  const progress = overrideProgress ?? taskProgress();
+
+  // Reset override when todos change so slider stays in sync
+  useEffect(() => {
+    setOverrideProgress(null);
+  }, [completedTodos.length]);
 
   const handleReportAndSettle = async () => {
     if (!pledge || !walletAddress) return;
 
-    const completionPct = calculateProgress();
+    const completionPct = progress;
     const finalStatus: 'Completed' | 'Forfeited' =
       completionPct > 0 ? 'Completed' : 'Forfeited';
 
-    Alert.alert(
-      t('Report Completion'),
-      `${t('Completion')}: ${completionPct}%\n${t(
-        'Your Refund'
+    alert({
+      title: t('Report Completion'),
+      message: `${t('Completion')}: ${completionPct}%\n${t(
+        'Your Refund',
       )}: $${formatUsdcAmount(
         Math.round(
           pledge.stake_amount *
             (completionPct / 100) *
-            (completionPct === 100 ? 1 : 0.99)
-        )
+            (completionPct === 100 ? 1 : 0.99),
+        ),
       )}`,
-      [
+      buttons: [
         { text: t('Cancel'), style: 'cancel' },
         {
           text: t('Confirm'),
@@ -165,7 +193,7 @@ export const PledgeDetailScreen = () => {
             try {
               const signature = await reportAndSettle(
                 pledge.on_chain_address,
-                completionPct
+                completionPct,
               );
               await updatePledgeStatus.mutateAsync({
                 pledgeId: pledge.id,
@@ -174,17 +202,17 @@ export const PledgeDetailScreen = () => {
                 settleTxSignature: signature,
               });
               refetch();
-              Alert.alert(t('Success'), t('Pledge settled successfully'));
+              alert({ title: t('Success'), message: t('Pledge settled successfully') });
             } catch (err: any) {
               console.error('Report and settle error:', err);
-              Alert.alert(t('Error'), err.message || 'Failed to settle pledge');
+              alert({ title: t('Error'), message: err.message || 'Failed to settle pledge' });
             } finally {
               setIsReporting(false);
             }
           },
         },
-      ]
-    );
+      ],
+    });
   };
 
   if (pledgeLoading || progressLoading) {
@@ -217,8 +245,6 @@ export const PledgeDetailScreen = () => {
       </ScreenContainer>
     );
   }
-
-  const progress = calculateProgress();
 
   return (
     <ScreenContainer style={{ flex: 1, gap: 24, paddingBottom: 32 }}>
@@ -283,10 +309,10 @@ export const PledgeDetailScreen = () => {
                 {progress}%
               </Title3>
             </Row>
-            <ProgressBar
-              progress={progress}
-              height={12}
-              style={{ marginTop: 8 }}
+            <Slider
+              value={progress}
+              onValueChange={(v) => setOverrideProgress(Math.round(v))}
+              disabled={pledge.status !== 'Active'}
             />
           </View>
 
@@ -321,9 +347,7 @@ export const PledgeDetailScreen = () => {
                     <Body
                       style={{
                         flex: 1,
-                        textDecorationLine: completed
-                          ? 'line-through'
-                          : 'none',
+                        textDecorationLine: completed ? 'line-through' : 'none',
                         opacity: completed ? 0.6 : 1,
                       }}
                     >
@@ -375,6 +399,7 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     marginBottom: 24,
+    gap: 8,
   },
   todoItem: {
     flexDirection: 'row',

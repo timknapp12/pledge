@@ -160,5 +160,7 @@
   "Save your tasks and schedule as a reusable template": "Guarda tus tareas y horario como plantilla reutilizable",
   "No templates yet": "Aún no hay plantillas",
   "Save a template when creating a pledge to reuse it later": "Guarda una plantilla al crear un compromiso para reutilizarla después",
-  "Delete Template": "Eliminar Plantilla"
+  "Delete Template": "Eliminar Plantilla",
+  "Enable notifications to receive reminders for your pledges.": "Activa las notificaciones para recibir recordatorios de tus compromisos.",
+  "Enable": "Activar"
 }

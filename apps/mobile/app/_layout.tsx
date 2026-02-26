@@ -22,6 +22,8 @@ import { I18nProvider } from '../contexts/I18nContext';
 import { ScrollProvider } from '@/contexts/ScrollContext';
 import { ThemeProvider, useThemeMode } from '@/theme/ThemeProvider';
 import { lightTheme, darkTheme } from '@/theme';
+import { AlertProvider } from '@/components/common/Alert';
+import { NotificationsProvider } from '@/hooks/useNotifications';
 
 const LightNavTheme = {
   ...DefaultTheme,
@@ -84,9 +86,13 @@ function RootLayoutNav() {
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
         <AuthProvider>
-          <ThemeProvider>
-            <ThemedNavigation />
-          </ThemeProvider>
+          <NotificationsProvider>
+            <ThemeProvider>
+              <AlertProvider>
+                <ThemedNavigation />
+              </AlertProvider>
+            </ThemeProvider>
+          </NotificationsProvider>
         </AuthProvider>
       </I18nProvider>
     </QueryClientProvider>
