@@ -242,9 +242,7 @@
 ### 3. Edit Pledge
 
 - [ ] Edit pledge screen/modal
-- [ ] Show 10% penalty warning
-- [ ] Build editPledge transaction
-- [ ] Update DB after on-chain confirmation
+- [ ] Update DB
 
 ### 4. HomeScreen Copy
 

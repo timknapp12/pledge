@@ -53,17 +53,18 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
   const { data: allProgress } = useAllDailyProgress(selectedDate);
 
   // Combine daily tasks + goals for a pledge on a given date.
-  // Goals show on every date within the pledge's active range.
+  // Goals only appear on today — they are one-time completions, not daily.
+  const todayStr = toLocalDateStr(new Date());
   const getTasksForDate = useCallback(
     (pledge: Pledge, date: string): string[] => {
       const dailyTasks = getDailyTasksForDate(pledge.todos, date);
       const startLocal = toLocalDateStr(new Date(pledge.start_date));
       const endLocal = toLocalDateStr(new Date(pledge.end_date));
       const isWithinRange = date >= startLocal && date <= endLocal;
-      const goals = isWithinRange ? getGoals(pledge.todos) : [];
+      const goals = isWithinRange && date === todayStr ? getGoals(pledge.todos) : [];
       return [...dailyTasks, ...goals];
     },
-    [],
+    [todayStr],
   );
 
   // Check if any pledge has tasks for yesterday (to decide whether to show the toggle)

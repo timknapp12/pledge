@@ -10,3 +10,5 @@ export * from './ProgressBar';
 export * from './Switch';
 export * from './SegmentControl';
 export * from './Checkbox';
+export * from './Slider';
+export * from './Alert';

@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Alert, View, StyleSheet } from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,6 +22,7 @@ import {
   ThemeSelector,
   OutlineButton,
   Row,
+  useAlert,
 } from '@/components';
 import { SettingsItem } from './SettingsItem';
 
@@ -29,37 +30,26 @@ export const ProfileScreen = () => {
   const { t } = useTranslation();
   const { theme } = useAppTheme();
   const router = useRouter();
-  const { user, walletAddress, supabase, disconnect } = useAuth();
+  const { user, walletAddress, disconnect } = useAuth();
   const {
     registerForPushNotifications,
     disableNotifications,
+    isEnabled: notificationsEnabled,
     isRegistering,
   } = useNotifications();
 
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const { alert } = useAlert();
   const [isTogglingNotifications, setIsTogglingNotifications] = useState(false);
 
-  // Load notifications_enabled from DB
-  useEffect(() => {
-    if (!user) return;
-
-    supabase
-      .from('users')
-      .select('notifications_enabled')
-      .eq('id', user.id)
-      .single()
-      .then(({ data }) => {
-        if (data) {
-          setNotificationsEnabled(data.notifications_enabled ?? false);
-        }
-      });
-  }, [user, supabase]);
-
   const handleSignOut = () => {
-    Alert.alert(t('Sign Out'), t('Are you sure?'), [
-      { text: t('Cancel'), style: 'cancel' },
-      { text: t('Sign Out'), style: 'destructive', onPress: disconnect },
-    ]);
+    alert({
+      title: t('Sign Out'),
+      message: t('Are you sure?'),
+      buttons: [
+        { text: t('Cancel'), style: 'cancel' },
+        { text: t('Sign Out'), style: 'destructive', onPress: disconnect },
+      ],
+    });
   };
 
   const handleTemplates = () => {
@@ -71,14 +61,9 @@ export const ProfileScreen = () => {
       setIsTogglingNotifications(true);
       try {
         if (value) {
-          const token = await registerForPushNotifications();
-          if (token) {
-            setNotificationsEnabled(true);
-          }
-          // If token is null, permission was denied — don't toggle
+          await registerForPushNotifications();
         } else {
           await disableNotifications();
-          setNotificationsEnabled(false);
         }
       } catch (err) {
         console.error('Failed to toggle notifications:', err);
