@@ -7,7 +7,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useThemeMode } from '@/theme/ThemeProvider';
 import { SHEET_COLORS } from '@/theme/colors';
 import { BaseSheet } from './BaseSheet';
-import { RoundButton, Row } from '../common';
 
 export type DurationPreset = '1day' | '1week' | '1month' | 'custom';
 
@@ -108,12 +107,10 @@ export const DurationPickerSheet = forwardRef<
     [openDatePicker, customDate]
   );
 
-  const handleConfirm = useCallback(() => {
+  const handleClose = useCallback(() => {
     onConfirm(getEndDate(), preset);
-    if (ref && 'current' in ref && ref.current) {
-      ref.current.close();
-    }
-  }, [getEndDate, preset, onConfirm, ref]);
+    onClose?.();
+  }, [getEndDate, preset, onConfirm, onClose]);
 
   const getDurationDays = (): number => {
     const end = getEndDate();
@@ -139,7 +136,7 @@ export const DurationPickerSheet = forwardRef<
       ref={ref}
       title={t('Duration')}
       snapPoints={['50%']}
-      onClose={onClose}
+      onClose={handleClose}
       onOpen={() => setHasBeenOpened(true)}
     >
       {hasBeenOpened && (
@@ -274,18 +271,6 @@ export const DurationPickerSheet = forwardRef<
             </View>
           </View>
 
-          <Row>
-            <RoundButton
-              variant='secondary'
-              icon='close'
-              onPress={() => {
-                if (ref && 'current' in ref && ref.current) {
-                  ref.current.close();
-                }
-              }}
-            />
-            <RoundButton icon='checkmark' onPress={handleConfirm} />
-          </Row>
         </View>
       )}
     </BaseSheet>

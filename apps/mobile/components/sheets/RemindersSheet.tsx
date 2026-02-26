@@ -15,7 +15,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useThemeMode } from '@/theme/ThemeProvider';
 import { SHEET_COLORS } from '@/theme/colors';
 import { BaseSheet } from './BaseSheet';
-import { RoundButton, Row } from '../common';
 import {
   type ReminderConfig,
   type ReminderSettings,
@@ -138,7 +137,7 @@ export const RemindersSheet = forwardRef<BottomSheet, RemindersSheetProps>(
         .padStart(2, '0')}`;
     };
 
-    const handleConfirm = useCallback(() => {
+    const handleClose = useCallback(() => {
       const reminders: ReminderConfig[] = [];
 
       if (dailyEnabled) {
@@ -158,18 +157,15 @@ export const RemindersSheet = forwardRef<BottomSheet, RemindersSheetProps>(
       const settings: ReminderSettings | null =
         reminders.length > 0 ? { reminders } : null;
       onConfirm(settings);
-
-      if (ref && 'current' in ref && ref.current) {
-        ref.current.close();
-      }
-    }, [dailyEnabled, dailyTime, deadlineReminders, onConfirm, ref]);
+      onClose?.();
+    }, [dailyEnabled, dailyTime, deadlineReminders, onConfirm, onClose]);
 
     return (
       <BaseSheet
         ref={ref}
         title={t('Reminders')}
         snapPoints={['55%']}
-        onClose={onClose}
+        onClose={handleClose}
         onOpen={() => setHasBeenOpened(true)}
       >
         {hasBeenOpened && (
@@ -266,18 +262,6 @@ export const RemindersSheet = forwardRef<BottomSheet, RemindersSheetProps>(
               ))}
             </View>
 
-            <Row>
-              <RoundButton
-                variant='secondary'
-                icon='close'
-                onPress={() => {
-                  if (ref && 'current' in ref && ref.current) {
-                    ref.current.close();
-                  }
-                }}
-              />
-              <RoundButton icon='checkmark' onPress={handleConfirm} />
-            </Row>
           </View>
         )}
       </BaseSheet>
