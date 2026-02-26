@@ -7,3 +7,6 @@ export * from './CustomTabBar';
 export * from './TrackedScrollView';
 export * from './ErrorState';
 export * from './ProgressBar';
+export * from './Switch';
+export * from './SegmentControl';
+export * from './Checkbox';

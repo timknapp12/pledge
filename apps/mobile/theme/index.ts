@@ -42,6 +42,7 @@ export const lightTheme = {
     buttonPrimaryText: white,
     buttonSecondaryBorder: slateIndigo,
     buttonSecondaryText: slateIndigo,
+    thumbColor: white,
 
     // UI
     border: lightBorder,
@@ -82,6 +83,7 @@ export const darkTheme = {
     buttonPrimaryText: white,
     buttonSecondaryBorder: slateIndigo,
     buttonSecondaryText: slateIndigo,
+    thumbColor: white,
 
     // UI
     border: darkBorder,

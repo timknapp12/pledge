@@ -12,6 +12,7 @@ import {
 import {
   getCreatePledgePdas,
   getReportCompletionPdas,
+  getReportAndSettlePdas,
   getConfigPda,
 } from './pdas';
 import {
@@ -189,6 +190,75 @@ export const buildReportCompletionTransaction = async (
   transaction.add(ix);
 
   // Get recent blockhash
+  const { blockhash, lastValidBlockHeight } =
+    await connection.getLatestBlockhash('confirmed');
+  transaction.recentBlockhash = blockhash;
+  transaction.lastValidBlockHeight = lastValidBlockHeight;
+  transaction.feePayer = user;
+
+  return transaction;
+};
+
+/**
+ * Build a combined report_completion + process_completion transaction (unsigned).
+ * This lets the user self-settle in a single wallet signature:
+ *  - IX 1: reportCompletion (sets status to Reported, records percentage)
+ *  - IX 2: processCompletion (transfers funds based on percentage, closes vault)
+ * The user's wallet acts as both the "user" signer for report and the "crank" signer for process.
+ */
+export const buildReportAndSettleTransaction = async (
+  user: PublicKey,
+  pledgeCreatedAt: BN,
+  completionPercentage: number,
+): Promise<Transaction> => {
+  const program = getReadOnlyProgram();
+  const connection = getConnection();
+
+  if (completionPercentage < 0 || completionPercentage > 100) {
+    throw new Error('Completion percentage must be between 0 and 100');
+  }
+
+  // Fetch config to get treasury/charity addresses
+  const config = await fetchProgramConfig();
+
+  const pdas = getReportAndSettlePdas(
+    user,
+    USDC_MINT,
+    pledgeCreatedAt,
+    config.treasury,
+    config.charity,
+  );
+
+  // IX 1: reportCompletion
+  const reportIx = await program.methods
+    .reportCompletion(completionPercentage)
+    .accounts({
+      user,
+      config: pdas.config,
+      pledge: pdas.pledge,
+    })
+    .instruction();
+
+  // IX 2: processCompletion (user wallet = crank signer)
+  const processIx = await program.methods
+    .processCompletion()
+    .accounts({
+      crank: user,
+      config: pdas.config,
+      pledge: pdas.pledge,
+      vault: pdas.vault,
+      user,
+      userTokenAccount: pdas.userTokenAccount,
+      treasuryTokenAccount: pdas.treasuryTokenAccount,
+      charityTokenAccount: pdas.charityTokenAccount,
+      tokenProgram: TOKEN_PROGRAM_ID,
+    })
+    .instruction();
+
+  const transaction = new Transaction();
+  transaction.add(reportIx);
+  transaction.add(processIx);
+
   const { blockhash, lastValidBlockHeight } =
     await connection.getLatestBlockhash('confirmed');
   transaction.recentBlockhash = blockhash;

@@ -8,6 +8,7 @@ import {
   fetchProgramConfig,
   buildCreatePledgeTransaction,
   buildReportCompletionTransaction,
+  buildReportAndSettleTransaction,
   signAndSendTransaction,
   ParsedPledge,
   ProgramConfigAccount,
@@ -29,6 +30,10 @@ export interface UseProgramReturn {
     deadline: Date
   ) => Promise<{ signature: string; pledgeAddress: PublicKey; createdAt: number }>;
   reportCompletion: (
+    pledgeAddress: string,
+    completionPercentage: number
+  ) => Promise<string>;
+  reportAndSettle: (
     pledgeAddress: string,
     completionPercentage: number
   ) => Promise<string>;
@@ -202,6 +207,54 @@ export const useProgram = (): UseProgramReturn => {
     [walletAddress]
   );
 
+  /**
+   * Report completion AND settle funds in a single transaction via MWA.
+   * Bundles report_completion + process_completion so the user self-settles.
+   * After success, caller should update Supabase status to Completed/Forfeited.
+   */
+  const reportAndSettle = useCallback(
+    async (pledgeAddress: string, completionPercentage: number): Promise<string> => {
+      if (!walletAddress) {
+        throw new Error('Wallet not connected');
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const userPubkey = new PublicKey(walletAddress);
+        const pledgePubkey = new PublicKey(pledgeAddress);
+
+        // Fetch the on-chain pledge to get createdAt (needed for PDA derivation)
+        const onChainPledge = await fetchPledge(pledgePubkey);
+        if (!onChainPledge) {
+          throw new Error('Pledge not found on-chain');
+        }
+
+        const createdAtBN = new BN(Math.floor(onChainPledge.createdAt.getTime() / 1000));
+
+        // Build combined report + settle transaction
+        const transaction = await buildReportAndSettleTransaction(
+          userPubkey,
+          createdAtBN,
+          completionPercentage
+        );
+
+        // Sign and send via MWA (single signature for both instructions)
+        const { signature } = await signAndSendTransaction(transaction);
+
+        return signature;
+      } catch (err: any) {
+        const message = err.message || 'Failed to report and settle';
+        setError(message);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [walletAddress]
+  );
+
   return {
     isLoading,
     error,
@@ -210,6 +263,7 @@ export const useProgram = (): UseProgramReturn => {
     fetchConfig,
     createPledge,
     reportCompletion,
+    reportAndSettle,
     clearError,
   };
 };

@@ -38,7 +38,7 @@ export const ConnectWalletScreen = () => {
           {/* // TODO - think of new copy */}
           <BodySecondary style={{ textAlign: 'center', maxWidth: 280 }}>
             {t(
-              'Stake on your goals. Connect your Solana wallet to get started.'
+              'Pledge your tokens, achieve your goals. Connect your wallet to get started.',
             )}
           </BodySecondary>
         </CenteredColumn>

@@ -21,6 +21,17 @@ import { AuthProvider } from '../contexts/AuthContext';
 import { I18nProvider } from '../contexts/I18nContext';
 import { ScrollProvider } from '@/contexts/ScrollContext';
 import { ThemeProvider, useThemeMode } from '@/theme/ThemeProvider';
+import { lightTheme, darkTheme } from '@/theme';
+
+const LightNavTheme = {
+  ...DefaultTheme,
+  colors: { ...DefaultTheme.colors, background: lightTheme.colors.background },
+};
+
+const DarkNavTheme = {
+  ...DarkTheme,
+  colors: { ...DarkTheme.colors, background: darkTheme.colors.background },
+};
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -86,9 +97,16 @@ function ThemedNavigation() {
   const { isDark } = useThemeMode();
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView
+      style={{
+        flex: 1,
+        backgroundColor: isDark
+          ? darkTheme.colors.background
+          : lightTheme.colors.background,
+      }}
+    >
       <ScrollProvider>
-        <NavigationThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
+        <NavigationThemeProvider value={isDark ? DarkNavTheme : LightNavTheme}>
           <StatusBar style={isDark ? 'light' : 'dark'} />
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name='(tabs)' />

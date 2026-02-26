@@ -171,7 +171,7 @@ describe("report_completion", () => {
     expect(pledge.completionPercentage).to.equal(0);
   });
 
-  it("fails to report before deadline", async () => {
+  it("allows reporting before deadline (self-settle)", async () => {
     const user4 = await createTestUser(ctx, HUNDRED_USDC);
     const currentTimestamp = await getCurrentTimestamp(ctx.provider.connection);
     const createdAt = new anchor.BN(currentTimestamp);
@@ -200,22 +200,20 @@ describe("report_completion", () => {
       .signers([user4.keypair])
       .rpc();
 
-    // Try to report immediately (before deadline)
-    try {
-      await ctx.program.methods
-        .reportCompletion(100)
-        .accounts({
-          user: user4.keypair.publicKey,
-          config: ctx.configPda,
-          pledge: pledgePda,
-        })
-        .signers([user4.keypair])
-        .rpc();
+    // Report immediately (before deadline) — should succeed now
+    await ctx.program.methods
+      .reportCompletion(100)
+      .accounts({
+        user: user4.keypair.publicKey,
+        config: ctx.configPda,
+        pledge: pledgePda,
+      })
+      .signers([user4.keypair])
+      .rpc();
 
-      expect.fail("Should have thrown DeadlineNotPassed error");
-    } catch (err) {
-      expect(err.message).to.include("DeadlineNotPassed");
-    }
+    const pledge = await ctx.program.account.pledge.fetch(pledgePda);
+    expect(pledge.status).to.deep.equal({ reported: {} });
+    expect(pledge.completionPercentage).to.equal(100);
   });
 
   it("fails with invalid completion percentage (> 100)", async () => {
