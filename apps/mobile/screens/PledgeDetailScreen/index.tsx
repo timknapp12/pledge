@@ -38,7 +38,7 @@ import {
   PrimaryButton,
   ErrorState,
   CenteredColumn,
-  ProgressBar,
+  Slider,
   Checkbox,
 } from '@/components';
 
@@ -90,6 +90,7 @@ export const PledgeDetailScreen = () => {
   const { reportAndSettle } = useProgram();
 
   const [completedTodos, setCompletedTodos] = useState<number[]>([]);
+  const [overrideProgress, setOverrideProgress] = useState<number | null>(null);
   const [isReporting, setIsReporting] = useState(false);
 
   // Initialize completed todos from today's progress
@@ -122,39 +123,44 @@ export const PledgeDetailScreen = () => {
         setCompletedTodos(completedTodos);
       }
     },
-    [completedTodos, id, updateProgress]
+    [completedTodos, id, updateProgress],
   );
 
   const today = toLocalDateStr(new Date());
-  const dailyTasks = pledge
-    ? getDailyTasksForDate(pledge.todos, today)
-    : [];
+  const dailyTasks = pledge ? getDailyTasksForDate(pledge.todos, today) : [];
   const goals = pledge ? getGoals(pledge.todos) : [];
   // Combined list: daily tasks first, then goals — indices match todos_completed
   const allTasks = [...dailyTasks, ...goals];
 
-  const calculateProgress = (): number => {
+  const taskProgress = (): number => {
     if (allTasks.length === 0) return 0;
     return Math.round((completedTodos.length / allTasks.length) * 100);
   };
 
+  const progress = overrideProgress ?? taskProgress();
+
+  // Reset override when todos change so slider stays in sync
+  useEffect(() => {
+    setOverrideProgress(null);
+  }, [completedTodos.length]);
+
   const handleReportAndSettle = async () => {
     if (!pledge || !walletAddress) return;
 
-    const completionPct = calculateProgress();
+    const completionPct = progress;
     const finalStatus: 'Completed' | 'Forfeited' =
       completionPct > 0 ? 'Completed' : 'Forfeited';
 
     Alert.alert(
       t('Report Completion'),
       `${t('Completion')}: ${completionPct}%\n${t(
-        'Your Refund'
+        'Your Refund',
       )}: $${formatUsdcAmount(
         Math.round(
           pledge.stake_amount *
             (completionPct / 100) *
-            (completionPct === 100 ? 1 : 0.99)
-        )
+            (completionPct === 100 ? 1 : 0.99),
+        ),
       )}`,
       [
         { text: t('Cancel'), style: 'cancel' },
@@ -165,7 +171,7 @@ export const PledgeDetailScreen = () => {
             try {
               const signature = await reportAndSettle(
                 pledge.on_chain_address,
-                completionPct
+                completionPct,
               );
               await updatePledgeStatus.mutateAsync({
                 pledgeId: pledge.id,
@@ -183,7 +189,7 @@ export const PledgeDetailScreen = () => {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -217,8 +223,6 @@ export const PledgeDetailScreen = () => {
       </ScreenContainer>
     );
   }
-
-  const progress = calculateProgress();
 
   return (
     <ScreenContainer style={{ flex: 1, gap: 24, paddingBottom: 32 }}>
@@ -283,10 +287,10 @@ export const PledgeDetailScreen = () => {
                 {progress}%
               </Title3>
             </Row>
-            <ProgressBar
-              progress={progress}
-              height={12}
-              style={{ marginTop: 8 }}
+            <Slider
+              value={progress}
+              onValueChange={(v) => setOverrideProgress(Math.round(v))}
+              disabled={pledge.status !== 'Active'}
             />
           </View>
 
@@ -321,9 +325,7 @@ export const PledgeDetailScreen = () => {
                     <Body
                       style={{
                         flex: 1,
-                        textDecorationLine: completed
-                          ? 'line-through'
-                          : 'none',
+                        textDecorationLine: completed ? 'line-through' : 'none',
                         opacity: completed ? 0.6 : 1,
                       }}
                     >
@@ -375,6 +377,7 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     marginBottom: 24,
+    gap: 8,
   },
   todoItem: {
     flexDirection: 'row',
