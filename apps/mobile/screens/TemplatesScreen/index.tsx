@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Alert, Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +21,7 @@ import {
   Row,
   Card,
   TrackedScrollView,
+  useAlert,
 } from '@/components';
 
 const DURATION_LABELS: Record<string, string> = {
@@ -33,6 +34,7 @@ export const TemplatesScreen = () => {
   const { t } = useTranslation();
   const { theme } = useAppTheme();
   const router = useRouter();
+  const { alert } = useAlert();
   const { data: templates, isLoading } = useTemplates();
   const deleteTemplate = useDeleteTemplate();
 
@@ -45,20 +47,20 @@ export const TemplatesScreen = () => {
 
   const handleDelete = useCallback(
     (templateId: string, templateName: string) => {
-      Alert.alert(
-        t('Delete Template'),
-        `${t('Delete')} "${templateName}"?`,
-        [
+      alert({
+        title: t('Delete Template'),
+        message: `${t('Delete')} "${templateName}"?`,
+        buttons: [
           { text: t('Cancel'), style: 'cancel' },
           {
             text: t('Delete'),
             style: 'destructive',
             onPress: () => deleteTemplate.mutate(templateId),
           },
-        ]
-      );
+        ],
+      });
     },
-    [t, deleteTemplate]
+    [t, deleteTemplate, alert]
   );
 
   return (
