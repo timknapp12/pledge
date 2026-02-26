@@ -1,8 +1,17 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  type ReactNode,
+} from 'react';
 import { Platform, AppState, AppStateStatus } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { useAuth } from '@/contexts/AuthContext';
+import React from 'react';
 
 // Configure how notifications are handled when app is in foreground
 Notifications.setNotificationHandler({
@@ -15,20 +24,37 @@ Notifications.setNotificationHandler({
   }),
 });
 
-interface UseNotificationsReturn {
+interface NotificationsContextValue {
   expoPushToken: string | null;
   permissionStatus: Notifications.PermissionStatus | null;
+  /** Whether notifications are enabled at the app level (DB flag). */
+  isEnabled: boolean;
   isRegistering: boolean;
   registerForPushNotifications: () => Promise<string | null>;
   requestPermission: () => Promise<boolean>;
   disableNotifications: () => Promise<void>;
 }
 
-export const useNotifications = (): UseNotificationsReturn => {
+const NotificationsContext =
+  createContext<NotificationsContextValue | null>(null);
+
+export const useNotifications = (): NotificationsContextValue => {
+  const ctx = useContext(NotificationsContext);
+  if (!ctx)
+    throw new Error('useNotifications must be used inside NotificationsProvider');
+  return ctx;
+};
+
+export const NotificationsProvider = ({
+  children,
+}: {
+  children: ReactNode;
+}) => {
   const { supabase, user, walletAddress } = useAuth();
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
   const [permissionStatus, setPermissionStatus] =
     useState<Notifications.PermissionStatus | null>(null);
+  const [isEnabled, setIsEnabled] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const appState = useRef(AppState.currentState);
 
@@ -38,6 +64,19 @@ export const useNotifications = (): UseNotificationsReturn => {
       setPermissionStatus(status);
     });
   }, []);
+
+  // Load app-level enabled state from DB
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('users')
+      .select('notifications_enabled')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => {
+        setIsEnabled(data?.notifications_enabled ?? false);
+      });
+  }, [user, supabase]);
 
   // Sync permission status when app comes to foreground
   useEffect(() => {
@@ -50,14 +89,12 @@ export const useNotifications = (): UseNotificationsReturn => {
         const { status } = await Notifications.getPermissionsAsync();
 
         // Permission was revoked in system settings
-        if (
-          status !== 'granted' &&
-          permissionStatus === 'granted'
-        ) {
+        if (status !== 'granted' && permissionStatus === 'granted') {
           await supabase
             .from('users')
             .update({ notifications_enabled: false })
             .eq('id', user.id);
+          setIsEnabled(false);
         }
 
         setPermissionStatus(status);
@@ -67,7 +104,7 @@ export const useNotifications = (): UseNotificationsReturn => {
 
     const subscription = AppState.addEventListener(
       'change',
-      handleAppStateChange
+      handleAppStateChange,
     );
     return () => subscription.remove();
   }, [user, supabase, permissionStatus]);
@@ -132,6 +169,7 @@ export const useNotifications = (): UseNotificationsReturn => {
         console.error('Failed to store push token:', error);
         // Don't throw - the token is still valid locally
       } else {
+        setIsEnabled(true);
         console.log('Push token registered:', token.substring(0, 20) + '...');
       }
 
@@ -184,16 +222,24 @@ export const useNotifications = (): UseNotificationsReturn => {
       .eq('status', 'pending');
 
     setExpoPushToken(null);
+    setIsEnabled(false);
   }, [user, supabase]);
 
-  return {
+  const value: NotificationsContextValue = {
     expoPushToken,
     permissionStatus,
+    isEnabled,
     isRegistering,
     registerForPushNotifications,
     requestPermission,
     disableNotifications,
   };
+
+  return React.createElement(
+    NotificationsContext.Provider,
+    { value },
+    children,
+  );
 };
 
 // Helper to schedule a local notification (for testing)

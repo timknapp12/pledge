@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/theme/ThemeProvider';
@@ -30,32 +30,16 @@ export const ProfileScreen = () => {
   const { t } = useTranslation();
   const { theme } = useAppTheme();
   const router = useRouter();
-  const { user, walletAddress, supabase, disconnect } = useAuth();
+  const { user, walletAddress, disconnect } = useAuth();
   const {
     registerForPushNotifications,
     disableNotifications,
+    isEnabled: notificationsEnabled,
     isRegistering,
   } = useNotifications();
 
   const { alert } = useAlert();
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [isTogglingNotifications, setIsTogglingNotifications] = useState(false);
-
-  // Load notifications_enabled from DB
-  useEffect(() => {
-    if (!user) return;
-
-    supabase
-      .from('users')
-      .select('notifications_enabled')
-      .eq('id', user.id)
-      .single()
-      .then(({ data }) => {
-        if (data) {
-          setNotificationsEnabled(data.notifications_enabled ?? false);
-        }
-      });
-  }, [user, supabase]);
 
   const handleSignOut = () => {
     alert({
@@ -77,14 +61,9 @@ export const ProfileScreen = () => {
       setIsTogglingNotifications(true);
       try {
         if (value) {
-          const token = await registerForPushNotifications();
-          if (token) {
-            setNotificationsEnabled(true);
-          }
-          // If token is null, permission was denied — don't toggle
+          await registerForPushNotifications();
         } else {
           await disableNotifications();
-          setNotificationsEnabled(false);
         }
       } catch (err) {
         console.error('Failed to toggle notifications:', err);
