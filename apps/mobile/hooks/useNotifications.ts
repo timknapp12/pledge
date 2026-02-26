@@ -35,13 +35,16 @@ interface NotificationsContextValue {
   disableNotifications: () => Promise<void>;
 }
 
-const NotificationsContext =
-  createContext<NotificationsContextValue | null>(null);
+const NotificationsContext = createContext<NotificationsContextValue | null>(
+  null,
+);
 
 export const useNotifications = (): NotificationsContextValue => {
   const ctx = useContext(NotificationsContext);
   if (!ctx)
-    throw new Error('useNotifications must be used inside NotificationsProvider');
+    throw new Error(
+      'useNotifications must be used inside NotificationsProvider',
+    );
   return ctx;
 };
 
@@ -170,7 +173,6 @@ export const NotificationsProvider = ({
         // Don't throw - the token is still valid locally
       } else {
         setIsEnabled(true);
-        console.log('Push token registered:', token.substring(0, 20) + '...');
       }
 
       // Set up Android notification channel
