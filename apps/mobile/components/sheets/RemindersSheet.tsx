@@ -1,12 +1,5 @@
 import { forwardRef, useState, useCallback, useEffect } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  Alert,
-  Platform,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, Pressable, Platform, StyleSheet } from 'react-native';
 import { Switch } from '@/components/common';
 import BottomSheet from '@gorhom/bottom-sheet';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -15,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useThemeMode } from '@/theme/ThemeProvider';
 import { SHEET_COLORS } from '@/theme/colors';
 import { BaseSheet } from './BaseSheet';
+import { useAlert } from '@/components/common/Alert';
 import {
   type ReminderConfig,
   type ReminderSettings,
@@ -37,8 +31,8 @@ export const RemindersSheet = forwardRef<BottomSheet, RemindersSheetProps>(
     const { t } = useTranslation();
     const { isDark } = useThemeMode();
     const colors = isDark ? SHEET_COLORS.dark : SHEET_COLORS.light;
-    const { registerForPushNotifications, permissionStatus } =
-      useNotifications();
+    const { alert } = useAlert();
+    const { isEnabled, registerForPushNotifications } = useNotifications();
 
     const [dailyEnabled, setDailyEnabled] = useState(false);
     const [dailyTime, setDailyTime] = useState(new Date());
@@ -71,27 +65,30 @@ export const RemindersSheet = forwardRef<BottomSheet, RemindersSheetProps>(
       }
     }, [value]);
 
-    const ensureNotificationsEnabled = async (): Promise<boolean> => {
-      // If already granted, we're good
-      if (permissionStatus === 'granted') {
-        return true;
+    const ensureNotificationsEnabled = (): Promise<boolean> => {
+      // If already enabled at app level, we're good
+      if (isEnabled) {
+        return Promise.resolve(true);
       }
 
-      // Register for push notifications (handles permission request + token storage)
-      const token = await registerForPushNotifications();
-
-      if (!token) {
-        Alert.alert(
-          t('Notifications Disabled'),
-          t(
-            'Please enable notifications in your device settings to receive reminders.',
+      return new Promise((resolve) => {
+        alert({
+          title: t('Notifications Disabled'),
+          message: t(
+            'Enable notifications to receive reminders for your pledges.',
           ),
-          [{ text: t('OK') }],
-        );
-        return false;
-      }
-
-      return true;
+          buttons: [
+            { text: t('Cancel'), style: 'cancel', onPress: () => resolve(false) },
+            {
+              text: t('Enable'),
+              onPress: async () => {
+                const token = await registerForPushNotifications();
+                resolve(!!token);
+              },
+            },
+          ],
+        });
+      });
     };
 
     const handleDailyToggle = async (enabled: boolean) => {
@@ -261,7 +258,6 @@ export const RemindersSheet = forwardRef<BottomSheet, RemindersSheetProps>(
                 </View>
               ))}
             </View>
-
           </View>
         )}
       </BaseSheet>
