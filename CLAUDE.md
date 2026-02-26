@@ -175,6 +175,7 @@ const MyComponent = () => {
 ```
 
 **Rules:**
+
 - Never hardcode user-facing strings directly in JSX
 - Add English strings to `en.json` immediately when creating UI
 - Use the exact string as the key (no camelCase keys)
@@ -213,7 +214,7 @@ import * as jwt from 'jsonwebtoken';
 const token = jwt.sign(
   { sub: walletAddress, role: 'authenticated' },
   Deno.env.get('SUPABASE_JWT_SECRET'),
-  { expiresIn: '1h' }
+  { expiresIn: '1h' },
 );
 ```
 
@@ -324,7 +325,7 @@ interface PendingSyncOp {
 export const createPledgeAtomic = async (
   program: Program,
   supabase: SupabaseClient,
-  params: CreatePledgeParams
+  params: CreatePledgeParams,
 ): Promise<{ success: boolean; error?: string }> => {
   const pledgeKeypair = Keypair.generate();
 
@@ -346,7 +347,10 @@ export const createPledgeAtomic = async (
 
   // 2. WAIT for confirmation (critical!)
   const connection = program.provider.connection;
-  const confirmation = await connection.confirmTransaction(txSignature, 'confirmed');
+  const confirmation = await connection.confirmTransaction(
+    txSignature,
+    'confirmed',
+  );
 
   if (confirmation.value.err) {
     return { success: false, error: 'Transaction not confirmed' };
@@ -379,7 +383,7 @@ export const createPledgeAtomic = async (
   }
 
   return { success: true };
-}
+};
 
 async function queueForRetry(op: PendingSyncOp): Promise<void> {
   const existing = await AsyncStorage.getItem(PENDING_SYNC_KEY);
@@ -396,7 +400,7 @@ async function queueForRetry(op: PendingSyncOp): Promise<void> {
 export const reconcileUserPledges = async (
   program: Program,
   supabase: SupabaseClient,
-  walletAddress: PublicKey
+  walletAddress: PublicKey,
 ): Promise<void> => {
   // 1. Process any pending sync operations first
   await processPendingSyncQueue(supabase);
@@ -418,7 +422,7 @@ export const reconcileUserPledges = async (
     .eq('wallet_address', walletAddress.toString());
 
   const dbPledgeMap = new Map(
-    dbPledges?.map((p) => [p.on_chain_address, p]) ?? []
+    dbPledges?.map((p) => [p.on_chain_address, p]) ?? [],
   );
 
   // 4. Reconcile differences
@@ -432,7 +436,9 @@ export const reconcileUserPledges = async (
         on_chain_address: address,
         wallet_address: walletAddress.toString(),
         stake_amount: onChain.account.stakeAmount.toNumber(),
-        deadline: new Date(onChain.account.deadline.toNumber() * 1000).toISOString(),
+        deadline: new Date(
+          onChain.account.deadline.toNumber() * 1000,
+        ).toISOString(),
         status: mapOnChainStatus(onChain.account.status),
         // Note: some metadata (name, todos) may be lost if only on-chain exists
         name: 'Recovered Pledge',
@@ -449,9 +455,11 @@ export const reconcileUserPledges = async (
       }
     }
   }
-}
+};
 
-async function processPendingSyncQueue(supabase: SupabaseClient): Promise<void> {
+async function processPendingSyncQueue(
+  supabase: SupabaseClient,
+): Promise<void> {
   const stored = await AsyncStorage.getItem(PENDING_SYNC_KEY);
   if (!stored) return;
 
@@ -479,89 +487,17 @@ async function processPendingSyncQueue(supabase: SupabaseClient): Promise<void> 
   }
 }
 
-function mapOnChainStatus(status: { active?: {}; reported?: {}; completed?: {}; forfeited?: {} }): string {
+function mapOnChainStatus(status: {
+  active?: {};
+  reported?: {};
+  completed?: {};
+  forfeited?: {};
+}): string {
   if (status.active) return 'active';
   if (status.reported) return 'reported';
   if (status.completed) return 'completed';
   if (status.forfeited) return 'forfeited';
   return 'unknown';
-}
-```
-
-#### Edit Pledge (Special Handling)
-
-Edit is the trickiest operation - user pays penalty, so we must be extra careful:
-
-```typescript
-// lib/sync/atomicOperations.ts
-export const editPledgeAtomic = async (
-  program: Program,
-  supabase: SupabaseClient,
-  params: EditPledgeParams
-): Promise<{ success: boolean; error?: string }> => {
-  // Store intended edit BEFORE transaction (in case app crashes)
-  const pendingEdit = {
-    pledgeAddress: params.pledgeAddress,
-    newTodos: params.newTodos,
-    timestamp: Date.now(),
-  };
-  await AsyncStorage.setItem(
-    `pending_edit_${params.pledgeAddress}`,
-    JSON.stringify(pendingEdit)
-  );
-
-  // 1. Send transaction (pays 10% penalty)
-  let txSignature: string;
-  try {
-    txSignature = await program.methods
-      .editPledge(params.newTodos)
-      .accounts({ /* ... */ })
-      .rpc();
-  } catch (err) {
-    // Tx failed - no penalty paid, clean up pending edit
-    await AsyncStorage.removeItem(`pending_edit_${params.pledgeAddress}`);
-    return { success: false, error: 'Transaction failed' };
-  }
-
-  // 2. Wait for confirmation
-  const confirmation = await connection.confirmTransaction(txSignature, 'confirmed');
-  if (confirmation.value.err) {
-    await AsyncStorage.removeItem(`pending_edit_${params.pledgeAddress}`);
-    return { success: false, error: 'Transaction not confirmed' };
-  }
-
-  // 3. Penalty paid - MUST update DB (retry until success)
-  let dbSuccess = false;
-  let attempts = 0;
-  const maxAttempts = 3;
-
-  while (!dbSuccess && attempts < maxAttempts) {
-    const { error } = await supabase
-      .from('pledges')
-      .update({ todos: params.newTodos })
-      .eq('on_chain_address', params.pledgeAddress);
-
-    if (!error) {
-      dbSuccess = true;
-      await AsyncStorage.removeItem(`pending_edit_${params.pledgeAddress}`);
-    } else {
-      attempts++;
-      await new Promise((r) => setTimeout(r, 1000 * attempts)); // Backoff
-    }
-  }
-
-  if (!dbSuccess) {
-    // Queue for reconciliation - user will see update on next load
-    await queueForRetry({
-      id: crypto.randomUUID(),
-      type: 'EDIT_PLEDGE',
-      txSignature,
-      data: { pledgeAddress: params.pledgeAddress, todos: params.newTodos },
-      createdAt: Date.now(),
-    });
-  }
-
-  return { success: true };
 }
 ```
 
