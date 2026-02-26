@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Alert, View, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,6 +22,7 @@ import {
   ThemeSelector,
   OutlineButton,
   Row,
+  useAlert,
 } from '@/components';
 import { SettingsItem } from './SettingsItem';
 
@@ -36,6 +37,7 @@ export const ProfileScreen = () => {
     isRegistering,
   } = useNotifications();
 
+  const { alert } = useAlert();
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [isTogglingNotifications, setIsTogglingNotifications] = useState(false);
 
@@ -56,10 +58,14 @@ export const ProfileScreen = () => {
   }, [user, supabase]);
 
   const handleSignOut = () => {
-    Alert.alert(t('Sign Out'), t('Are you sure?'), [
-      { text: t('Cancel'), style: 'cancel' },
-      { text: t('Sign Out'), style: 'destructive', onPress: disconnect },
-    ]);
+    alert({
+      title: t('Sign Out'),
+      message: t('Are you sure?'),
+      buttons: [
+        { text: t('Cancel'), style: 'cancel' },
+        { text: t('Sign Out'), style: 'destructive', onPress: disconnect },
+      ],
+    });
   };
 
   const handleTemplates = () => {
