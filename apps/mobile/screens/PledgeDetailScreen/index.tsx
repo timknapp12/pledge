@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   ScrollView,
   Pressable,
   View,
@@ -41,6 +40,7 @@ import {
   CenteredColumn,
   Slider,
   Checkbox,
+  useAlert,
 } from '@/components';
 
 function formatDeadline(deadline: string): string {
@@ -90,6 +90,7 @@ export const PledgeDetailScreen = () => {
   const updatePledgeStatus = useUpdatePledgeStatus();
   const { reportAndSettle } = useProgram();
 
+  const { alert } = useAlert();
   const [completedTodos, setCompletedTodos] = useState<number[]>([]);
   const [overrideProgress, setOverrideProgress] = useState<number | null>(null);
   const [isReporting, setIsReporting] = useState(false);
@@ -172,9 +173,9 @@ export const PledgeDetailScreen = () => {
     const finalStatus: 'Completed' | 'Forfeited' =
       completionPct > 0 ? 'Completed' : 'Forfeited';
 
-    Alert.alert(
-      t('Report Completion'),
-      `${t('Completion')}: ${completionPct}%\n${t(
+    alert({
+      title: t('Report Completion'),
+      message: `${t('Completion')}: ${completionPct}%\n${t(
         'Your Refund',
       )}: $${formatUsdcAmount(
         Math.round(
@@ -183,7 +184,7 @@ export const PledgeDetailScreen = () => {
             (completionPct === 100 ? 1 : 0.99),
         ),
       )}`,
-      [
+      buttons: [
         { text: t('Cancel'), style: 'cancel' },
         {
           text: t('Confirm'),
@@ -201,17 +202,17 @@ export const PledgeDetailScreen = () => {
                 settleTxSignature: signature,
               });
               refetch();
-              Alert.alert(t('Success'), t('Pledge settled successfully'));
+              alert({ title: t('Success'), message: t('Pledge settled successfully') });
             } catch (err: any) {
               console.error('Report and settle error:', err);
-              Alert.alert(t('Error'), err.message || 'Failed to settle pledge');
+              alert({ title: t('Error'), message: err.message || 'Failed to settle pledge' });
             } finally {
               setIsReporting(false);
             }
           },
         },
       ],
-    );
+    });
   };
 
   if (pledgeLoading || progressLoading) {
