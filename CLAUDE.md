@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Pledge is a Solana mobile dApp for Android that lets users stake tokens on personal goals. Users create time-bound goals with to-do lists, stake USDC tokens, track progress, and report completion. 100% completion returns full stake (no fee); partial completion returns proportional amount minus fee; failure forfeits tokens to treasury/charity.
+Pledge is a Solana mobile dApp for Android that lets users stake tokens on personal goals. Users create time-bound goals with to-do lists, stake USDC tokens, track progress, and self-settle at any time (report + settle in one transaction). 100% completion returns full stake (no fee); partial completion returns proportional amount minus fee; failure forfeits tokens to treasury/charity. A crank service handles users who forget to self-settle after the deadline + grace period.
 
 **Key Document:** See `PRD.md` for full product requirements.
 

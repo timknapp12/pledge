@@ -6,5 +6,7 @@ export const queryKeys = {
   pledge: (pledgeId: string) => ['pledge', pledgeId] as const,
   dailyProgress: (pledgeId: string, date?: string) =>
     ['dailyProgress', pledgeId, date] as const,
+  allDailyProgress: (walletAddress: string, date: string) =>
+    ['allDailyProgress', walletAddress, date] as const,
   templates: (walletAddress: string) => ['templates', walletAddress] as const,
 };

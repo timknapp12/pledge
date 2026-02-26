@@ -5,6 +5,7 @@ import {
   LayoutChangeEvent,
   Pressable,
   ScrollView,
+  StyleSheet,
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +15,8 @@ import { useRouter } from 'expo-router';
 import {
   Title1,
   Title3,
+  Body,
+  BodySecondary,
   ErrorText,
   ScreenContainer,
   Row,
@@ -25,8 +28,10 @@ import {
   DateTimePickerSheet,
   DurationPickerSheet,
   RemindersSheet,
-  DailyTodosSheet,
+  StakeAmountSheet,
+  SaveTemplateSheet,
 } from '@/components';
+import { useUsdcBalance } from '@/hooks/useUsdcBalance';
 import { useCreatePledgeForm } from './useCreatePledgeForm';
 import { ScheduleCard } from './ScheduleCard';
 import { TodoSection } from './TodoSection';
@@ -39,15 +44,13 @@ export const CreatePledgeScreen = () => {
   const router = useRouter();
 
   const form = useCreatePledgeForm();
+  const { balance: usdcBalance, isLoading: balanceLoading } = useUsdcBalance();
   const scrollViewRef = useRef<ScrollView>(null);
   const inputPositions = useRef<Record<string, number>>({});
 
-  const trackLayout = useCallback(
-    (key: string, e: LayoutChangeEvent) => {
-      inputPositions.current[key] = e.nativeEvent.layout.y;
-    },
-    []
-  );
+  const trackLayout = useCallback((key: string, e: LayoutChangeEvent) => {
+    inputPositions.current[key] = e.nativeEvent.layout.y;
+  }, []);
 
   const scrollToSection = useCallback((key: string) => {
     const y = inputPositions.current[key];
@@ -96,26 +99,14 @@ export const CreatePledgeScreen = () => {
               keyboardShouldPersistTaps='handled'
             >
               <CenteredColumn flex={1}>
-                {/* Goal Name */}
-                <View style={styles.section}>
-                  <FloatingLabelInput
-                    label={t('Goal Name')}
-                    value={form.name}
-                    onChangeText={form.setName}
-                    autoFocus
-                  />
-                </View>
-
+                {/* 1. Schedule (start date, duration, reminders) */}
                 <ScheduleCard
                   startDate={form.startDate}
                   endDate={form.endDate}
-                  todos={form.todos}
-                  showDailyTracking={form.showDailyTracking}
                   formatDate={form.formatDate}
                   formatTime={form.formatTime}
                   getDurationLabel={form.getDurationLabel}
                   getRemindersLabel={form.getRemindersLabel}
-                  getDailyTrackingLabel={form.getDailyTrackingLabel}
                   onStartDatePress={() => {
                     Keyboard.dismiss();
                     form.startDateSheetRef.current?.expand();
@@ -124,58 +115,83 @@ export const CreatePledgeScreen = () => {
                     Keyboard.dismiss();
                     form.durationSheetRef.current?.expand();
                   }}
-                  onDailyTrackingPress={() => {
-                    Keyboard.dismiss();
-                    form.dailyTodosSheetRef.current?.expand();
-                  }}
                   onRemindersPress={() => {
                     Keyboard.dismiss();
                     form.remindersSheetRef.current?.expand();
                   }}
                 />
 
+                {/* 2. Action Items (tasks with inline schedule presets) */}
                 <View
                   style={{ width: '100%' }}
                   onLayout={(e) => trackLayout('todo', e)}
                 >
                   <TodoSection
-                    todos={form.todos}
-                    newTodo={form.newTodo}
-                    showDailyTracking={form.showDailyTracking}
-                    onNewTodoChange={form.setNewTodo}
-                    onAddTodo={form.handleAddTodo}
-                    onRemoveTodo={form.handleRemoveTodo}
+                    taskDefinitions={form.taskDefinitions}
+                    showDailyOptions={form.showDailyOptions}
+                    onAddTask={form.addTaskDefinition}
+                    onRemoveTask={form.removeTaskDefinition}
                     onInputFocus={() => scrollToSection('todo')}
                   />
                 </View>
 
-                {/* Stake Amount */}
-                <View
-                  style={styles.section}
-                  onLayout={(e) => trackLayout('stake', e)}
-                >
+                {/* 3. Goal Name (optional) */}
+                <View style={styles.section}>
+                  <FloatingLabelInput
+                    label={t('Goal Name (optional)')}
+                    value={form.name}
+                    onChangeText={form.setName}
+                  />
+                </View>
+
+                {/* 4. Stake Amount */}
+                <View style={styles.section}>
                   <Title3 style={{ marginBottom: 12 }}>
                     {t('Stake Amount')}
                   </Title3>
-                  <Row gap={12}>
-                    <View style={{ flex: 1 }}>
-                      <FloatingLabelInput
-                        label={t('USDC')}
-                        value={form.stakeAmount}
-                        onChangeText={form.setStakeAmount}
-                        keyboardType='decimal-pad'
-                        onFocus={() => scrollToSection('stake')}
-                      />
+                  <Pressable
+                    style={[
+                      styles.scheduleCard,
+                      { backgroundColor: theme.colors.cardBackground },
+                    ]}
+                    onPress={() => {
+                      Keyboard.dismiss();
+                      form.stakeAmountSheetRef.current?.expand();
+                    }}
+                  >
+                    <View style={styles.scheduleRow}>
+                      <BodySecondary>{t('USDC')}</BodySecondary>
+                      <Row gap={8}>
+                        <View
+                          style={[
+                            styles.dateChip,
+                            { backgroundColor: theme.colors.background },
+                          ]}
+                        >
+                          <Body>
+                            {form.stakeAmount
+                              ? `$${form.stakeAmount}`
+                              : t('Select amount')}
+                          </Body>
+                        </View>
+                        <Ionicons
+                          name='chevron-forward'
+                          size={16}
+                          color={theme.colors.textSecondary}
+                        />
+                      </Row>
                     </View>
-                  </Row>
+                  </Pressable>
                 </View>
 
+                {/* 5. Summary */}
                 {form.isValid && (
                   <PledgeSummary
                     durationLabel={form.getDurationLabel()}
-                    todoCount={form.todos.length}
+                    taskCount={form.taskDefinitions.length}
                     remindersLabel={form.getRemindersLabel()}
                     stakeAmount={form.stakeAmount}
+                    goalName={form.name.trim() || undefined}
                   />
                 )}
 
@@ -189,6 +205,24 @@ export const CreatePledgeScreen = () => {
           </KeyboardAvoidingView>
 
           <CenteredColumn gap={12} width='100%'>
+            {form.taskDefinitions.length > 0 && form.templateDirty && (
+              <Pressable
+                onPress={() => {
+                  Keyboard.dismiss();
+                  form.saveTemplateSheetRef.current?.expand();
+                }}
+                style={localStyles.saveTemplateLink}
+              >
+                <Ionicons
+                  name='bookmark-outline'
+                  size={16}
+                  color={theme.colors.primary}
+                />
+                <Body style={{ color: theme.colors.primary }}>
+                  {t('Save as Template')}
+                </Body>
+              </Pressable>
+            )}
             <SecondaryButton onPress={() => router.back()}>
               {t('Cancel')}
             </SecondaryButton>
@@ -226,15 +260,28 @@ export const CreatePledgeScreen = () => {
         onConfirm={form.handleRemindersConfirm}
       />
 
-      {form.showDailyTracking && (
-        <DailyTodosSheet
-          ref={form.dailyTodosSheetRef}
-          todos={form.todos}
-          startDate={form.startDate}
-          endDate={form.endDate}
-          onConfirm={form.handleDailyTodosConfirm}
-        />
-      )}
+      <StakeAmountSheet
+        ref={form.stakeAmountSheetRef}
+        value={form.stakeAmount}
+        walletBalance={usdcBalance}
+        balanceLoading={balanceLoading}
+        onConfirm={form.setStakeAmount}
+      />
+
+      <SaveTemplateSheet
+        ref={form.saveTemplateSheetRef}
+        defaultName={form.name.trim()}
+        onSave={form.handleSaveTemplate}
+      />
     </ScreenContainer>
   );
 };
+
+const localStyles = StyleSheet.create({
+  saveTemplateLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+  },
+});

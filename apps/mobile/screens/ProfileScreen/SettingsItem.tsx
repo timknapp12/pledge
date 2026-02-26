@@ -1,5 +1,6 @@
-import { Pressable, View, Switch, StyleSheet } from 'react-native';
+import { Pressable, View, StyleSheet } from 'react-native';
 import { useAppTheme } from '@/theme/ThemeProvider';
+import { Switch } from '@/components';
 import { Ionicons } from '@expo/vector-icons';
 import { Body, BodySecondary, Row } from '@/components';
 
@@ -53,11 +54,6 @@ export const SettingsItem = ({
             value={switchValue}
             onValueChange={onSwitchChange}
             disabled={switchDisabled}
-            trackColor={{
-              false: theme.colors.border,
-              true: theme.colors.primary,
-            }}
-            thumbColor={theme.colors.background}
           />
         ) : (
           onPress && (

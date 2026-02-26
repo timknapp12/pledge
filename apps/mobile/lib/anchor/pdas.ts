@@ -91,3 +91,30 @@ export const getReportCompletionPdas = (
     pledge,
   };
 };
+
+/**
+ * Get all PDAs needed for report + settle (report_completion + process_completion)
+ */
+export const getReportAndSettlePdas = (
+  user: PublicKey,
+  mint: PublicKey,
+  createdAt: BN | number,
+  treasuryOwner: PublicKey,
+  charityOwner: PublicKey,
+) => {
+  const [config] = getConfigPda();
+  const [pledge] = getPledgePda(user, createdAt);
+  const [vault] = getVaultPda(pledge);
+  const userTokenAccount = getAssociatedTokenAddress(user, mint);
+  const treasuryTokenAccount = getAssociatedTokenAddress(treasuryOwner, mint);
+  const charityTokenAccount = getAssociatedTokenAddress(charityOwner, mint);
+
+  return {
+    config,
+    pledge,
+    vault,
+    userTokenAccount,
+    treasuryTokenAccount,
+    charityTokenAccount,
+  };
+};

@@ -9,7 +9,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 // Program ID from Anchor.toml
-export const PROGRAM_ID = new PublicKey("GXmRKiwZ6ozV8iGJLq1usFafhpPPYFjfFoQcCPGUQpJe");
+export const PROGRAM_ID = new PublicKey("PLDG12YsnCxRHa9CkWDnzkA9vsbEFpThXHR9zgnDTDp");
 
 // PDA Seeds
 export const CONFIG_SEED = "config";

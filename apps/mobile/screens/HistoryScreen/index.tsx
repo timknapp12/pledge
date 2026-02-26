@@ -1,15 +1,23 @@
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   RefreshControl,
   View,
   StyleSheet,
 } from 'react-native';
+import {
+  useSharedValue,
+  useAnimatedReaction,
+  withTiming,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePledges, formatUsdcAmount } from '@/hooks/useSupabase';
+import { getAnimatedDisplayLamports } from '@/lib/animatedAmount';
 import {
   Title1,
   Title2,
@@ -25,9 +33,10 @@ import {
   Gap,
   ErrorState,
 } from '@/components';
+import { ProgressBar } from '@/components/common/ProgressBar';
+import { AnimatedCircularProgress } from '@/components/common/AnimatedCircularProgress';
 import { PastPledgeItem } from './PastPledgeItem';
 import { EmptyState } from './EmptyState';
-// TODO - add haptic feedback to nav buttons
 
 export const HistoryScreen = () => {
   const { t } = useTranslation();
@@ -46,7 +55,7 @@ export const HistoryScreen = () => {
   // Filter for past pledges (completed or forfeited)
   const pastPledges =
     allPledges?.filter(
-      (p) => p.status === 'Completed' || p.status === 'Forfeited'
+      (p) => p.status === 'Completed' || p.status === 'Forfeited',
     ) || [];
 
   // Calculate stats
@@ -54,14 +63,46 @@ export const HistoryScreen = () => {
     allPledges?.reduce((sum, p) => sum + p.stake_amount, 0) || 0;
   const completedPledges =
     allPledges?.filter((p) => p.status === 'Completed') || [];
+  const settledPledges = allPledges?.filter((p) => p.status !== 'Active') || [];
   const successRate =
-    allPledges && allPledges.length > 0
-      ? Math.round(
-          (completedPledges.length /
-            allPledges.filter((p) => p.status !== 'Active').length) *
-            100
-        ) || 0
+    settledPledges.length > 0
+      ? Math.round((completedPledges.length / settledPledges.length) * 100)
       : 0;
+
+  const [focusCount, setFocusCount] = useState(0);
+  const [displayPledged, setDisplayPledged] = useState(0);
+  const pledgedProgress = useSharedValue(0);
+  const totalPledgedRef = useSharedValue(totalPledged);
+
+  useFocusEffect(
+    useCallback(() => {
+      setFocusCount((c) => c + 1);
+    }, []),
+  );
+
+  useEffect(() => {
+    totalPledgedRef.value = totalPledged;
+  }, [totalPledged, totalPledgedRef]);
+
+  useEffect(() => {
+    setDisplayPledged(0);
+    pledgedProgress.value = 0;
+    pledgedProgress.value = withTiming(100, { duration: 1000 });
+  }, [totalPledged, focusCount, pledgedProgress]);
+
+  const updateDisplayPledged = useCallback(
+    (progress: number, total: number) => {
+      setDisplayPledged(getAnimatedDisplayLamports(progress, total));
+    },
+    []
+  );
+
+  useAnimatedReaction(
+    () => pledgedProgress.value,
+    (progress) => {
+      scheduleOnRN(updateDisplayPledged, progress, totalPledgedRef.value);
+    }
+  );
 
   const handlePledgePress = (pledgeId: string) => {
     router.push(`/pledge/${pledgeId}`);
@@ -121,21 +162,48 @@ export const HistoryScreen = () => {
                   <Title3>{t('Stats')}</Title3>
                 </View>
                 <CenteredColumn gap={8}>
-                  <Card style={{ alignItems: 'center' }}>
+                  <Card style={{ alignItems: 'center', width: '100%', gap: 8 }}>
                     <Title2 style={{ color: theme.colors.primary }}>
-                      ${formatUsdcAmount(totalPledged)}
+                      ${formatUsdcAmount(displayPledged)}
                     </Title2>
-                    <BodySmallSecondary style={{ marginTop: 4 }}>
+                    <BodySmallSecondary>
                       {t('Total Pledged')}
                     </BodySmallSecondary>
+                    <ProgressBar
+                      progress={100}
+                      height={6}
+                      style={{ width: '100%' }}
+                      animateKey={focusCount}
+                      color={theme.colors.accent}
+                    />
                   </Card>
-                  <Card style={{ alignItems: 'center' }}>
-                    <Title2 style={{ color: theme.colors.primary }}>
-                      {successRate}%
-                    </Title2>
-                    <BodySmallSecondary style={{ marginTop: 4 }}>
-                      {t('Success Rate')}
-                    </BodySmallSecondary>
+                  <Card
+                    style={{
+                      width: '100%',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <Column gap={4} width='auto'>
+                      <Title3 style={{ color: theme.colors.primary }}>
+                        ({completedPledges.length}/{settledPledges.length})
+                      </Title3>
+                      <BodySmallSecondary>
+                        {t('Success Rate')}
+                      </BodySmallSecondary>
+                    </Column>
+                    {successRate > 0 && (
+                      <AnimatedCircularProgress
+                        progress={successRate}
+                        size={66}
+                        strokeWidth={5}
+                        showPercentage
+                        animateKey={focusCount}
+                        color={theme.colors.accent}
+                        textColor={theme.colors.text}
+                      />
+                    )}
                   </Card>
                 </CenteredColumn>
               </Column>
@@ -145,34 +213,34 @@ export const HistoryScreen = () => {
                 <View style={localStyles.sectionHeader}>
                   <Title3>{t('Past Pledges')}</Title3>
                 </View>
-              </Column>
-
-              {pledgesLoading ? (
-                <CenteredColumn>
-                  <Gap gap={48} />
-                  <ActivityIndicator
-                    size='large'
-                    color={theme.colors.primary}
-                  />
-                </CenteredColumn>
-              ) : isError ? (
-                <ErrorState
-                  message={error instanceof Error ? error.message : undefined}
-                  onRetry={refetch}
-                />
-              ) : pastPledges.length > 0 ? (
-                <View style={localStyles.contentContainer}>
-                  {pastPledges.map((pledge) => (
-                    <PastPledgeItem
-                      key={pledge.id}
-                      pledge={pledge}
-                      onPress={() => handlePledgePress(pledge.id)}
+                {pledgesLoading ? (
+                  <CenteredColumn>
+                    <Gap gap={48} />
+                    <ActivityIndicator
+                      size='large'
+                      color={theme.colors.primary}
                     />
-                  ))}
-                </View>
-              ) : (
-                <EmptyState />
-              )}
+                  </CenteredColumn>
+                ) : isError ? (
+                  <ErrorState
+                    message={error instanceof Error ? error.message : undefined}
+                    onRetry={refetch}
+                  />
+                ) : pastPledges.length > 0 ? (
+                  <View style={localStyles.contentContainer}>
+                    {pastPledges.map((pledge) => (
+                      <PastPledgeItem
+                        key={pledge.id}
+                        pledge={pledge}
+                        onPress={() => handlePledgePress(pledge.id)}
+                        animateKey={focusCount}
+                      />
+                    ))}
+                  </View>
+                ) : (
+                  <EmptyState />
+                )}
+              </Column>
             </Column>
           </TrackedScrollView>
         </CenteredColumn>

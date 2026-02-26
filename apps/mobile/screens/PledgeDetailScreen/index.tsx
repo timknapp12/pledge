@@ -17,7 +17,11 @@ import {
   usePledge,
   useTodayProgress,
   useUpdateDailyProgress,
+  useUpdatePledgeStatus,
   formatUsdcAmount,
+  getDailyTasksForDate,
+  getGoals,
+  toLocalDateStr,
 } from '@/hooks/useSupabase';
 import { useProgram } from '@/hooks/useProgram';
 import {
@@ -26,7 +30,6 @@ import {
   Body,
   BodySecondary,
   BodySmall,
-  BodySmallSecondary,
   ErrorText,
   ScreenContainer,
   Column,
@@ -36,6 +39,7 @@ import {
   ErrorState,
   CenteredColumn,
   ProgressBar,
+  Checkbox,
 } from '@/components';
 
 function formatDeadline(deadline: string): string {
@@ -82,7 +86,8 @@ export const PledgeDetailScreen = () => {
   const { data: todayProgress, isLoading: progressLoading } =
     useTodayProgress(id);
   const updateProgress = useUpdateDailyProgress();
-  const { reportCompletion } = useProgram();
+  const updatePledgeStatus = useUpdatePledgeStatus();
+  const { reportAndSettle } = useProgram();
 
   const [completedTodos, setCompletedTodos] = useState<number[]>([]);
   const [isReporting, setIsReporting] = useState(false);
@@ -104,7 +109,7 @@ export const PledgeDetailScreen = () => {
 
       setCompletedTodos(newCompleted);
 
-      const today = new Date().toISOString().split('T')[0];
+      const today = toLocalDateStr(new Date());
       try {
         await updateProgress.mutateAsync({
           pledgeId: id,
@@ -120,15 +125,25 @@ export const PledgeDetailScreen = () => {
     [completedTodos, id, updateProgress]
   );
 
+  const today = toLocalDateStr(new Date());
+  const dailyTasks = pledge
+    ? getDailyTasksForDate(pledge.todos, today)
+    : [];
+  const goals = pledge ? getGoals(pledge.todos) : [];
+  // Combined list: daily tasks first, then goals — indices match todos_completed
+  const allTasks = [...dailyTasks, ...goals];
+
   const calculateProgress = (): number => {
-    if (!pledge?.todos || pledge.todos.length === 0) return 0;
-    return Math.round((completedTodos.length / pledge.todos.length) * 100);
+    if (allTasks.length === 0) return 0;
+    return Math.round((completedTodos.length / allTasks.length) * 100);
   };
 
-  const handleReportCompletion = async () => {
+  const handleReportAndSettle = async () => {
     if (!pledge || !walletAddress) return;
 
     const completionPct = calculateProgress();
+    const finalStatus: 'Completed' | 'Forfeited' =
+      completionPct > 0 ? 'Completed' : 'Forfeited';
 
     Alert.alert(
       t('Report Completion'),
@@ -148,15 +163,21 @@ export const PledgeDetailScreen = () => {
           onPress: async () => {
             setIsReporting(true);
             try {
-              await reportCompletion(pledge.on_chain_address, completionPct);
-              refetch();
-              Alert.alert(t('Success'), t('Completion reported successfully'));
-            } catch (err: any) {
-              console.error('Report completion error:', err);
-              Alert.alert(
-                t('Error'),
-                err.message || 'Failed to report completion'
+              const signature = await reportAndSettle(
+                pledge.on_chain_address,
+                completionPct
               );
+              await updatePledgeStatus.mutateAsync({
+                pledgeId: pledge.id,
+                status: finalStatus,
+                completionPercentage: completionPct,
+                settleTxSignature: signature,
+              });
+              refetch();
+              Alert.alert(t('Success'), t('Pledge settled successfully'));
+            } catch (err: any) {
+              console.error('Report and settle error:', err);
+              Alert.alert(t('Error'), err.message || 'Failed to settle pledge');
             } finally {
               setIsReporting(false);
             }
@@ -198,8 +219,6 @@ export const PledgeDetailScreen = () => {
   }
 
   const progress = calculateProgress();
-  const isExpired = new Date(pledge.deadline) < new Date();
-  const canReport = pledge.status === 'Active' && isExpired;
 
   return (
     <ScreenContainer style={{ flex: 1, gap: 24, paddingBottom: 32 }}>
@@ -207,7 +226,7 @@ export const PledgeDetailScreen = () => {
         <Pressable
           onPress={() => router.back()}
           style={[
-            localStyles.backButton,
+            styles.backButton,
             { backgroundColor: theme.colors.cardBackground },
           ]}
         >
@@ -218,7 +237,7 @@ export const PledgeDetailScreen = () => {
         </Column>
         <View
           style={[
-            localStyles.statusBadge,
+            styles.statusBadge,
             { backgroundColor: getStatusBgColor(theme, pledge.status) },
           ]}
         >
@@ -240,116 +259,100 @@ export const PledgeDetailScreen = () => {
         <Column gap={24}>
           {/* Info Card */}
           <Card>
-            <View style={localStyles.infoRow}>
+            <View style={styles.infoRow}>
               <BodySecondary>{t('Pledged')}</BodySecondary>
               <Body>
                 ${formatUsdcAmount(pledge.stake_amount)} {t('USDC')}
               </Body>
             </View>
-            <View style={localStyles.infoRow}>
+            <View style={styles.infoRow}>
               <BodySecondary>{t('Deadline')}</BodySecondary>
               <Body>{formatDeadline(pledge.deadline)}</Body>
             </View>
-            <View style={localStyles.infoRow}>
+            <View style={styles.infoRow}>
               <BodySecondary>{t('Time Remaining')}</BodySecondary>
               <Body>{formatTimeRemaining(pledge.deadline)}</Body>
             </View>
           </Card>
 
           {/* Progress */}
-          <View style={localStyles.progressContainer}>
+          <View style={styles.progressContainer}>
             <Row style={{ justifyContent: 'space-between' }}>
               <Title3>{t('Progress')}</Title3>
               <Title3 style={{ color: theme.colors.primary }}>
                 {progress}%
               </Title3>
             </Row>
-            <ProgressBar progress={progress} height={12} style={{ marginTop: 8 }} />
+            <ProgressBar
+              progress={progress}
+              height={12}
+              style={{ marginTop: 8 }}
+            />
           </View>
 
-          {/* Today's Tasks */}
-          <Column gap={8}>
-            <Title3 style={{ marginBottom: 8 }}>{t("Today's Tasks")}</Title3>
-            {pledge.todos?.map((todo, index) => {
-              const completed = completedTodos.includes(index);
-              return (
-                <Pressable
-                  key={index}
-                  style={[
-                    localStyles.todoItem,
-                    {
-                      backgroundColor: completed
-                        ? theme.colors.primaryAlpha10
-                        : theme.colors.cardBackground,
-                      borderColor: completed
-                        ? theme.colors.primaryAlpha40
-                        : theme.colors.border,
-                    },
-                  ]}
-                  onPress={() =>
-                    pledge.status === 'Active' && handleTodoToggle(index)
-                  }
-                  disabled={pledge.status !== 'Active'}
-                >
-                  <View
+          {/* Tasks (daily + goals combined) */}
+          {allTasks.length > 0 && (
+            <Column gap={8}>
+              <Title3 style={{ marginBottom: 8 }}>
+                {t(dailyTasks.length > 0 ? "Today's Tasks" : 'Tasks')}
+              </Title3>
+              {allTasks.map((taskText, index) => {
+                const completed = completedTodos.includes(index);
+                return (
+                  <Pressable
+                    key={index}
                     style={[
-                      localStyles.checkboxIcon,
+                      styles.todoItem,
                       {
-                        borderColor: completed
-                          ? theme.colors.primary
-                          : theme.colors.border,
                         backgroundColor: completed
-                          ? theme.colors.primary
-                          : 'transparent',
+                          ? theme.colors.primaryAlpha10
+                          : theme.colors.cardBackground,
+                        borderColor: completed
+                          ? theme.colors.primaryAlpha40
+                          : theme.colors.border,
                       },
                     ]}
+                    onPress={() =>
+                      pledge.status === 'Active' && handleTodoToggle(index)
+                    }
+                    disabled={pledge.status !== 'Active'}
                   >
-                    {completed && (
-                      <Ionicons
-                        name='checkmark'
-                        size={16}
-                        color={theme.colors.iconOnPrimary}
-                      />
-                    )}
-                  </View>
-                  <Body
-                    style={{
-                      flex: 1,
-                      textDecorationLine: completed ? 'line-through' : 'none',
-                      opacity: completed ? 0.6 : 1,
-                    }}
-                  >
-                    {todo.text}
-                  </Body>
-                </Pressable>
-              );
-            })}
-          </Column>
+                    <Checkbox checked={completed} />
+                    <Body
+                      style={{
+                        flex: 1,
+                        textDecorationLine: completed
+                          ? 'line-through'
+                          : 'none',
+                        opacity: completed ? 0.6 : 1,
+                      }}
+                    >
+                      {taskText}
+                    </Body>
+                  </Pressable>
+                );
+              })}
+            </Column>
+          )}
         </Column>
       </ScrollView>
 
       {pledge.status === 'Active' && (
         <CenteredColumn>
-          {canReport ? (
-            <PrimaryButton
-              onPress={handleReportCompletion}
-              disabled={isReporting}
-              loading={isReporting}
-            >
-              {t('Report Completion')}
-            </PrimaryButton>
-          ) : (
-            <BodySmallSecondary style={{ textAlign: 'center' }}>
-              {t('Complete your tasks daily. Report after deadline.')}
-            </BodySmallSecondary>
-          )}
+          <PrimaryButton
+            onPress={handleReportAndSettle}
+            disabled={isReporting}
+            loading={isReporting}
+          >
+            {t('Report Completion')}
+          </PrimaryButton>
         </CenteredColumn>
       )}
     </ScreenContainer>
   );
 };
 
-const localStyles = StyleSheet.create({
+const styles = StyleSheet.create({
   backButton: {
     width: 40,
     height: 40,
@@ -381,13 +384,5 @@ const localStyles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 8,
     borderWidth: 1,
-  },
-  checkboxIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

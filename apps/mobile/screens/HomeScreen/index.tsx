@@ -22,10 +22,14 @@ import {
   Column,
   CenteredColumn,
   ErrorState,
+  SegmentControl,
 } from '@/components';
 import { PledgeListItem } from './PledgeListItem';
+import { DailyTasksView } from './DailyTasksView';
 import { EmptyState } from './EmptyState';
 import { ConnectWalletScreen } from './ConnectWalletScreen';
+
+type ViewMode = 'tasks' | 'pledges';
 
 export const HomeScreen = () => {
   const { t } = useTranslation();
@@ -38,15 +42,26 @@ export const HomeScreen = () => {
     isError,
     error,
     refetch,
-    isRefetching,
   } = useActivePledges();
 
+  const [viewMode, setViewMode] = useState<ViewMode>('tasks');
   const [focusCount, setFocusCount] = useState(0);
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false);
+
   useFocusEffect(
     useCallback(() => {
       setFocusCount((c) => c + 1);
-    }, [])
+    }, []),
   );
+
+  const handleRefresh = useCallback(async () => {
+    setIsPullRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setIsPullRefreshing(false);
+    }
+  }, [refetch]);
 
   const handleCreatePledge = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -56,6 +71,11 @@ export const HomeScreen = () => {
   const handlePledgePress = (pledgeId: string) => {
     router.push(`/pledge/${pledgeId}`);
   };
+
+  const segments = [
+    { key: 'tasks', label: t('Tasks') },
+    { key: 'pledges', label: t('Pledges') },
+  ];
 
   // Loading state
   if (authLoading) {
@@ -84,7 +104,7 @@ export const HomeScreen = () => {
           flex: 1,
         }}
       >
-        <CenteredColumn gap={24} flex={1}>
+        <CenteredColumn gap={16} flex={1}>
           {/* HEADER ROW */}
           <Row
             gap={16}
@@ -105,6 +125,15 @@ export const HomeScreen = () => {
               </MonoText>
             </Pressable>
           </Row>
+
+          {/* Segment Control */}
+          {pledges && pledges.length > 0 && (
+            <SegmentControl
+              segments={segments}
+              selectedKey={viewMode}
+              onSelect={(key) => setViewMode(key as ViewMode)}
+            />
+          )}
 
           {pledgesLoading ? (
             <CenteredColumn
@@ -130,22 +159,26 @@ export const HomeScreen = () => {
               showsVerticalScrollIndicator={false}
               refreshControl={
                 <RefreshControl
-                  refreshing={isRefetching}
-                  onRefresh={refetch}
+                  refreshing={isPullRefreshing}
+                  onRefresh={handleRefresh}
                   tintColor={theme.colors.primary}
                 />
               }
             >
-              <Column flex={1} gap={24}>
-                {pledges.map((pledge) => (
-                  <PledgeListItem
-                    key={pledge.id}
-                    pledge={pledge}
-                    onPress={() => handlePledgePress(pledge.id)}
-                    animateKey={focusCount}
-                  />
-                ))}
-              </Column>
+              {viewMode === 'tasks' ? (
+                <DailyTasksView pledges={pledges} />
+              ) : (
+                <Column flex={1} gap={12}>
+                  {pledges.map((pledge) => (
+                    <PledgeListItem
+                      key={pledge.id}
+                      pledge={pledge}
+                      onPress={() => handlePledgePress(pledge.id)}
+                      animateKey={focusCount}
+                    />
+                  ))}
+                </Column>
+              )}
             </TrackedScrollView>
           ) : (
             <EmptyState onCreatePress={handleCreatePledge} />
