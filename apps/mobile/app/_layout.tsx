@@ -24,6 +24,7 @@ import { ThemeProvider, useThemeMode } from '@/theme/ThemeProvider';
 import { lightTheme, darkTheme } from '@/theme';
 import { AlertProvider } from '@/components/common/Alert';
 import { NotificationsProvider } from '@/hooks/useNotifications';
+import { UserPreferencesProvider } from '@/contexts/UserPreferencesContext';
 
 const LightNavTheme = {
   ...DefaultTheme,
@@ -87,11 +88,13 @@ function RootLayoutNav() {
       <I18nProvider>
         <AuthProvider>
           <NotificationsProvider>
+            <UserPreferencesProvider>
             <ThemeProvider>
               <AlertProvider>
                 <ThemedNavigation />
               </AlertProvider>
             </ThemeProvider>
+            </UserPreferencesProvider>
           </NotificationsProvider>
         </AuthProvider>
       </I18nProvider>
