@@ -19,7 +19,7 @@ interface SegmentControlProps {
   onSelect: (key: string) => void;
 }
 
-const SPRING_CONFIG = { damping: 20, stiffness: 300 };
+const SPRING_CONFIG = { damping: 28, stiffness: 200 };
 
 export const SegmentControl = ({
   segments,
@@ -99,16 +99,22 @@ export const SegmentControl = ({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    borderRadius: 10,
-    padding: 3,
+    borderBottomRightRadius: 20,
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 20,
+    borderBottomLeftRadius: 4,
+    padding: 4,
     position: 'relative',
     overflow: 'hidden',
   },
   indicator: {
     position: 'absolute',
-    top: 3,
-    bottom: 3,
-    borderRadius: 8,
+    top: 4,
+    bottom: 4,
+    borderBottomRightRadius: 16,
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 16,
+    borderBottomLeftRadius: 2,
   },
   segment: {
     flex: 1,
