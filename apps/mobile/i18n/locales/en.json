@@ -162,5 +162,11 @@
   "Save a template when creating a pledge to reuse it later": "Save a template when creating a pledge to reuse it later",
   "Delete Template": "Delete Template",
   "Enable notifications to receive reminders for your pledges.": "Enable notifications to receive reminders for your pledges.",
-  "Enable": "Enable"
+  "Enable": "Enable",
+  "Personality": "Personality",
+  "Carrot": "Carrot",
+  "Stick": "Stick",
+  "Choose how you want Pledge to speak to you": "Choose how you want Pledge to speak to you",
+  "Encouraging & Positive: Hey! Time to crush your tasks today! You've got this!": "Encouraging & Positive: Hey! Time to crush your tasks today! You've got this!",
+  "Drill Sergeant: Hey loser! You have 3 hours left. Don't waste your money and your life!": "Drill Sergeant: Hey loser! You have 3 hours left. Don't waste your money and your life!"
 }
