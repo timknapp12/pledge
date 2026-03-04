@@ -15,8 +15,24 @@ import {
 import {
   formatUsdcAmount,
   getTotalTaskCount,
+  getGoals,
+  getEffectiveStatus,
+  useDailyProgress,
+  calculateCompletionPercentage,
   Pledge,
+  type PledgeTodos,
 } from '@/hooks/useSupabase';
+
+/** If a pledge has exactly 1 task/goal and a date-range name, show the task text instead. */
+function getDisplayName(name: string, todos: PledgeTodos): string {
+  const goals = getGoals(todos);
+  const uniqueDaily = [...new Set(Object.values(todos.daily).flat())];
+  const allTasks = [...goals, ...uniqueDaily];
+  if (allTasks.length !== 1) return name;
+  // Detect auto-generated date-range names (e.g., "Mar 3 - Mar 10")
+  if (!name || name.includes(' - ')) return allTasks[0];
+  return name;
+}
 
 function formatDeadline(deadline: string): string {
   const date = new Date(deadline);
@@ -50,32 +66,24 @@ export const PledgeListItem = ({
 }: PledgeListItemProps) => {
   const { t } = useTranslation();
   const { theme } = useAppTheme();
+  const { data: allProgress } = useDailyProgress(pledge.id);
+  const effectiveStatus = getEffectiveStatus(pledge);
 
-  // Calculate progress based on time elapsed
-  const startDate = new Date(pledge.start_date);
-  const endDate = new Date(pledge.deadline);
-  const now = new Date();
-  const totalDays = Math.max(
-    1,
-    Math.ceil(
-      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
-    ),
-  );
-  const elapsedDays = Math.max(
-    0,
-    Math.ceil((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)),
-  );
-  const timeProgress = Math.min(
-    100,
-    Math.round((elapsedDays / totalDays) * 100),
-  );
+  const taskProgress = allProgress
+    ? calculateCompletionPercentage(
+        pledge.todos,
+        allProgress,
+        new Date(pledge.start_date),
+        new Date(pledge.end_date),
+      )
+    : 0;
 
   return (
     <Pressable onPress={onPress}>
       <Card>
         <Row justify='space-between' align='flex-start'>
           <Column flex={1}>
-            <Title3>{pledge.name}</Title3>
+            <Title3>{getDisplayName(pledge.name, pledge.todos)}</Title3>
             <BodySmallSecondary style={{ marginTop: 4 }}>
               {formatDeadline(pledge.deadline)}
             </BodySmallSecondary>
@@ -83,16 +91,16 @@ export const PledgeListItem = ({
           <View
             style={[
               localStyles.statusBadge,
-              { backgroundColor: getStatusBgColor(theme, pledge.status) },
+              { backgroundColor: getStatusBgColor(theme, effectiveStatus) },
             ]}
           >
             <BodySmall
               style={{
-                color: getStatusTextColor(theme, pledge.status),
+                color: getStatusTextColor(theme, effectiveStatus),
                 fontWeight: '600',
               }}
             >
-              {t(pledge.status)}
+              {t(effectiveStatus)}
             </BodySmall>
           </View>
         </Row>
@@ -107,7 +115,7 @@ export const PledgeListItem = ({
         </Row>
 
         <ProgressBar
-          progress={timeProgress}
+          progress={taskProgress}
           height={6}
           style={{ marginTop: 12 }}
           animateKey={animateKey}

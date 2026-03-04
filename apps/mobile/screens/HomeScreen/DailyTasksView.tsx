@@ -17,12 +17,23 @@ import {
 } from '@/components';
 import {
   type Pledge,
+  type PledgeTodos,
   getDailyTasksForDate,
   getGoals,
   toLocalDateStr,
   useAllDailyProgress,
   useUpdateDailyProgress,
 } from '@/hooks/useSupabase';
+
+/** If a pledge has exactly 1 task/goal and a date-range name, show the task text instead. */
+const getDisplayName = (name: string, todos: PledgeTodos): string => {
+  const goals = getGoals(todos);
+  const uniqueDaily = [...new Set(Object.values(todos.daily).flat())];
+  const allTasks = [...goals, ...uniqueDaily];
+  if (allTasks.length !== 1) return name;
+  if (!name || name.includes(' - ')) return allTasks[0];
+  return name;
+};
 
 interface DailyTasksViewProps {
   pledges: Pledge[];
@@ -75,9 +86,15 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
   }, []);
 
   const hasYesterdayTasks = useMemo(() => {
-    return pledges.some(
-      (pledge) => getTasksForDate(pledge, yesterdayDate).length > 0,
-    );
+    return pledges.some((pledge) => {
+      if (getTasksForDate(pledge, yesterdayDate).length > 0) return true;
+      // Also count goal-only pledges within range
+      const goals = getGoals(pledge.todos);
+      if (goals.length === 0) return false;
+      const start = toLocalDateStr(new Date(pledge.start_date));
+      const end = toLocalDateStr(new Date(pledge.end_date));
+      return yesterdayDate >= start && yesterdayDate <= end;
+    });
   }, [pledges, yesterdayDate, getTasksForDate]);
 
   // Build per-pledge task data
@@ -91,6 +108,21 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
       })
       .filter((d) => d.tasks.length > 0); // Only pledges with tasks for this date
   }, [pledges, selectedDate, allProgress, getTasksForDate]);
+
+  // Goal-only pledges: have goals but no daily tasks for this date
+  const goalOnlyPledges = useMemo(() => {
+    const startLocal = (p: Pledge) => toLocalDateStr(new Date(p.start_date));
+    const endLocal = (p: Pledge) => toLocalDateStr(new Date(p.end_date));
+    return pledges.filter((pledge) => {
+      const hasTasks = getTasksForDate(pledge, selectedDate).length > 0;
+      if (hasTasks) return false; // already in pledgeTaskData
+      const goals = getGoals(pledge.todos);
+      if (goals.length === 0) return false;
+      const inRange =
+        selectedDate >= startLocal(pledge) && selectedDate <= endLocal(pledge);
+      return inRange;
+    });
+  }, [pledges, selectedDate, getTasksForDate]);
 
   const handleToggle = useCallback(
     async (pledgeId: string, taskIndex: number, currentCompleted: number[]) => {
@@ -135,7 +167,10 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
     [selectedDate, updateProgress],
   );
 
-  if (pledgeTaskData.length === 0) {
+  const noTasksForSelectedDate =
+    pledgeTaskData.length === 0 && goalOnlyPledges.length === 0;
+
+  if (noTasksForSelectedDate && !hasYesterdayTasks) {
     return (
       <Column
         gap={12}
@@ -147,7 +182,7 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
           color={theme.colors.textSecondary}
         />
         <Body style={{ color: theme.colors.textSecondary }}>
-          {t('No tasks for this day')}
+          {t(!showYesterday ? 'No tasks for today' : 'No tasks for this day')}
         </Body>
       </Column>
     );
@@ -224,7 +259,7 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
               style={styles.pledgeHeader}
             >
               <Column flex={1} width='auto'>
-                <Title3 numberOfLines={1}>{pledge.name}</Title3>
+                <Title3 numberOfLines={1}>{getDisplayName(pledge.name, pledge.todos)}</Title3>
                 <BodySmallSecondary>
                   {completed.length}/{tasks.length} {t('done')}
                 </BodySmallSecondary>
@@ -294,6 +329,60 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
           </Card>
         );
       })}
+
+      {/* Inline empty state when toggle is visible but selected date has no tasks */}
+      {noTasksForSelectedDate && (
+        <Column
+          gap={12}
+          style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 32 }}
+        >
+          <Ionicons
+            name='checkmark-circle-outline'
+            size={48}
+            color={theme.colors.textSecondary}
+          />
+          <Body style={{ color: theme.colors.textSecondary }}>
+            {t(!showYesterday ? 'No tasks for today' : 'No tasks for this day')}
+          </Body>
+        </Column>
+      )}
+
+      {/* Goal-only pledges — no daily tasks, shown as tappable reminder cards */}
+      {goalOnlyPledges.map((pledge) => {
+        const goals = getGoals(pledge.todos);
+        return (
+          <Pressable
+            key={pledge.id}
+            onPress={() => router.push(`/pledge/${pledge.id}`)}
+          >
+            <Card>
+              <Row justify='space-between' align='center'>
+                <Column flex={1} width='auto'>
+                  <Title3 numberOfLines={1}>{getDisplayName(pledge.name, pledge.todos)}</Title3>
+                  <BodySmallSecondary style={{ marginTop: 2 }}>
+                    {goals.length} {goals.length === 1 ? t('goal') : t('goals')}
+                  </BodySmallSecondary>
+                </Column>
+                <Ionicons
+                  name='chevron-forward'
+                  size={16}
+                  color={theme.colors.textSecondary}
+                />
+              </Row>
+              {goals.map((goal, index) => (
+                <Row key={index} gap={8} style={styles.goalRow}>
+                  <Ionicons
+                    name='flag-outline'
+                    size={16}
+                    color={theme.colors.primary}
+                  />
+                  <Body style={{ flex: 1 }}>{goal}</Body>
+                </Row>
+              ))}
+            </Card>
+          </Pressable>
+        );
+      })}
     </Column>
   );
 };
@@ -325,5 +414,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     borderRadius: 8,
     marginBottom: 2,
+  },
+  goalRow: {
+    paddingVertical: 6,
+    paddingHorizontal: 4,
   },
 });
