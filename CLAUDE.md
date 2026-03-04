@@ -56,7 +56,7 @@ Use MCP tools for documentation and project management:
 | RPC             | Helius (free tier)                              |
 | Database        | Supabase (Postgres)                             |
 | Notifications   | Supabase pg_cron + Edge Functions               |
-| i18n            | i18next (English default, Spanish for testing)  |
+| i18n            | i18next (en, es, fr), personality-aware via `tp()` |
 
 ---
 
@@ -69,7 +69,7 @@ pledge/
 │       ├── src/
 │       │   ├── app/         # Expo Router screens
 │       │   ├── components/  # UI components
-│       │   ├── contexts/    # React contexts
+│       │   ├── contexts/    # React contexts (Auth, I18n, Scroll, UserPreferences)
 │       │   ├── hooks/       # Custom hooks
 │       │   ├── lib/         # Utilities, API clients
 │       │   ├── types/       # TypeScript types
@@ -167,7 +167,7 @@ const MyComponent = () => {
 ```
 
 ```json
-// In src/i18n/locales/en.json
+// In i18n/locales/en.json
 {
   "Maximum Amount": "Maximum Amount",
   "Creating your account...": "Creating your account..."
@@ -179,7 +179,40 @@ const MyComponent = () => {
 - Never hardcode user-facing strings directly in JSX
 - Add English strings to `en.json` immediately when creating UI
 - Use the exact string as the key (no camelCase keys)
-- Spanish translations go in `es.json` (for testing RTL/translation)
+- Translations go in `es.json` (Spanish) and `fr.json` (French)
+- i18n initialization reads saved language from AsyncStorage (persists across restarts)
+- Supported languages are stored in the `supported_languages` Supabase table — the UI language picker reads from this dynamically (no frontend code change needed to add a new language)
+
+### Personality-Aware Strings (`tp()`)
+
+For strings that vary based on the user's personality (carrot vs stick), use the `usePersonalityText` hook instead of `t()`:
+
+```typescript
+import { usePersonalityText } from '@/hooks/usePersonalityText';
+
+const MyComponent = () => {
+  const tp = usePersonalityText();
+
+  return <Text>{tp('Complete your first pledge to see it here.')}</Text>;
+};
+```
+
+This uses i18next's built-in `context` feature. `tp('key')` resolves to `key_carrot` or `key_stick` in locale files based on the user's personality preference:
+
+```json
+// In i18n/locales/en.json
+{
+  "Complete your first pledge to see it here._carrot": "Complete your first pledge to see it here. I believe in you!",
+  "Complete your first pledge to see it here._stick": "Get off your butt and complete a pledge!"
+}
+```
+
+**Rules for `tp()` strings:**
+
+- Always provide both `_carrot` and `_stick` variants in all locale files (en, es, fr)
+- No base key needed — both variants must always exist
+- Use the English base string as the key prefix (keeps it searchable in codebase)
+- Use `tp()` only for motivational/tone-dependent strings; use `t()` for neutral UI labels
 
 ### Tests
 
@@ -672,8 +705,18 @@ npm test
 ### Add New Translation
 
 1. Add key to `locales/en.json`
-2. Add translations to other locale files
+2. Add translations to `es.json` and `fr.json`
 3. Use with `t('key')` in components
+4. For personality-variant strings: add `key_carrot` and `key_stick` variants to all locale files and use `tp('key')` instead
+
+### Add New Language
+
+1. `INSERT INTO supported_languages (code, label, sort_order) VALUES ('xx', 'Language Name', N);`
+2. `INSERT INTO notification_templates ...` — add rows for `language='xx'` for each key/personality combo
+3. Create `i18n/locales/xx.json` with all translated keys
+4. Import and register in `i18n/index.ts` (`import xx from './locales/xx.json'` + add to `resources`)
+5. Add `'xx'` to the `detectLanguage()` supported array in `i18n/index.ts`
+6. No UI code changes needed — the language picker auto-populates from the `supported_languages` table
 
 ---
 
