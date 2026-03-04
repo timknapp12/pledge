@@ -1,5 +1,6 @@
 import 'intl-pluralrules';
 import * as Localization from 'expo-localization';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
@@ -9,6 +10,8 @@ import es from './locales/es.json';
 
 // Type-safe translation keys
 export type TranslationKey = keyof typeof en;
+
+const LANGUAGE_KEY = 'user_language';
 
 const resources = {
   en: { translation: en },
@@ -28,7 +31,9 @@ export const detectLanguage = (): string => {
 };
 
 export const initializeI18n = async (): Promise<void> => {
-  const language = detectLanguage();
+  // Prefer user's saved language, fall back to device detection
+  const savedLanguage = await AsyncStorage.getItem(LANGUAGE_KEY);
+  const language = savedLanguage || detectLanguage();
 
   await i18n.use(initReactI18next).init({
     lng: language,
