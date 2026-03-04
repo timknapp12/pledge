@@ -16,7 +16,7 @@ import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePledges, formatUsdcAmount } from '@/hooks/useSupabase';
+import { usePledges, formatUsdcAmount, getEffectiveStatus } from '@/hooks/useSupabase';
 import { getAnimatedDisplayLamports } from '@/lib/animatedAmount';
 import {
   Title1,
@@ -52,18 +52,19 @@ export const HistoryScreen = () => {
     isRefetching,
   } = usePledges();
 
-  // Filter for past pledges (completed or forfeited)
+  // Filter for past pledges (completed, forfeited, or expired)
   const pastPledges =
-    allPledges?.filter(
-      (p) => p.status === 'Completed' || p.status === 'Forfeited',
-    ) || [];
+    allPledges?.filter((p) => {
+      const s = getEffectiveStatus(p);
+      return s === 'Completed' || s === 'Forfeited' || s === 'Expired';
+    }) || [];
 
   // Calculate stats
   const totalPledged =
     allPledges?.reduce((sum, p) => sum + p.stake_amount, 0) || 0;
   const completedPledges =
-    allPledges?.filter((p) => p.status === 'Completed') || [];
-  const settledPledges = allPledges?.filter((p) => p.status !== 'Active') || [];
+    allPledges?.filter((p) => getEffectiveStatus(p) === 'Completed') || [];
+  const settledPledges = allPledges?.filter((p) => getEffectiveStatus(p) !== 'Active') || [];
   const successRate =
     settledPledges.length > 0
       ? Math.round((completedPledges.length / settledPledges.length) * 100)

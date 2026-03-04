@@ -26,6 +26,8 @@ export const statusCompleted = '#10B981';
 export const statusCompletedBg = '#10B98120';
 export const statusForfeited = '#EF4444';
 export const statusForfeitedBg = '#EF444420';
+export const statusExpired = '#F97316';
+export const statusExpiredBg = '#F9731620';
 
 // Primary alpha variants (for badges, borders, highlights)
 export const primaryAlpha10 = '#6366F110';

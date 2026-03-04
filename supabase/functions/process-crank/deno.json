@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2",
+    "@solana/web3.js": "npm:@solana/web3.js@1",
+    "bs58": "npm:bs58@^5.0.0"
+  }
+}

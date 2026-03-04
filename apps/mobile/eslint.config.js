@@ -1,9 +1,18 @@
 const expoConfig = require('eslint-config-expo/flat');
+const tseslint = require('@typescript-eslint/eslint-plugin');
+const tsParser = require('@typescript-eslint/parser');
 const { defineConfig } = require('eslint/config');
 
 module.exports = defineConfig([
   ...expoConfig,
   {
+    files: ['**/*.ts', '**/*.tsx'],
+    plugins: {
+      '@typescript-eslint': tseslint,
+    },
+    languageOptions: {
+      parser: tsParser,
+    },
     rules: {
       // Unused imports/vars: warn (yellow squiggle). _-prefixed ignored.
       '@typescript-eslint/no-unused-vars': [
