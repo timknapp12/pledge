@@ -16,6 +16,8 @@ import {
   statusCompletedBg,
   statusForfeited,
   statusForfeitedBg,
+  statusExpired,
+  statusExpiredBg,
   primaryAlpha10,
   primaryAlpha20,
   primaryAlpha40,
@@ -54,6 +56,8 @@ export const lightTheme = {
     statusCompletedBg,
     statusForfeited,
     statusForfeitedBg,
+    statusExpired,
+    statusExpiredBg,
 
     // Primary alpha variants
     primaryAlpha10,
@@ -95,6 +99,8 @@ export const darkTheme = {
     statusCompletedBg,
     statusForfeited,
     statusForfeitedBg,
+    statusExpired,
+    statusExpiredBg,
 
     // Primary alpha variants
     primaryAlpha10,
@@ -122,6 +128,8 @@ export const getStatusBgColor = (theme: AppTheme, status: string): string => {
       return theme.colors.statusCompletedBg;
     case 'Forfeited':
       return theme.colors.statusForfeitedBg;
+    case 'Expired':
+      return theme.colors.statusExpiredBg;
     default:
       return theme.colors.cardBackground;
   }
@@ -135,6 +143,8 @@ export const getStatusTextColor = (theme: AppTheme, status: string): string => {
       return theme.colors.statusCompleted;
     case 'Forfeited':
       return theme.colors.statusForfeited;
+    case 'Expired':
+      return theme.colors.statusExpired;
     default:
       return theme.colors.text;
   }

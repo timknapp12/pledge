@@ -12,7 +12,7 @@ import {
   Card,
 } from '@/components';
 import { AnimatedCircularProgress } from '@/components/common/AnimatedCircularProgress';
-import { formatUsdcAmount, Pledge } from '@/hooks/useSupabase';
+import { formatUsdcAmount, getEffectiveStatus, Pledge } from '@/hooks/useSupabase';
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -36,6 +36,7 @@ export const PastPledgeItem = ({
 }: PastPledgeItemProps) => {
   const { t } = useTranslation();
   const { theme } = useAppTheme();
+  const effectiveStatus = getEffectiveStatus(pledge);
 
   return (
     <Pressable onPress={onPress}>
@@ -50,16 +51,16 @@ export const PastPledgeItem = ({
           <View
             style={[
               localStyles.statusBadge,
-              { backgroundColor: getStatusBgColor(theme, pledge.status) },
+              { backgroundColor: getStatusBgColor(theme, effectiveStatus) },
             ]}
           >
             <BodySmall
               style={{
-                color: getStatusTextColor(theme, pledge.status),
+                color: getStatusTextColor(theme, effectiveStatus),
                 fontWeight: '600',
               }}
             >
-              {t(pledge.status)}
+              {t(effectiveStatus)}
             </BodySmall>
           </View>
         </Row>
