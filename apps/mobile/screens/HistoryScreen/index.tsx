@@ -94,14 +94,14 @@ export const HistoryScreen = () => {
     (progress: number, total: number) => {
       setDisplayPledged(getAnimatedDisplayLamports(progress, total));
     },
-    []
+    [],
   );
 
   useAnimatedReaction(
     () => pledgedProgress.value,
     (progress) => {
       scheduleOnRN(updateDisplayPledged, progress, totalPledgedRef.value);
-    }
+    },
   );
 
   const handlePledgePress = (pledgeId: string) => {
@@ -141,7 +141,7 @@ export const HistoryScreen = () => {
       >
         <CenteredColumn flex={1} gap={24}>
           {/* HEADER ROW */}
-          <Row width='100%'>
+          <Row width='100%' justify='flex-start'>
             <Title1>{t('History')}</Title1>
           </Row>
 
