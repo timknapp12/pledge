@@ -175,7 +175,7 @@ export const ProfileScreen = () => {
 
               {/* Theme Section */}
               <Column gap={4}>
-                <View style={localStyles.sectionHeader}>
+                <View>
                   <Title3>{t('Theme')}</Title3>
                 </View>
                 <ThemeSelector />
@@ -183,7 +183,7 @@ export const ProfileScreen = () => {
 
               {/* Personality Section */}
               <Column gap={4}>
-                <View style={localStyles.sectionHeader}>
+                <View>
                   <Title3>{t('Personality')}</Title3>
                 </View>
                 <Card>
@@ -210,7 +210,7 @@ export const ProfileScreen = () => {
               {/* Language Section */}
               {languageSegments.length > 0 && (
                 <Column gap={4}>
-                  <View style={localStyles.sectionHeader}>
+                  <View>
                     <Title3>{t('Language')}</Title3>
                   </View>
                   <SegmentControl
@@ -223,7 +223,7 @@ export const ProfileScreen = () => {
 
               {/* Settings Section */}
               <Column gap={4}>
-                <View style={localStyles.sectionHeader}>
+                <View>
                   <Title3>{t('Settings')}</Title3>
                 </View>
                 <Card>
@@ -270,8 +270,5 @@ const localStyles = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  sectionHeader: {
-    paddingHorizontal: 20,
   },
 });
