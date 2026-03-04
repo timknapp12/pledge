@@ -197,8 +197,12 @@ export const ProfileScreen = () => {
                   />
                   <BodySmallSecondary>
                     {personality === 'carrot'
-                      ? t("Encouraging & Positive: Hey! Time to crush your tasks today! You've got this!")
-                      : t("Drill Sergeant: Hey loser! You have 3 hours left. Don't waste your money and your life!")}
+                      ? t(
+                          "Encouraging & Positive: Hey! Time to crush your tasks today! You've got this!",
+                        )
+                      : t(
+                          "Drill Sergeant: Hey loser! You have 3 hours left. Don't waste your money and your life!",
+                        )}
                   </BodySmallSecondary>
                 </Card>
               </Column>
@@ -209,13 +213,11 @@ export const ProfileScreen = () => {
                   <View style={localStyles.sectionHeader}>
                     <Title3>{t('Language')}</Title3>
                   </View>
-                  <Card>
-                    <SegmentControl
-                      segments={languageSegments}
-                      selectedKey={language}
-                      onSelect={handleLanguageChange}
-                    />
-                  </Card>
+                  <SegmentControl
+                    segments={languageSegments}
+                    selectedKey={language}
+                    onSelect={handleLanguageChange}
+                  />
                 </Column>
               )}
 
