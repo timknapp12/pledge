@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import {
   Animated,
   Pressable,
@@ -21,6 +21,7 @@ export const ThemeSelector = () => {
   const { mode, setMode } = useThemeMode();
   const slideAnim = useRef(new Animated.Value(0)).current;
   const segmentWidth = useRef(0);
+  const [pillWidth, setPillWidth] = useState(0);
 
   const selectedIndex = OPTIONS.findIndex((o) => o.mode === mode);
 
@@ -35,9 +36,12 @@ export const ThemeSelector = () => {
 
   const handleLayout = (e: LayoutChangeEvent) => {
     const width = e.nativeEvent.layout.width;
-    segmentWidth.current = width / OPTIONS.length;
+    const padding = 4;
+    const sw = (width - padding * 2) / OPTIONS.length;
+    segmentWidth.current = sw;
+    setPillWidth(sw);
     // Set initial position without animation
-    slideAnim.setValue(selectedIndex * segmentWidth.current);
+    slideAnim.setValue(selectedIndex * sw);
   };
 
   return (
@@ -54,7 +58,7 @@ export const ThemeSelector = () => {
           {
             backgroundColor: theme.colors.primary,
             transform: [{ translateX: slideAnim }],
-            width: `${100 / OPTIONS.length}%`,
+            width: pillWidth || `${100 / OPTIONS.length}%`,
           },
         ]}
       />
@@ -88,6 +92,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 4,
     padding: 4,
     position: 'relative',
+    overflow: 'hidden',
   },
   pill: {
     position: 'absolute',
@@ -103,7 +108,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
+    paddingVertical: 8,
     paddingHorizontal: 20,
     zIndex: 1,
   },
