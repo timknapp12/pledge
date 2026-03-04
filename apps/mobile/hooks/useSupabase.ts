@@ -138,6 +138,17 @@ export interface Pledge {
   created_at: string;
 }
 
+export type PledgeDisplayStatus = Pledge['status'] | 'Expired';
+
+/** Frontend failsafe: if deadline + 24h grace has passed and crank hasn't updated status, treat as Expired. */
+export const getEffectiveStatus = (pledge: Pledge): PledgeDisplayStatus => {
+  if (pledge.status !== 'Active') return pledge.status;
+  const gracePeriodMs = 24 * 60 * 60 * 1000;
+  const deadlinePlusGrace = new Date(pledge.deadline).getTime() + gracePeriodMs;
+  if (Date.now() > deadlinePlusGrace) return 'Expired';
+  return 'Active';
+};
+
 export interface DailyProgress {
   id: string;
   pledge_id: string;
@@ -189,7 +200,10 @@ export const useActivePledges = () => {
   return {
     ...pledgesQuery,
     data: pledgesQuery.data
-      ?.filter((p) => p.status === 'Active' || p.status === 'Reported')
+      ?.filter((p) => {
+        const effective = getEffectiveStatus(p);
+        return effective === 'Active' || effective === 'Reported';
+      })
       .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime()),
   };
 }
