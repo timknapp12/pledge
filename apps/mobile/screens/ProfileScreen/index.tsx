@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/theme/ThemeProvider';
@@ -7,6 +7,8 @@ import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
+import type { Personality } from '@/hooks/useUserPreferences';
 import {
   Title1,
   Title3,
@@ -20,6 +22,7 @@ import {
   Card,
   TrackedScrollView,
   ThemeSelector,
+  SegmentControl,
   OutlineButton,
   Row,
   useAlert,
@@ -38,8 +41,47 @@ export const ProfileScreen = () => {
     isRegistering,
   } = useNotifications();
 
+  const {
+    personality,
+    setPersonality,
+    language,
+    setLanguage,
+    supportedLanguages,
+  } = useUserPreferences();
+
   const { alert } = useAlert();
   const [isTogglingNotifications, setIsTogglingNotifications] = useState(false);
+
+  const personalitySegments = useMemo(
+    () => [
+      { key: 'carrot', label: `${t('Carrot')}   🥕` },
+      { key: 'stick', label: `${t('Stick')}   🪓` },
+    ],
+    [t],
+  );
+
+  const languageSegments = useMemo(
+    () =>
+      supportedLanguages.map((lang) => ({
+        key: lang.code,
+        label: lang.label,
+      })),
+    [supportedLanguages],
+  );
+
+  const handlePersonalityChange = useCallback(
+    (key: string) => {
+      setPersonality(key as Personality);
+    },
+    [setPersonality],
+  );
+
+  const handleLanguageChange = useCallback(
+    (key: string) => {
+      setLanguage(key);
+    },
+    [setLanguage],
+  );
 
   const handleSignOut = () => {
     alert({
@@ -71,7 +113,7 @@ export const ProfileScreen = () => {
         setIsTogglingNotifications(false);
       }
     },
-    [registerForPushNotifications, disableNotifications]
+    [registerForPushNotifications, disableNotifications],
   );
 
   const appVersion = Constants.expoConfig?.version || '1.0.0';
@@ -104,7 +146,7 @@ export const ProfileScreen = () => {
       >
         <CenteredColumn flex={1} gap={24}>
           {/* HEADER ROW */}
-          <Row width='100%'>
+          <Row width='100%' justify='flex-start'>
             <Title1>{t('Profile')}</Title1>
           </Row>
           <TrackedScrollView showsVerticalScrollIndicator={false}>
@@ -133,15 +175,55 @@ export const ProfileScreen = () => {
 
               {/* Theme Section */}
               <Column gap={4}>
-                <View style={localStyles.sectionHeader}>
+                <View>
                   <Title3>{t('Theme')}</Title3>
                 </View>
                 <ThemeSelector />
               </Column>
 
+              {/* Personality Section */}
+              <Column gap={4}>
+                <View>
+                  <Title3>{t('Personality')}</Title3>
+                </View>
+                <Card>
+                  <BodySecondary>
+                    {t('Choose how you want Pledge to speak to you')}
+                  </BodySecondary>
+                  <SegmentControl
+                    segments={personalitySegments}
+                    selectedKey={personality}
+                    onSelect={handlePersonalityChange}
+                  />
+                  <BodySmallSecondary>
+                    {personality === 'carrot'
+                      ? t(
+                          "Encouraging & Positive: Hey! Time to crush your tasks today! You've got this!",
+                        )
+                      : t(
+                          "Drill Sergeant: Hey loser! You have 3 hours left. Don't waste your money and your life!",
+                        )}
+                  </BodySmallSecondary>
+                </Card>
+              </Column>
+
+              {/* Language Section */}
+              {languageSegments.length > 0 && (
+                <Column gap={4}>
+                  <View>
+                    <Title3>{t('Language')}</Title3>
+                  </View>
+                  <SegmentControl
+                    segments={languageSegments}
+                    selectedKey={language}
+                    onSelect={handleLanguageChange}
+                  />
+                </Column>
+              )}
+
               {/* Settings Section */}
               <Column gap={4}>
-                <View style={localStyles.sectionHeader}>
+                <View>
                   <Title3>{t('Settings')}</Title3>
                 </View>
                 <Card>
@@ -188,8 +270,5 @@ const localStyles = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  sectionHeader: {
-    paddingHorizontal: 20,
   },
 });

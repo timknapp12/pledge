@@ -93,18 +93,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Store user timezone in Supabase
-  const storeTimezone = useCallback(
+  // Store user timezone and initial language in Supabase
+  const storeTimezoneAndLanguage = useCallback(
     async (client: SupabaseClient, userId: string) => {
       try {
         const tz =
           Localization.getCalendars()[0]?.timeZone ?? 'America/New_York';
-        await client
+
+        // Detect device language
+        const deviceLang = Localization.getLocales()[0]?.languageCode ?? 'en';
+
+        // Check if user already has a language set (don't overwrite manual choice)
+        const { data: userData } = await client
           .from('users')
-          .update({ timezone: tz })
-          .eq('id', userId);
+          .select('language')
+          .eq('id', userId)
+          .single();
+
+        const updatePayload: Record<string, string> = { timezone: tz };
+
+        // Only set language if not already set (null means first login)
+        if (!userData?.language) {
+          updatePayload.language = deviceLang;
+        }
+
+        await client.from('users').update(updatePayload).eq('id', userId);
       } catch (err) {
-        console.error('Failed to store timezone:', err);
+        console.error('Failed to store timezone/language:', err);
       }
     },
     []
@@ -149,7 +164,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             });
             // Prefetch pledges data and sync timezone
             prefetchPledges(authenticatedClient, payload.sub);
-            storeTimezone(authenticatedClient, payload.sub);
+            storeTimezoneAndLanguage(authenticatedClient, payload.sub);
           } else {
             // Token expired, clear it
             await removeAuthToken();
@@ -164,7 +179,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     checkExistingSession();
-  }, [prefetchPledges, storeTimezone]);
+  }, [prefetchPledges, storeTimezoneAndLanguage]);
 
   const connect = useCallback(async () => {
     setIsConnecting(true);
@@ -251,7 +266,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(userData);
         // Prefetch pledges data and sync timezone
         prefetchPledges(authenticatedClient, walletAddr);
-        storeTimezone(authenticatedClient, userData.id);
+        storeTimezoneAndLanguage(authenticatedClient, userData.id);
       });
     } catch (err: any) {
       console.error('Connection error:', err);
@@ -260,7 +275,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsConnecting(false);
     }
-  }, [prefetchPledges, storeTimezone]);
+  }, [prefetchPledges, storeTimezoneAndLanguage]);
 
   const disconnect = useCallback(async () => {
     try {
