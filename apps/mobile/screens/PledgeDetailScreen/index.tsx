@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   ActivityIndicator,
   ScrollView,
@@ -21,6 +21,7 @@ import {
   formatUsdcAmount,
   getDailyTasksForDate,
   getGoals,
+  getEffectiveStatus,
   toLocalDateStr,
 } from '@/hooks/useSupabase';
 import { useProgram } from '@/hooks/useProgram';
@@ -38,8 +39,10 @@ import {
   PrimaryButton,
   ErrorState,
   CenteredColumn,
+  ProgressBar,
   Slider,
   Checkbox,
+  DateCarousel,
   useAlert,
 } from '@/components';
 
@@ -95,18 +98,57 @@ export const PledgeDetailScreen = () => {
   const [overrideProgress, setOverrideProgress] = useState<number | null>(null);
   const [isReporting, setIsReporting] = useState(false);
 
-  // Initialize completed todos from today's progress
   const today = toLocalDateStr(new Date());
+  const effectiveStatus = pledge ? getEffectiveStatus(pledge) : null;
+
+  // Determine if pledge has daily tasks
+  const hasDailyTasks = useMemo(() => {
+    if (!pledge) return false;
+    return Object.keys(pledge.todos.daily).length > 0;
+  }, [pledge]);
+
+  // Default selected date: today if active and today is within range, else last day of pledge
+  const defaultDate = useMemo(() => {
+    if (!pledge) return today;
+    const endDate = toLocalDateStr(new Date(pledge.end_date));
+    if (effectiveStatus !== 'Active' || today > endDate) {
+      return endDate;
+    }
+    const startDate = toLocalDateStr(new Date(pledge.start_date));
+    if (today < startDate) return startDate;
+    return today;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pledge, today]);
+
+  const [selectedDate, setSelectedDate] = useState(defaultDate);
+
+  // Update selectedDate when defaultDate changes (e.g. pledge loads)
+  useEffect(() => {
+    setSelectedDate(defaultDate);
+  }, [defaultDate]);
+
+  // Editable on today or yesterday (24h grace period), only while pledge is Active
+  const yesterdayStr = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return toLocalDateStr(d);
+  }, []);
+
+  const isSelectedDateEditable =
+    (selectedDate === today || selectedDate === yesterdayStr) &&
+    effectiveStatus === 'Active';
+
+  // Initialize completed todos from selected date's progress
   useEffect(() => {
     if (allProgress) {
-      const todayRecord = allProgress.find((p) => p.date === today);
-      setCompletedTodos(todayRecord?.todos_completed || []);
+      const dateRecord = allProgress.find((p) => p.date === selectedDate);
+      setCompletedTodos(dateRecord?.todos_completed || []);
     }
-  }, [allProgress, today]);
+  }, [allProgress, selectedDate]);
 
   const handleTodoToggle = useCallback(
     async (index: number) => {
-      if (!id) return;
+      if (!id || !isSelectedDateEditable) return;
 
       const newCompleted = completedTodos.includes(index)
         ? completedTodos.filter((i) => i !== index)
@@ -114,11 +156,10 @@ export const PledgeDetailScreen = () => {
 
       setCompletedTodos(newCompleted);
 
-      const today = toLocalDateStr(new Date());
       try {
         await updateProgress.mutateAsync({
           pledgeId: id,
-          date: today,
+          date: selectedDate,
           todosCompleted: newCompleted,
         });
       } catch (err) {
@@ -127,22 +168,31 @@ export const PledgeDetailScreen = () => {
         setCompletedTodos(completedTodos);
       }
     },
-    [completedTodos, id, updateProgress],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [completedTodos, id, updateProgress, isSelectedDateEditable, today],
   );
 
-  const dailyTasks = pledge ? getDailyTasksForDate(pledge.todos, today) : [];
+  // Tasks for the selected date
+  const dailyTasks = pledge
+    ? getDailyTasksForDate(pledge.todos, selectedDate)
+    : [];
   const goals = pledge ? getGoals(pledge.todos) : [];
-  // Combined list: daily tasks first, then goals — indices match todos_completed
-  const allTasks = [...dailyTasks, ...goals];
+  // For today: daily tasks first, then goals — indices match todos_completed
+  // For past dates: daily tasks only (goals are shown read-only separately)
+  const isToday = selectedDate === today;
+  const taskList = isToday ? [...dailyTasks, ...goals] : dailyTasks;
 
   const taskProgress = (): number => {
     if (!pledge || !allProgress) return 0;
     // Build progress array with today's local state for immediate feedback
     const progressWithLocalState = allProgress.map((p) =>
-      p.date === today ? { ...p, todos_completed: completedTodos } : p
+      p.date === today ? { ...p, todos_completed: completedTodos } : p,
     );
     // If no record for today yet but user has checked items, add it
-    if (completedTodos.length > 0 && !allProgress.find((p) => p.date === today)) {
+    if (
+      completedTodos.length > 0 &&
+      !allProgress.find((p) => p.date === today)
+    ) {
       progressWithLocalState.push({
         id: '',
         pledge_id: pledge.id,
@@ -155,7 +205,7 @@ export const PledgeDetailScreen = () => {
       pledge.todos,
       progressWithLocalState,
       new Date(pledge.start_date),
-      new Date(pledge.end_date)
+      new Date(pledge.end_date),
     );
   };
 
@@ -202,10 +252,16 @@ export const PledgeDetailScreen = () => {
                 settleTxSignature: signature,
               });
               refetch();
-              alert({ title: t('Success'), message: t('Pledge settled successfully') });
+              alert({
+                title: t('Success'),
+                message: t('Pledge settled successfully'),
+              });
             } catch (err: any) {
               console.error('Report and settle error:', err);
-              alert({ title: t('Error'), message: err.message || 'Failed to settle pledge' });
+              alert({
+                title: t('Error'),
+                message: err.message || 'Failed to settle pledge',
+              });
             } finally {
               setIsReporting(false);
             }
@@ -246,6 +302,12 @@ export const PledgeDetailScreen = () => {
     );
   }
 
+  // Get completed todos for selected date from allProgress (for read-only past days)
+  const selectedDateProgress = allProgress?.find(
+    (p) => p.date === selectedDate,
+  );
+  const readOnlyCompleted = selectedDateProgress?.todos_completed || [];
+
   return (
     <ScreenContainer style={{ flex: 1, gap: 24, paddingBottom: 32 }}>
       <Row>
@@ -264,16 +326,16 @@ export const PledgeDetailScreen = () => {
         <View
           style={[
             styles.statusBadge,
-            { backgroundColor: getStatusBgColor(theme, pledge.status) },
+            { backgroundColor: getStatusBgColor(theme, effectiveStatus!) },
           ]}
         >
           <BodySmall
             style={{
-              color: getStatusTextColor(theme, pledge.status),
+              color: getStatusTextColor(theme, effectiveStatus!),
               fontWeight: '600',
             }}
           >
-            {t(pledge.status)}
+            {t(effectiveStatus!)}
           </BodySmall>
         </View>
       </Row>
@@ -309,22 +371,37 @@ export const PledgeDetailScreen = () => {
                 {progress}%
               </Title3>
             </Row>
-            <Slider
-              value={progress}
-              onValueChange={(v) => setOverrideProgress(Math.round(v))}
-              disabled={pledge.status !== 'Active'}
-            />
+            {hasDailyTasks || effectiveStatus !== 'Active' ? (
+              <ProgressBar progress={progress} height={12} />
+            ) : (
+              <Slider
+                value={progress}
+                onValueChange={(v) => setOverrideProgress(Math.round(v))}
+              />
+            )}
           </View>
 
-          {/* Tasks (daily + goals combined) */}
-          {allTasks.length > 0 && (
+          {/* Date Carousel — only for pledges with daily tasks */}
+          {hasDailyTasks && (
+            <DateCarousel
+              startDate={pledge.start_date}
+              endDate={pledge.end_date}
+              selectedDate={selectedDate}
+              onSelectDate={setSelectedDate}
+            />
+          )}
+
+          {/* Daily Tasks for selected date */}
+          {taskList.length > 0 && (
             <Column gap={8}>
               <Title3 style={{ marginBottom: 8 }}>
-                {t(dailyTasks.length > 0 ? "Today's Tasks" : 'Tasks')}
+                {isToday ? t("Today's Tasks") : t('Tasks')}
               </Title3>
-              {allTasks.map((taskText, index) => {
-                const completed = completedTodos.includes(index);
-                return (
+              {taskList.map((taskText, index) => {
+                const completed = isSelectedDateEditable
+                  ? completedTodos.includes(index)
+                  : readOnlyCompleted.includes(index);
+                return isSelectedDateEditable ? (
                   <Pressable
                     key={index}
                     style={[
@@ -338,10 +415,7 @@ export const PledgeDetailScreen = () => {
                           : theme.colors.border,
                       },
                     ]}
-                    onPress={() =>
-                      pledge.status === 'Active' && handleTodoToggle(index)
-                    }
-                    disabled={pledge.status !== 'Active'}
+                    onPress={() => handleTodoToggle(index)}
                   >
                     <Checkbox checked={completed} />
                     <Body
@@ -354,14 +428,81 @@ export const PledgeDetailScreen = () => {
                       {taskText}
                     </Body>
                   </Pressable>
+                ) : (
+                  <View
+                    key={index}
+                    style={[
+                      styles.todoItem,
+                      {
+                        backgroundColor: completed
+                          ? theme.colors.primaryAlpha10
+                          : theme.colors.cardBackground,
+                        borderColor: completed
+                          ? theme.colors.primaryAlpha40
+                          : theme.colors.border,
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name={completed ? 'checkmark-circle' : 'close-circle'}
+                      size={20}
+                      color={
+                        completed ? theme.colors.primary : theme.colors.error
+                      }
+                    />
+                    <Body
+                      style={{
+                        flex: 1,
+                        textDecorationLine: completed ? 'line-through' : 'none',
+                        opacity: completed ? 0.6 : 1,
+                      }}
+                    >
+                      {taskText}
+                    </Body>
+                  </View>
                 );
               })}
             </Column>
           )}
+
+          {/* Goals (read-only display on non-today dates) */}
+          {!isToday && goals.length > 0 && (
+            <Column gap={8}>
+              <Title3 style={{ marginBottom: 8 }}>{t('Goals')}</Title3>
+              {goals.map((goalText, index) => (
+                <View
+                  key={`goal-${index}`}
+                  style={[
+                    styles.todoItem,
+                    {
+                      backgroundColor: theme.colors.cardBackground,
+                      borderColor: theme.colors.border,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name='flag-outline'
+                    size={18}
+                    color={theme.colors.textSecondary}
+                  />
+                  <Body style={{ flex: 1 }}>{goalText}</Body>
+                </View>
+              ))}
+            </Column>
+          )}
+
+          {/* No tasks message for selected date */}
+          {taskList.length === 0 && goals.length === 0 && (
+            <CenteredColumn>
+              <BodySecondary>
+                {t(isToday ? 'No tasks for today' : 'No tasks for this day')}
+              </BodySecondary>
+            </CenteredColumn>
+          )}
         </Column>
       </ScrollView>
 
-      {pledge.status === 'Active' && (
+      {effectiveStatus === 'Active' && (
         <CenteredColumn>
           <PrimaryButton
             onPress={handleReportAndSettle}
@@ -384,9 +525,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  contentContainer: {
-    gap: 24,
-  },
   statusBadge: {
     paddingVertical: 6,
     paddingHorizontal: 12,
@@ -398,7 +536,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   progressContainer: {
-    marginBottom: 24,
     gap: 8,
   },
   todoItem: {
