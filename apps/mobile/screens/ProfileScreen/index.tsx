@@ -188,13 +188,18 @@ export const ProfileScreen = () => {
                 </View>
                 <Card>
                   <BodySecondary>
-                    {t('Choose the tone for your notifications')}
+                    {t('Choose how you want Pledge to speak to you')}
                   </BodySecondary>
                   <SegmentControl
                     segments={personalitySegments}
                     selectedKey={personality}
                     onSelect={handlePersonalityChange}
                   />
+                  <BodySmallSecondary>
+                    {personality === 'carrot'
+                      ? t("Encouraging & Positive: Hey! Time to crush your tasks today! You've got this!")
+                      : t("Drill Sergeant: Hey loser! You have 3 hours left. Don't waste your money and your life!")}
+                  </BodySmallSecondary>
                 </Card>
               </Column>
 
