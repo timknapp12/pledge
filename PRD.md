@@ -167,12 +167,23 @@ Pre-scheduled push notifications via Expo Push API. Full architecture documented
 - Goal completed/failed confirmation
 - Streak milestones
 
+### Personality & Language
+
+Users choose a notification personality in their profile:
+
+- **Carrot** (default): Encouraging, positive tone
+- **Stick**: Drill-sergeant, tough-love tone
+
+Notification messages are selected from the `notification_templates` table based on the user's `personality` and `language` preferences. Multiple template variants exist per (key, personality, language) combination — the scheduling function picks one at random per notification for variety.
+
 ### Implementation Summary
 
 - All notification rows pre-scheduled at pledge creation (`schedule_pledge_notifications` Postgres function)
+- Scheduling function reads user's `personality` + `language` from `users` table and selects random templates from `notification_templates`
 - pg_cron fires every 2 minutes, calling `send-notification` Edge Function
 - Edge Function queries pending rows, batch-sends via Expo Push API, handles errors
-- Profile screen has a master notifications toggle (on/off)
+- Profile screen has personality selector, language selector, and master notifications toggle
+- Changing personality or language re-schedules notifications for all active pledges
 - Firebase project required for Android push delivery
 
 ---
@@ -279,7 +290,7 @@ Consider adding an indexer when:
 | ----------- | ----------------------------------------------------------------------------------------------- |
 | **Home**    | Active pledges, progress rings (Apple Fitness style), today's to-dos if relevant, quick actions |
 | **History** | Past pledges, streaks, analytics/charts, points                                                 |
-| **Profile** | Settings, templates, wallet info, connected accounts                                            |
+| **Profile** | Settings, templates, wallet info, personality & language preferences                              |
 
 ### Key Screens
 
@@ -355,31 +366,30 @@ pledge/
 | **RPC**           | Helius (free tier)                                                       |
 | **Database**      | Supabase (Postgres)                                                      |
 | **Notifications** | Supabase pg_cron + Edge Functions + Expo push notifications              |
-| **i18n**          | i18next (English + Spanish test strings)                                 |
+| **i18n**          | i18next (en, es, fr), personality-aware via `tp()` hook                  |
 
 ### i18n (Internationalization)
 
-All user-facing strings must be internationalized:
+All user-facing strings must be internationalized. Three languages supported: English, Spanish, French.
 
 ```typescript
-// Wrap all UI strings in t()
+// Standard strings — use t()
 import { useTranslation } from 'react-i18next';
 const { t } = useTranslation();
-
 <Text>{t('Maximum Amount')}</Text>;
-```
 
-```json
-// Add to src/i18n/locales/en.json
-{
-  "Maximum Amount": "Maximum Amount",
-  "Creating your account...": "Creating your account..."
-}
+// Personality-variant strings — use tp()
+import { usePersonalityText } from '@/hooks/usePersonalityText';
+const tp = usePersonalityText();
+<Text>{tp('Complete your first pledge to see it here.')}</Text>;
+// Resolves to "key_carrot" or "key_stick" based on user's personality preference
 ```
 
 - Use exact string as key (not camelCase)
-- Add to `en.json` when creating any new UI text
-- Spanish `es.json` for testing translations
+- Add to `en.json`, `es.json`, and `fr.json` when creating any new UI text
+- For personality-variant strings: add `key_carrot` and `key_stick` variants (no base key needed)
+- Supported languages stored in `supported_languages` DB table — UI picker reads dynamically
+- User's language preference persisted in Supabase `users.language` and cached in AsyncStorage
 
 ### Anchor Program Structure
 
@@ -509,10 +519,11 @@ users (
   streak_best int DEFAULT 0,
   github_username text,           -- V2: for verified goals
   x_username text,                -- V2: for verified goals
-  notification_preferences jsonb,
   push_token text,                -- Expo push token
   notifications_enabled boolean DEFAULT false,
   timezone text DEFAULT 'America/New_York',
+  personality text DEFAULT 'carrot',  -- 'carrot' or 'stick'
+  language text DEFAULT 'en',         -- language code (e.g. 'en', 'es', 'fr')
   created_at timestamptz
 )
 
@@ -551,6 +562,25 @@ daily_progress (
   pledge_id uuid REFERENCES pledges,
   date date,
   todos_completed jsonb,  -- [todo_index, ...]
+  created_at timestamptz
+)
+
+-- Supported Languages (drives UI language picker)
+supported_languages (
+  code text PRIMARY KEY,          -- 'en', 'es', 'fr'
+  label text NOT NULL,            -- 'English', 'Español', 'Français'
+  sort_order int DEFAULT 0,
+  created_at timestamptz
+)
+
+-- Notification Templates (multiple per key/personality/language for variety)
+notification_templates (
+  id uuid PRIMARY KEY,
+  key text NOT NULL,               -- 'daily_reminder', 'deadline_approaching'
+  personality text NOT NULL,       -- 'carrot' or 'stick'
+  language text NOT NULL,          -- 'en', 'es', 'fr'
+  title text NOT NULL,
+  body_template text NOT NULL,     -- supports {{pledge_name}}, {{hours}} placeholders
   created_at timestamptz
 )
 
