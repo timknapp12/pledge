@@ -12,6 +12,7 @@ supabase:
 - create and add CRANK_KEYPAIR to supabase/env ✅ (devnet admin: 6F1zqkPXyeJ64e4T4fpREhzgnLW3vwsdstrGqQ8BaVFz)
 - add CRANK_KEYPAIR to supabase dev and prod secrets - load with some funds
 - run script in prod to create ATAs for treasury and charity pubkeys. there is a script in scripts folder
+- this is done on dev - deploy crank to check for forfeited pledges - look at docs/crank.md, get prod project id and set secrets after deploying crank
 
 firebase:
 
