@@ -12,3 +12,4 @@ export * from './SegmentControl';
 export * from './Checkbox';
 export * from './Slider';
 export * from './Alert';
+export * from './DateCarousel';
