@@ -47,6 +47,9 @@ pub enum ErrorCode {
     #[msg("Grace period has ended - cannot report")]
     GracePeriodEnded,
 
+    #[msg("Pledge already reported - use process_completion instead")]
+    AlreadyReported,
+
     #[msg("Invalid completion percentage - must be 0-100")]
     InvalidCompletionPercentage,
 
