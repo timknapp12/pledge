@@ -13,7 +13,8 @@ pub struct ReportCompletion<'info> {
 
     #[account(
         seeds = [CONFIG_SEED],
-        bump = config.bump
+        bump = config.bump,
+        constraint = !config.paused @ ErrorCode::ProgramPaused
     )]
     pub config: Account<'info, ProgramConfig>,
 

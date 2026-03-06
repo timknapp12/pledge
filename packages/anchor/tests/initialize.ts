@@ -12,6 +12,7 @@ import {
   DEFAULT_GRACE_PERIOD,
   CONFIG_SEED,
   airdrop,
+  SHARED_CRANK_AUTHORITY,
 } from './utils/helpers';
 
 describe('initialize', () => {
@@ -40,6 +41,8 @@ describe('initialize', () => {
         .initialize(
           ctx.treasury.publicKey,
           ctx.charity.publicKey,
+          ctx.crankAuthority.publicKey,
+          ctx.usdcMint,
           DEFAULT_TREASURY_SPLIT_BPS,
           DEFAULT_PARTIAL_FEE_BPS,
           DEFAULT_EDIT_PENALTY_BPS,
@@ -64,6 +67,12 @@ describe('initialize', () => {
     expect(config.charity.toBase58()).to.equal(
       ctx.charity.publicKey.toBase58()
     );
+    expect(config.crankAuthority.toBase58()).to.equal(
+      ctx.crankAuthority.publicKey.toBase58()
+    );
+    expect(config.allowedMint.toBase58()).to.equal(
+      ctx.usdcMint.toBase58()
+    );
     expect(config.treasurySplitBps).to.equal(DEFAULT_TREASURY_SPLIT_BPS);
     expect(config.partialFeeBps).to.equal(DEFAULT_PARTIAL_FEE_BPS);
     expect(config.editPenaltyBps).to.equal(DEFAULT_EDIT_PENALTY_BPS);
@@ -77,6 +86,8 @@ describe('initialize', () => {
         .initialize(
           ctx.treasury.publicKey,
           ctx.charity.publicKey,
+          ctx.crankAuthority.publicKey,
+          ctx.usdcMint,
           DEFAULT_TREASURY_SPLIT_BPS,
           DEFAULT_PARTIAL_FEE_BPS,
           DEFAULT_EDIT_PENALTY_BPS,
@@ -120,6 +131,26 @@ describe('initialize', () => {
     // Similar to above - config already initialized
     // The validation is in the program, tested via the constraint
   });
+
+  it('fails with negative grace period', async () => {
+    // Config is already initialized so we can't re-init to test this directly.
+    // But we can test via updateConfig which has the same validation.
+    try {
+      await ctx.program.methods
+        .updateConfig(null, null, null, null, null, null, null, new anchor.BN(-1), null)
+        .accounts({
+          admin: ctx.admin.publicKey,
+          config: ctx.configPda,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([ctx.admin])
+        .rpc();
+
+      expect.fail('Should have thrown InvalidTimestamp error');
+    } catch (err) {
+      expect(err.message).to.include('InvalidTimestamp');
+    }
+  });
 });
 
 /**
@@ -130,6 +161,8 @@ export const runInitialize = async (ctx: TestContext): Promise<void> => {
     .initialize(
       ctx.treasury.publicKey,
       ctx.charity.publicKey,
+      ctx.crankAuthority.publicKey,
+      ctx.usdcMint,
       DEFAULT_TREASURY_SPLIT_BPS,
       DEFAULT_PARTIAL_FEE_BPS,
       DEFAULT_EDIT_PENALTY_BPS,

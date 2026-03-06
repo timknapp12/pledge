@@ -37,6 +37,9 @@ export const SHARED_TREASURY = Keypair.fromSeed(
 export const SHARED_CHARITY = Keypair.fromSeed(
   Buffer.concat([SHARED_SEED.slice(0, 31), Buffer.from([2])])
 );
+export const SHARED_CRANK_AUTHORITY = Keypair.fromSeed(
+  Buffer.concat([SHARED_SEED.slice(0, 31), Buffer.from([3])])
+);
 
 // Test amounts (USDC has 6 decimals)
 export const USDC_DECIMALS = 6;
@@ -50,6 +53,7 @@ export interface TestContext {
   admin: Keypair;
   treasury: Keypair;
   charity: Keypair;
+  crankAuthority: Keypair;
   usdcMint: PublicKey;
   configPda: PublicKey;
   configBump: number;
@@ -77,6 +81,7 @@ export const setupTestContext = async (): Promise<TestContext> => {
   const admin = SHARED_ADMIN;
   const treasury = SHARED_TREASURY;
   const charity = SHARED_CHARITY;
+  const crankAuthority = SHARED_CRANK_AUTHORITY;
 
   // Airdrop SOL to shared accounts if needed
   const adminBalance = await provider.connection.getBalance(admin.publicKey);
@@ -102,6 +107,13 @@ export const setupTestContext = async (): Promise<TestContext> => {
     await airdrop(provider.connection, charity.publicKey, 1 * LAMPORTS_PER_SOL);
   }
 
+  const crankBalance = await provider.connection.getBalance(
+    crankAuthority.publicKey
+  );
+  if (crankBalance < LAMPORTS_PER_SOL) {
+    await airdrop(provider.connection, crankAuthority.publicKey, 2 * LAMPORTS_PER_SOL);
+  }
+
   // Create USDC mint once, reuse across tests
   if (!sharedUsdcMint) {
     sharedUsdcMint = await createMint(
@@ -125,6 +137,7 @@ export const setupTestContext = async (): Promise<TestContext> => {
     admin,
     treasury,
     charity,
+    crankAuthority,
     usdcMint: sharedUsdcMint,
     configPda,
     configBump,
@@ -177,6 +190,8 @@ export const initializeConfig = async (ctx: TestContext): Promise<void> => {
     .initialize(
       ctx.treasury.publicKey,
       ctx.charity.publicKey,
+      ctx.crankAuthority.publicKey,
+      ctx.usdcMint,
       DEFAULT_TREASURY_SPLIT_BPS,
       DEFAULT_PARTIAL_FEE_BPS,
       DEFAULT_EDIT_PENALTY_BPS,

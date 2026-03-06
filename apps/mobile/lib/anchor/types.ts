@@ -53,6 +53,8 @@ export interface ProgramConfigAccount {
   gracePeriodSeconds: BN;
   paused: boolean;
   bump: number;
+  crankAuthority: PublicKey;
+  allowedMint: PublicKey;
 }
 
 // Args for createPledge instruction
