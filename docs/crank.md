@@ -24,13 +24,14 @@ For each Active pledge where `deadline + 24h grace` has passed:
 
 Set via `supabase secrets set`:
 
-| Variable                    | Description                                       |
-| --------------------------- | ------------------------------------------------- |
-| `CRANK_KEYPAIR`             | Base58-encoded secret key of the crank wallet     |
-| `HELIUS_API_KEY`            | Helius RPC API key (works for devnet and mainnet) |
-| `SOLANA_NETWORK`            | `devnet` or `mainnet` (defaults to `mainnet`)     |
-| `SUPABASE_URL`              | Auto-set by Supabase                              |
-| `SUPABASE_SERVICE_ROLE_KEY` | Auto-set by Supabase                              |
+| Variable                    | Description                                                      |
+| --------------------------- | ---------------------------------------------------------------- |
+| `CRANK_KEYPAIR`             | Base58-encoded secret key — must match `config.crank_authority`  |
+| `HELIUS_API_KEY`            | Helius RPC API key (works for devnet and mainnet)                |
+| `SOLANA_NETWORK`            | `devnet` or `mainnet` (defaults to `mainnet`)                    |
+| `FUNCTION_SECRET`           | Shared secret for auth (optional — if unset, no auth check)     |
+| `SUPABASE_URL`              | Auto-set by Supabase                                             |
+| `SUPABASE_SERVICE_ROLE_KEY` | Auto-set by Supabase                                             |
 
 ---
 
@@ -39,8 +40,10 @@ Set via `supabase secrets set`:
 ### Deploy
 
 ```bash
-supabase functions deploy process-crank --project-ref ejgcfgjkwlkblwrqtqbr
+supabase functions deploy process-crank --no-verify-jwt --project-ref ejgcfgjkwlkblwrqtqbr
 ```
+
+Note: `--no-verify-jwt` is required because the function uses `FUNCTION_SECRET` bearer auth instead of Supabase JWT verification.
 
 ### Set Secrets
 
@@ -48,8 +51,10 @@ supabase functions deploy process-crank --project-ref ejgcfgjkwlkblwrqtqbr
 supabase secrets set --project-ref ejgcfgjkwlkblwrqtqbr \
   CRANK_KEYPAIR=<base58-encoded-keypair> \
   HELIUS_API_KEY=<helius-api-key> \
-  SOLANA_NETWORK=devnet // leave this off for mainnet
+  SOLANA_NETWORK=devnet
 ```
+
+Leave off `SOLANA_NETWORK` for mainnet (defaults to `mainnet`).
 
 ### Manual Test
 
@@ -71,7 +76,9 @@ supabase functions logs process-crank --project-ref ejgcfgjkwlkblwrqtqbr
 
 ## pg_cron Setup
 
-Run this SQL once (via Supabase SQL editor) to schedule the crank every 6 hours:
+Run this SQL once (via Supabase SQL editor) to schedule the crank every 6 hours.
+
+**Important:** Use hardcoded URL and service role key — `current_setting('app.settings.*')` is not configured on Supabase hosted projects.
 
 ```sql
 SELECT cron.schedule(
@@ -79,10 +86,10 @@ SELECT cron.schedule(
   '0 */6 * * *',
   $$
   SELECT net.http_post(
-    url := current_setting('app.settings.supabase_url') || '/functions/v1/process-crank',
+    url := 'https://<project-ref>.supabase.co/functions/v1/process-crank',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key')
+      'Authorization', 'Bearer <service-role-key>'
     ),
     body := '{}'::jsonb
   );
@@ -127,8 +134,13 @@ SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 10;
 ### Transaction fails
 
 - Check that the crank wallet has enough SOL for fees.
-- Verify the crank wallet pubkey is authorized (doesn't need to be admin — any signer can crank).
+- Verify the crank wallet pubkey matches `config.crank_authority` on-chain.
 - Check Helius API key is valid and not rate-limited.
+
+### Crank not running (pg_cron)
+
+- Check `SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 5;`
+- If you see `unrecognized configuration parameter "app.settings.supabase_url"`, the cron job needs hardcoded URL and key (see pg_cron Setup above).
 
 ### Pledge processed on-chain but DB not updated
 

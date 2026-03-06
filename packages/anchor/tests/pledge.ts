@@ -17,6 +17,7 @@
 // Each file contains describe() blocks that will be executed by mocha
 
 import "./initialize";
+import "./updateConfig";
 import "./createPledge";
 import "./reportCompletion";
 import "./processCompletion";

@@ -29,6 +29,8 @@ impl<'info> Initialize<'info> {
         &mut self,
         treasury: Pubkey,
         charity: Pubkey,
+        crank_authority: Pubkey,
+        allowed_mint: Pubkey,
         treasury_split_bps: u16,
         partial_fee_bps: u16,
         edit_penalty_bps: u16,
@@ -42,12 +44,15 @@ impl<'info> Initialize<'info> {
         );
         require!(partial_fee_bps <= 1000, ErrorCode::InvalidFee);
         require!(edit_penalty_bps <= 1000, ErrorCode::InvalidFee);
+        require!(grace_period_seconds >= 0, ErrorCode::InvalidTimestamp);
 
         // Initialize config
         self.config.set_inner(ProgramConfig {
             admin: self.admin.key(),
             treasury,
             charity,
+            crank_authority,
+            allowed_mint,
             treasury_split_bps,
             partial_fee_bps,
             edit_penalty_bps,

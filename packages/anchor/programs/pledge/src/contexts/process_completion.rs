@@ -8,12 +8,16 @@ use crate::utils::fees::{calculate_partial_refund, calculate_split};
 
 #[derive(Accounts)]
 pub struct ProcessCompletion<'info> {
-    /// Any signer can be the crank - permissionless
+    /// Authorized crank signer OR the pledge owner (self-settle)
+    #[account(
+        constraint = (crank.key() == config.crank_authority || crank.key() == pledge.user) @ ErrorCode::Unauthorized
+    )]
     pub crank: Signer<'info>,
 
     #[account(
         seeds = [CONFIG_SEED],
-        bump = config.bump
+        bump = config.bump,
+        constraint = !config.paused @ ErrorCode::ProgramPaused
     )]
     pub config: Account<'info, ProgramConfig>,
 

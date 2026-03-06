@@ -24,6 +24,8 @@ type AnimatedCircularProgressProps = {
   showPercentage?: boolean;
   /** Font size for percentage text (default 14) */
   percentageFontSize?: number;
+  /** Custom text to display instead of percentage (e.g. streak count) */
+  customText?: string;
   /** Change this value to replay the animation from 0 */
   animateKey?: number;
 };
@@ -40,6 +42,7 @@ export const AnimatedCircularProgress = ({
   style,
   showPercentage = false,
   percentageFontSize = 16,
+  customText,
   animateKey,
 }: AnimatedCircularProgressProps) => {
   const { theme } = useAppTheme();
@@ -106,7 +109,7 @@ export const AnimatedCircularProgress = ({
           animatedProps={animatedProps}
         />
       </Svg>
-      {showPercentage && (
+      {(showPercentage || customText !== undefined) && (
         <View style={styles.centerContent}>
           <Text
             style={[
@@ -114,7 +117,7 @@ export const AnimatedCircularProgress = ({
               { color: textColor || fillColor, fontSize: percentageFontSize },
             ]}
           >
-            {displayPercent}%
+            {customText !== undefined ? customText : `${displayPercent}%`}
           </Text>
         </View>
       )}

@@ -7,6 +7,7 @@ use crate::state::{ConfigUpdated, ProgramConfig};
 #[derive(Accounts)]
 pub struct UpdateConfig<'info> {
     #[account(
+        mut,
         constraint = admin.key() == config.admin @ ErrorCode::Unauthorized
     )]
     pub admin: Signer<'info>,
@@ -14,9 +15,14 @@ pub struct UpdateConfig<'info> {
     #[account(
         mut,
         seeds = [CONFIG_SEED],
-        bump = config.bump
+        bump = config.bump,
+        realloc = ProgramConfig::INIT_SPACE,
+        realloc::payer = admin,
+        realloc::zero = false
     )]
     pub config: Account<'info, ProgramConfig>,
+
+    pub system_program: Program<'info, System>,
 }
 
 impl<'info> UpdateConfig<'info> {
@@ -24,6 +30,8 @@ impl<'info> UpdateConfig<'info> {
         &mut self,
         new_treasury: Option<Pubkey>,
         new_charity: Option<Pubkey>,
+        new_crank_authority: Option<Pubkey>,
+        new_allowed_mint: Option<Pubkey>,
         new_treasury_split_bps: Option<u16>,
         new_partial_fee_bps: Option<u16>,
         new_edit_penalty_bps: Option<u16>,
@@ -46,6 +54,24 @@ impl<'info> UpdateConfig<'info> {
                 new_value: charity.to_string(),
             });
             self.config.charity = charity;
+        }
+
+        if let Some(crank_authority) = new_crank_authority {
+            emit!(ConfigUpdated {
+                field: "crank_authority".to_string(),
+                old_value: self.config.crank_authority.to_string(),
+                new_value: crank_authority.to_string(),
+            });
+            self.config.crank_authority = crank_authority;
+        }
+
+        if let Some(allowed_mint) = new_allowed_mint {
+            emit!(ConfigUpdated {
+                field: "allowed_mint".to_string(),
+                old_value: self.config.allowed_mint.to_string(),
+                new_value: allowed_mint.to_string(),
+            });
+            self.config.allowed_mint = allowed_mint;
         }
 
         if let Some(split_bps) = new_treasury_split_bps {
@@ -79,6 +105,7 @@ impl<'info> UpdateConfig<'info> {
         }
 
         if let Some(grace_period) = new_grace_period_seconds {
+            require!(grace_period >= 0, ErrorCode::InvalidTimestamp);
             emit!(ConfigUpdated {
                 field: "grace_period_seconds".to_string(),
                 old_value: self.config.grace_period_seconds.to_string(),

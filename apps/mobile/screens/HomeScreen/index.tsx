@@ -11,7 +11,7 @@ import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
-import { useActivePledges } from '@/hooks/useSupabase';
+import { useActivePledges, useActivePledgeProgress } from '@/hooks/useSupabase';
 import {
   Title1,
   BodySecondary,
@@ -43,6 +43,7 @@ export const HomeScreen = () => {
     error,
     refetch,
   } = useActivePledges();
+  const { progressMap } = useActivePledgeProgress(pledges);
 
   const [viewMode, setViewMode] = useState<ViewMode>('tasks');
   const [focusCount, setFocusCount] = useState(0);
@@ -173,6 +174,7 @@ export const HomeScreen = () => {
                     <PledgeListItem
                       key={pledge.id}
                       pledge={pledge}
+                      completionProgress={progressMap.get(pledge.id) ?? 0}
                       onPress={() => handlePledgePress(pledge.id)}
                       animateKey={focusCount}
                     />

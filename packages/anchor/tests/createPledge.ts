@@ -17,7 +17,9 @@ import {
   UserContext,
   TEN_USDC,
   HUNDRED_USDC,
+  USDC_DECIMALS,
 } from "./utils/helpers";
+import { createMint } from "@solana/spl-token";
 
 describe("create_pledge", () => {
   let ctx: TestContext;
@@ -182,10 +184,11 @@ describe("create_pledge", () => {
   it("fails when program is paused", async () => {
     // First, pause the program
     await ctx.program.methods
-      .updateConfig(null, null, null, null, null, null, true)
+      .updateConfig(null, null, null, null, null, null, null, null, true)
       .accounts({
         admin: ctx.admin.publicKey,
         config: ctx.configPda,
+        systemProgram: SystemProgram.programId,
       })
       .signers([ctx.admin])
       .rpc();
@@ -226,12 +229,76 @@ describe("create_pledge", () => {
 
     // Unpause for other tests
     await ctx.program.methods
-      .updateConfig(null, null, null, null, null, null, false)
+      .updateConfig(null, null, null, null, null, null, null, null, false)
       .accounts({
         admin: ctx.admin.publicKey,
         config: ctx.configPda,
+        systemProgram: SystemProgram.programId,
       })
       .signers([ctx.admin])
       .rpc();
+  });
+
+  it("fails with wrong mint", async () => {
+    // Create a second (wrong) mint
+    const wrongMint = await createMint(
+      ctx.provider.connection,
+      ctx.admin,
+      ctx.admin.publicKey,
+      null,
+      USDC_DECIMALS
+    );
+
+    const user5 = await createTestUser(ctx, HUNDRED_USDC);
+
+    // Create a token account for the wrong mint and fund it
+    const { createAssociatedTokenAccount, mintTo } = await import("@solana/spl-token");
+    const wrongTokenAccount = await createAssociatedTokenAccount(
+      ctx.provider.connection,
+      ctx.admin,
+      wrongMint,
+      user5.keypair.publicKey
+    );
+    await mintTo(
+      ctx.provider.connection,
+      ctx.admin,
+      wrongMint,
+      wrongTokenAccount,
+      ctx.admin,
+      TEN_USDC
+    );
+
+    const currentTimestamp = await getCurrentTimestamp(ctx.provider.connection);
+    const createdAt = new anchor.BN(currentTimestamp);
+    const deadline = new anchor.BN(currentTimestamp + 3600);
+
+    const [pledgePda] = derivePledgePda(
+      ctx.program.programId,
+      user5.keypair.publicKey,
+      createdAt
+    );
+    const [vaultPda] = deriveVaultPda(ctx.program.programId, pledgePda);
+
+    try {
+      await ctx.program.methods
+        .createPledge(new anchor.BN(TEN_USDC), deadline, createdAt)
+        .accounts({
+          user: user5.keypair.publicKey,
+          config: ctx.configPda,
+          pledge: pledgePda,
+          vault: vaultPda,
+          userTokenAccount: wrongTokenAccount,
+          mint: wrongMint,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([user5.keypair])
+        .rpc();
+
+      expect.fail("Should have thrown InvalidMint error");
+    } catch (err) {
+      expect(err.message).to.include("InvalidMint");
+    }
   });
 });
