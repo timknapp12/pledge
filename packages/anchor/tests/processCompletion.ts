@@ -30,9 +30,8 @@ describe("process_completion", () => {
     ctx = await setupTestContext();
     await initializeConfig(ctx);
 
-    // Create a crank signer (permissionless)
-    crank = Keypair.generate();
-    await airdrop(ctx.provider.connection, crank.publicKey, 5 * anchor.web3.LAMPORTS_PER_SOL);
+    // Use authorized crank from config
+    crank = ctx.crankAuthority;
   });
 
   it("processes 100% completion - full refund, no fee", async () => {
@@ -370,6 +369,70 @@ describe("process_completion", () => {
       expect.fail("Should have thrown PledgeNotReported error");
     } catch (err) {
       expect(err.message).to.include("PledgeNotReported");
+    }
+  });
+
+  it("fails with unauthorized crank", async () => {
+    const user = await createTestUser(ctx, HUNDRED_USDC);
+    const currentTimestamp = await getCurrentTimestamp(ctx.provider.connection);
+    const createdAt = new anchor.BN(currentTimestamp);
+    const deadline = new anchor.BN(currentTimestamp + 2);
+
+    const [pledgePda] = derivePledgePda(
+      ctx.program.programId,
+      user.keypair.publicKey,
+      createdAt
+    );
+    const [vaultPda] = deriveVaultPda(ctx.program.programId, pledgePda);
+
+    await ctx.program.methods
+      .createPledge(new anchor.BN(TEN_USDC), deadline, createdAt)
+      .accounts({
+        user: user.keypair.publicKey,
+        pledge: pledgePda,
+        vault: vaultPda,
+        userTokenAccount: user.tokenAccount,
+        mint: ctx.usdcMint,
+      })
+      .signers([user.keypair])
+      .rpc();
+
+    await sleep(3000);
+
+    await ctx.program.methods
+      .reportCompletion(100)
+      .accounts({
+        user: user.keypair.publicKey,
+        pledge: pledgePda,
+      })
+      .signers([user.keypair])
+      .rpc();
+
+    const treasuryTokenAccount = await getTreasuryTokenAccount(ctx);
+    const charityTokenAccount = await getCharityTokenAccount(ctx);
+
+    // Use a random keypair as crank (not the authorized one)
+    const fakeCrank = Keypair.generate();
+    await airdrop(ctx.provider.connection, fakeCrank.publicKey, 1 * anchor.web3.LAMPORTS_PER_SOL);
+
+    try {
+      await ctx.program.methods
+        .processCompletion()
+        .accounts({
+          crank: fakeCrank.publicKey,
+          pledge: pledgePda,
+          vault: vaultPda,
+          user: user.keypair.publicKey,
+          userTokenAccount: user.tokenAccount,
+          treasuryTokenAccount,
+          charityTokenAccount,
+        })
+        .signers([fakeCrank])
+        .rpc();
+
+      expect.fail("Should have thrown Unauthorized error");
+    } catch (err) {
+      expect(err.message).to.include("Unauthorized");
     }
   });
 });

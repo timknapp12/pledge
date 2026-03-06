@@ -124,6 +124,69 @@ async function main() {
 
   console.log(`📍 Config PDA: ${configPda.toBase58()}`);
 
+  // --update mode: call update_config on existing config (handles realloc for new fields)
+  if (update) {
+    console.log('\n📝 Running update_config...');
+
+    if (!process.env.CRANK_AUTHORITY_PUBKEY) {
+      console.error('❌ CRANK_AUTHORITY_PUBKEY environment variable required');
+      process.exit(1);
+    }
+    const crankAuthority = new PublicKey(process.env.CRANK_AUTHORITY_PUBKEY);
+    const allowedMint = new PublicKey(USDC_MINTS[network]);
+
+    console.log(`   Setting crank_authority: ${crankAuthority.toBase58()}`);
+    console.log(`   Setting allowed_mint: ${allowedMint.toBase58()}`);
+
+    try {
+      const updateTx = await (program.methods as any)
+        .updateConfig(
+          null,              // treasury (unchanged)
+          null,              // charity (unchanged)
+          crankAuthority,    // crank_authority (new)
+          allowedMint,       // allowed_mint (new)
+          null,              // treasury_split_bps (unchanged)
+          null,              // partial_fee_bps (unchanged)
+          null,              // edit_penalty_bps (unchanged)
+          null,              // grace_period_seconds (unchanged)
+          null,              // paused (unchanged)
+        )
+        .accounts({
+          admin: adminKeypair.publicKey,
+          config: configPda,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([adminKeypair])
+        .rpc();
+
+      console.log(`\n✅ Config updated successfully!`);
+      console.log(`   Transaction: ${updateTx}`);
+      console.log(`   Explorer: https://explorer.solana.com/tx/${updateTx}?cluster=${network}`);
+
+      // Verify by fetching with the new layout
+      const updatedConfig = await (program.account as any).programConfig.fetch(configPda);
+      console.log(`\n📊 Updated config:`);
+      console.log(`   Admin: ${updatedConfig.admin.toBase58()}`);
+      console.log(`   Treasury: ${updatedConfig.treasury.toBase58()}`);
+      console.log(`   Charity: ${updatedConfig.charity.toBase58()}`);
+      console.log(`   Crank Authority: ${updatedConfig.crankAuthority.toBase58()}`);
+      console.log(`   Allowed Mint: ${updatedConfig.allowedMint.toBase58()}`);
+      console.log(`   Treasury Split: ${updatedConfig.treasurySplitBps / 100}%`);
+      console.log(`   Partial Fee: ${updatedConfig.partialFeeBps / 100}%`);
+      console.log(`   Edit Penalty: ${updatedConfig.editPenaltyBps / 100}%`);
+      console.log(`   Grace Period: ${updatedConfig.gracePeriodSeconds.toNumber() / 3600} hours`);
+      console.log(`   Paused: ${updatedConfig.paused}`);
+    } catch (err: any) {
+      console.error('\n❌ Update failed:', err.message);
+      if (err.logs) {
+        console.error('\nProgram logs:');
+        err.logs.forEach((log: string) => console.error(`   ${log}`));
+      }
+      process.exit(1);
+    }
+    return;
+  }
+
   // Check if already initialized
   try {
     const existingConfig = await (program.account as any).programConfig.fetch(configPda);
@@ -138,65 +201,9 @@ async function main() {
     console.log(`   Edit Penalty: ${existingConfig.editPenaltyBps / 100}%`);
     console.log(`   Grace Period: ${existingConfig.gracePeriodSeconds.toNumber() / 3600} hours`);
     console.log(`   Paused: ${existingConfig.paused}`);
-
-    if (!update) {
-      console.log('\n   Use --update to modify config fields.');
-      return;
-    }
-
-    // --update mode: call update_config with new values
-    console.log('\n📝 Running update_config...');
-
-    // Crank authority — required for update
-    if (!process.env.CRANK_AUTHORITY_PUBKEY) {
-      console.error('❌ CRANK_AUTHORITY_PUBKEY environment variable required');
-      process.exit(1);
-    }
-    const crankAuthority = new PublicKey(process.env.CRANK_AUTHORITY_PUBKEY);
-    const allowedMint = new PublicKey(USDC_MINTS[network]);
-
-    console.log(`   Setting crank_authority: ${crankAuthority.toBase58()}`);
-    console.log(`   Setting allowed_mint: ${allowedMint.toBase58()}`);
-
-    const updateTx = await (program.methods as any)
-      .updateConfig(
-        null,              // treasury (unchanged)
-        null,              // charity (unchanged)
-        crankAuthority,    // crank_authority (new)
-        allowedMint,       // allowed_mint (new)
-        null,              // treasury_split_bps (unchanged)
-        null,              // partial_fee_bps (unchanged)
-        null,              // edit_penalty_bps (unchanged)
-        null,              // grace_period_seconds (unchanged)
-        null,              // paused (unchanged)
-      )
-      .accounts({
-        admin: adminKeypair.publicKey,
-        config: configPda,
-        systemProgram: SystemProgram.programId,
-      })
-      .signers([adminKeypair])
-      .rpc();
-
-    console.log(`\n✅ Config updated successfully!`);
-    console.log(`   Transaction: ${updateTx}`);
-    console.log(`   Explorer: https://explorer.solana.com/tx/${updateTx}?cluster=${network}`);
-
-    // Verify
-    const updatedConfig = await (program.account as any).programConfig.fetch(configPda);
-    console.log(`\n📊 Updated config:`);
-    console.log(`   Crank Authority: ${updatedConfig.crankAuthority.toBase58()}`);
-    console.log(`   Allowed Mint: ${updatedConfig.allowedMint.toBase58()}`);
+    console.log('\n   Use --update to modify config fields.');
     return;
-  } catch (err: any) {
-    if (update) {
-      console.error('\n❌ Update failed:', err.message);
-      if (err.logs) {
-        console.error('\nProgram logs:');
-        err.logs.forEach((log: string) => console.error(`   ${log}`));
-      }
-      process.exit(1);
-    }
+  } catch {
     // Config doesn't exist - proceed with initialization
     console.log('📝 Config not found, proceeding with initialization...');
   }
