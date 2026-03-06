@@ -18,6 +18,7 @@ import nacl from 'tweetnacl';
 import bs58 from 'bs58';
 import * as Localization from 'expo-localization';
 import { useQueryClient } from '@tanstack/react-query';
+import Constants from 'expo-constants';
 import {
   createAuthenticatedClient,
   getStoredAuthToken,
@@ -27,6 +28,18 @@ import {
   supabaseAnon,
 } from '../lib/supabase';
 import { queryKeys } from '@/hooks/queryKeys';
+
+// Read cluster from app.config.ts (set based on DEPLOY_ENVIRONMENT)
+type SolanaCluster = 'devnet' | 'testnet' | 'mainnet-beta';
+const VALID_CLUSTERS: SolanaCluster[] = ['devnet', 'testnet', 'mainnet-beta'];
+const rawCluster = Constants.expoConfig?.extra?.solanaNetwork as string | undefined;
+if (!rawCluster || !VALID_CLUSTERS.includes(rawCluster as SolanaCluster)) {
+  throw new Error(
+    `Invalid or missing solanaNetwork in app.config.ts extra: "${rawCluster}". ` +
+    'Must be one of: devnet, testnet, mainnet-beta.',
+  );
+}
+const solanaCluster = rawCluster as SolanaCluster;
 
 // App identity for MWA
 const APP_IDENTITY = {
@@ -189,7 +202,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await transact(async (wallet: Web3MobileWallet) => {
         // Step 1: Authorize with wallet
         const authResult = await wallet.authorize({
-          cluster: 'devnet', // Change to 'mainnet-beta' for production
+          cluster: solanaCluster,
           identity: APP_IDENTITY,
         });
 

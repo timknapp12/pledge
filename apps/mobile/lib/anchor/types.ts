@@ -47,6 +47,8 @@ export interface ProgramConfigAccount {
   admin: PublicKey;
   treasury: PublicKey;
   charity: PublicKey;
+  crankAuthority: PublicKey;
+  allowedMint: PublicKey;
   treasurySplitBps: number;
   partialFeeBps: number;
   editPenaltyBps: number;
