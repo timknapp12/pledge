@@ -76,6 +76,9 @@ impl<'info> CreatePledge<'info> {
         require!(stake_amount > 0, ErrorCode::InvalidStakeAmount);
         require!(deadline > created_at, ErrorCode::InvalidDeadline);
 
+        // Validate mint is the allowed token (USDC)
+        require!(self.mint.key() == self.config.allowed_mint, ErrorCode::InvalidMint);
+
         // Transfer tokens from user to vault
         let transfer_ctx = CpiContext::new(
             self.token_program.to_account_info(),

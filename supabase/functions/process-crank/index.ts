@@ -76,6 +76,7 @@ const getAta = (owner: PublicKey, mint: PublicKey): PublicKey =>
 // --- On-chain account deserialization ---
 // ProgramConfig layout (after 8-byte discriminator):
 //   admin: pubkey(32), treasury: pubkey(32), charity: pubkey(32),
+//   crank_authority: pubkey(32), allowed_mint: pubkey(32),
 //   treasury_split_bps: u16, partial_fee_bps: u16, edit_penalty_bps: u16,
 //   grace_period_seconds: i64, paused: bool, bump: u8
 function deserializeConfig(data: Uint8Array): { treasury: PublicKey; charity: PublicKey } {
@@ -201,6 +202,16 @@ Deno.serve(async (req) => {
   try {
     if (req.method !== 'POST') {
       return new Response('Method not allowed', { status: 405 });
+    }
+
+    // Verify shared secret (if FUNCTION_SECRET is set)
+    const functionSecret = Deno.env.get('FUNCTION_SECRET');
+    if (functionSecret) {
+      const authHeader = req.headers.get('Authorization');
+      const providedSecret = authHeader?.replace('Bearer ', '');
+      if (providedSecret !== functionSecret) {
+        return new Response('Unauthorized', { status: 401 });
+      }
     }
 
     // --- Initialize clients ---

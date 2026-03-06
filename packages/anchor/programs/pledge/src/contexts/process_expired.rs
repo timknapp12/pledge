@@ -8,12 +8,16 @@ use crate::utils::fees::{calculate_partial_refund, calculate_split};
 
 #[derive(Accounts)]
 pub struct ProcessExpired<'info> {
-    /// Any signer can be the crank - permissionless
+    /// Authorized crank signer
+    #[account(
+        constraint = crank.key() == config.crank_authority @ ErrorCode::Unauthorized
+    )]
     pub crank: Signer<'info>,
 
     #[account(
         seeds = [CONFIG_SEED],
-        bump = config.bump
+        bump = config.bump,
+        constraint = !config.paused @ ErrorCode::ProgramPaused
     )]
     pub config: Account<'info, ProgramConfig>,
 
@@ -63,6 +67,12 @@ pub struct ProcessExpired<'info> {
 impl<'info> ProcessExpired<'info> {
     pub fn process_expired(&mut self, completion_percentage: u8) -> Result<()> {
         let clock = Clock::get()?;
+
+        // Reject if user already reported (use process_completion instead)
+        require!(
+            self.pledge.completion_percentage.is_none(),
+            ErrorCode::AlreadyReported
+        );
 
         // Validate grace period has ended
         let grace_period_end = self

@@ -2,13 +2,14 @@
  * Initialize the Pledge program on devnet or mainnet
  *
  * Usage:
- *   npx ts-node scripts/initialize-program.ts --network devnet
- *   npx ts-node scripts/initialize-program.ts --network mainnet
+ *   CRANK_AUTHORITY_PUBKEY=6F1zq... npx ts-node scripts/initialize-program.ts --network devnet
+ *   CRANK_AUTHORITY_PUBKEY=<mainnet-crank> npx ts-node scripts/initialize-program.ts --network mainnet
  *
  * Environment variables (or use defaults):
  *   ADMIN_KEYPAIR_PATH: Path to admin keypair JSON file
  *   TREASURY_PUBKEY: Treasury wallet address (defaults to admin)
  *   CHARITY_PUBKEY: Charity wallet address (defaults to admin)
+ *   CRANK_AUTHORITY_PUBKEY: Crank wallet address (required — no default)
  */
 
 import * as anchor from '@coral-xyz/anchor';
@@ -24,6 +25,13 @@ const DEFAULT_PARTIAL_FEE_BPS = 100; // 1%
 const DEFAULT_EDIT_PENALTY_BPS = 1000; // 10%
 const DEFAULT_GRACE_PERIOD = 86400; // 1 day in seconds
 
+// USDC mint addresses per network
+const USDC_MINTS: Record<string, string> = {
+  devnet: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+  mainnet: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+  localnet: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU', // use devnet mint for local
+};
+
 // RPC endpoints
 const RPC_ENDPOINTS: Record<string, string> = {
   devnet: `https://devnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY || ''}`,
@@ -35,12 +43,12 @@ const RPC_ENDPOINTS: Record<string, string> = {
 const PROGRAM_ID = new PublicKey('PLDG12YsnCxRHa9CkWDnzkA9vsbEFpThXHR9zgnDTDp');
 
 // Parse command line arguments
-function parseArgs(): { network: string } {
+function parseArgs(): { network: string; update: boolean } {
   const args = process.argv.slice(2);
   const networkIndex = args.indexOf('--network');
 
   if (networkIndex === -1 || !args[networkIndex + 1]) {
-    console.error('Usage: npx ts-node scripts/initialize-program.ts --network <devnet|mainnet|localnet>');
+    console.error('Usage: npx ts-node scripts/initialize-program.ts --network <devnet|mainnet|localnet> [--update]');
     process.exit(1);
   }
 
@@ -50,11 +58,13 @@ function parseArgs(): { network: string } {
     process.exit(1);
   }
 
-  return { network };
+  const update = args.includes('--update');
+
+  return { network, update };
 }
 
 async function main() {
-  const { network } = parseArgs();
+  const { network, update } = parseArgs();
 
   console.log(`\n🚀 Initializing Pledge program on ${network.toUpperCase()}\n`);
 
@@ -121,13 +131,72 @@ async function main() {
     console.log(`   Admin: ${existingConfig.admin.toBase58()}`);
     console.log(`   Treasury: ${existingConfig.treasury.toBase58()}`);
     console.log(`   Charity: ${existingConfig.charity.toBase58()}`);
+    console.log(`   Crank Authority: ${existingConfig.crankAuthority?.toBase58() ?? 'not set'}`);
+    console.log(`   Allowed Mint: ${existingConfig.allowedMint?.toBase58() ?? 'not set'}`);
     console.log(`   Treasury Split: ${existingConfig.treasurySplitBps / 100}%`);
     console.log(`   Partial Fee: ${existingConfig.partialFeeBps / 100}%`);
     console.log(`   Edit Penalty: ${existingConfig.editPenaltyBps / 100}%`);
     console.log(`   Grace Period: ${existingConfig.gracePeriodSeconds.toNumber() / 3600} hours`);
     console.log(`   Paused: ${existingConfig.paused}`);
+
+    if (!update) {
+      console.log('\n   Use --update to modify config fields.');
+      return;
+    }
+
+    // --update mode: call update_config with new values
+    console.log('\n📝 Running update_config...');
+
+    // Crank authority — required for update
+    if (!process.env.CRANK_AUTHORITY_PUBKEY) {
+      console.error('❌ CRANK_AUTHORITY_PUBKEY environment variable required');
+      process.exit(1);
+    }
+    const crankAuthority = new PublicKey(process.env.CRANK_AUTHORITY_PUBKEY);
+    const allowedMint = new PublicKey(USDC_MINTS[network]);
+
+    console.log(`   Setting crank_authority: ${crankAuthority.toBase58()}`);
+    console.log(`   Setting allowed_mint: ${allowedMint.toBase58()}`);
+
+    const updateTx = await (program.methods as any)
+      .updateConfig(
+        null,              // treasury (unchanged)
+        null,              // charity (unchanged)
+        crankAuthority,    // crank_authority (new)
+        allowedMint,       // allowed_mint (new)
+        null,              // treasury_split_bps (unchanged)
+        null,              // partial_fee_bps (unchanged)
+        null,              // edit_penalty_bps (unchanged)
+        null,              // grace_period_seconds (unchanged)
+        null,              // paused (unchanged)
+      )
+      .accounts({
+        admin: adminKeypair.publicKey,
+        config: configPda,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([adminKeypair])
+      .rpc();
+
+    console.log(`\n✅ Config updated successfully!`);
+    console.log(`   Transaction: ${updateTx}`);
+    console.log(`   Explorer: https://explorer.solana.com/tx/${updateTx}?cluster=${network}`);
+
+    // Verify
+    const updatedConfig = await (program.account as any).programConfig.fetch(configPda);
+    console.log(`\n📊 Updated config:`);
+    console.log(`   Crank Authority: ${updatedConfig.crankAuthority.toBase58()}`);
+    console.log(`   Allowed Mint: ${updatedConfig.allowedMint.toBase58()}`);
     return;
-  } catch {
+  } catch (err: any) {
+    if (update) {
+      console.error('\n❌ Update failed:', err.message);
+      if (err.logs) {
+        console.error('\nProgram logs:');
+        err.logs.forEach((log: string) => console.error(`   ${log}`));
+      }
+      process.exit(1);
+    }
     // Config doesn't exist - proceed with initialization
     console.log('📝 Config not found, proceeding with initialization...');
   }
@@ -141,9 +210,22 @@ async function main() {
     ? new PublicKey(process.env.CHARITY_PUBKEY)
     : adminKeypair.publicKey;
 
+  // Crank authority — required, no default
+  if (!process.env.CRANK_AUTHORITY_PUBKEY) {
+    console.error('❌ CRANK_AUTHORITY_PUBKEY environment variable required');
+    console.error('   This is the public key of the wallet that runs the crank service.');
+    process.exit(1);
+  }
+  const crankAuthority = new PublicKey(process.env.CRANK_AUTHORITY_PUBKEY);
+
+  // USDC mint for this network
+  const allowedMint = new PublicKey(USDC_MINTS[network]);
+
   console.log(`\n📊 Configuration:`);
   console.log(`   Treasury: ${treasuryPubkey.toBase58()}`);
   console.log(`   Charity: ${charityPubkey.toBase58()}`);
+  console.log(`   Crank Authority: ${crankAuthority.toBase58()}`);
+  console.log(`   Allowed Mint (USDC): ${allowedMint.toBase58()}`);
   console.log(`   Treasury Split: ${DEFAULT_TREASURY_SPLIT_BPS / 100}%`);
   console.log(`   Partial Fee: ${DEFAULT_PARTIAL_FEE_BPS / 100}%`);
   console.log(`   Edit Penalty: ${DEFAULT_EDIT_PENALTY_BPS / 100}%`);
@@ -157,6 +239,8 @@ async function main() {
       .initialize(
         treasuryPubkey,
         charityPubkey,
+        crankAuthority,
+        allowedMint,
         DEFAULT_TREASURY_SPLIT_BPS,
         DEFAULT_PARTIAL_FEE_BPS,
         DEFAULT_EDIT_PENALTY_BPS,
