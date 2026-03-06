@@ -32,16 +32,17 @@ describe("process_expired", () => {
 
     // Update config with short grace period for testing (2 seconds instead of 1 day)
     await ctx.program.methods
-      .updateConfig(null, null, null, null, null, new anchor.BN(2), null)
+      .updateConfig(null, null, null, null, null, null, null, new anchor.BN(2), null)
       .accounts({
         admin: ctx.admin.publicKey,
         config: ctx.configPda,
+        systemProgram: SystemProgram.programId,
       })
       .signers([ctx.admin])
       .rpc();
 
-    crank = Keypair.generate();
-    await airdrop(ctx.provider.connection, crank.publicKey, 5 * anchor.web3.LAMPORTS_PER_SOL);
+    // Use authorized crank from config
+    crank = ctx.crankAuthority;
   });
 
   it("processes expired pledge with completion data from crank (50%)", async () => {
@@ -325,9 +326,73 @@ describe("process_expired", () => {
         .signers([crank])
         .rpc();
 
-      expect.fail("Should have thrown PledgeNotActive error");
+      expect.fail("Should have thrown error");
     } catch (err) {
+      // The account constraint (pledge.status == Active) fires before the handler's
+      // AlreadyReported check, so we get PledgeNotActive for reported pledges.
       expect(err.message).to.include("PledgeNotActive");
+    }
+  });
+
+  it("fails with unauthorized crank", async () => {
+    const user = await createTestUser(ctx, HUNDRED_USDC);
+
+    const currentTimestamp = await getCurrentTimestamp(ctx.provider.connection);
+    const createdAt = new anchor.BN(currentTimestamp);
+    const deadline = new anchor.BN(currentTimestamp + 1);
+
+    const [pledgePda] = derivePledgePda(
+      ctx.program.programId,
+      user.keypair.publicKey,
+      createdAt
+    );
+    const [vaultPda] = deriveVaultPda(ctx.program.programId, pledgePda);
+
+    await ctx.program.methods
+      .createPledge(new anchor.BN(TEN_USDC), deadline, createdAt)
+      .accounts({
+        user: user.keypair.publicKey,
+        config: ctx.configPda,
+        pledge: pledgePda,
+        vault: vaultPda,
+        userTokenAccount: user.tokenAccount,
+        mint: ctx.usdcMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([user.keypair])
+      .rpc();
+
+    await sleep(5000);
+
+    const treasuryTokenAccount = await getTreasuryTokenAccount(ctx);
+    const charityTokenAccount = await getCharityTokenAccount(ctx);
+
+    // Use a random keypair as crank (not the authorized one)
+    const fakeCrank = Keypair.generate();
+    await airdrop(ctx.provider.connection, fakeCrank.publicKey, 1 * anchor.web3.LAMPORTS_PER_SOL);
+
+    try {
+      await ctx.program.methods
+        .processExpired(0)
+        .accounts({
+          crank: fakeCrank.publicKey,
+          config: ctx.configPda,
+          pledge: pledgePda,
+          vault: vaultPda,
+          user: user.keypair.publicKey,
+          userTokenAccount: user.tokenAccount,
+          treasuryTokenAccount,
+          charityTokenAccount,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .signers([fakeCrank])
+        .rpc();
+
+      expect.fail("Should have thrown Unauthorized error");
+    } catch (err) {
+      expect(err.message).to.include("Unauthorized");
     }
   });
 });

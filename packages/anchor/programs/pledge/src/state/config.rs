@@ -5,14 +5,15 @@ pub struct ProgramConfig {
     pub admin: Pubkey,             // Program admin (can update config)
     pub treasury: Pubkey,          // Treasury wallet (receives forfeitures)
     pub charity: Pubkey,           // Charity wallet (receives forfeitures)
-    pub crank_authority: Pubkey,   // Authorized crank keypair
-    pub allowed_mint: Pubkey,      // Allowed token mint (USDC)
     pub treasury_split_bps: u16,   // Treasury % of forfeitures (7000 = 70%)
     pub partial_fee_bps: u16,      // Fee on partial completions (100 = 1%)
     pub edit_penalty_bps: u16,     // Penalty for editing (1000 = 10%)
     pub grace_period_seconds: i64, // Grace period after deadline (86400 = 1 day)
     pub paused: bool,              // Emergency pause flag
     pub bump: u8,
+    // New fields appended at end for realloc compatibility
+    pub crank_authority: Pubkey,   // Authorized crank keypair
+    pub allowed_mint: Pubkey,      // Allowed token mint (USDC)
 }
 
 impl ProgramConfig {
@@ -20,14 +21,14 @@ impl ProgramConfig {
         32 +    // admin
         32 +    // treasury
         32 +    // charity
-        32 +    // crank_authority
-        32 +    // allowed_mint
         2 +     // treasury_split_bps
         2 +     // partial_fee_bps
         2 +     // edit_penalty_bps
         8 +     // grace_period_seconds
         1 +     // paused
-        1; // bump
+        1 +     // bump
+        32 +    // crank_authority (appended for realloc compat)
+        32;     // allowed_mint (appended for realloc compat)
 }
 
 #[event]
