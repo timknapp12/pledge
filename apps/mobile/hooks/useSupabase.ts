@@ -208,6 +208,51 @@ export const useActivePledges = () => {
   };
 }
 
+// Fetch completion progress for all active pledges in one query
+export const useActivePledgeProgress = (pledges: Pledge[] | undefined) => {
+  const { supabase, walletAddress } = useAuth();
+  const pledgeIds = pledges?.map((p) => p.id) ?? [];
+
+  const progressQuery = useQuery({
+    queryKey: queryKeys.allActivePledgeProgress(walletAddress ?? '', pledgeIds),
+    queryFn: async (): Promise<DailyProgress[]> => {
+      if (!walletAddress || pledgeIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from('daily_progress')
+        .select('*')
+        .in('pledge_id', pledgeIds);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!walletAddress && pledgeIds.length > 0,
+  });
+
+  // Build a map of pledgeId -> completion percentage
+  const progressMap = new Map<string, number>();
+  if (pledges && progressQuery.data) {
+    const progressByPledge = new Map<string, DailyProgress[]>();
+    for (const row of progressQuery.data) {
+      const arr = progressByPledge.get(row.pledge_id) ?? [];
+      arr.push(row);
+      progressByPledge.set(row.pledge_id, arr);
+    }
+    for (const pledge of pledges) {
+      const dp = progressByPledge.get(pledge.id) ?? [];
+      progressMap.set(
+        pledge.id,
+        calculateCompletionPercentage(
+          pledge.todos,
+          dp,
+          new Date(pledge.start_date),
+          new Date(pledge.end_date),
+        ),
+      );
+    }
+  }
+
+  return { ...progressQuery, progressMap };
+};
+
 // Fetch a single pledge with its daily progress
 export const usePledge = (pledgeId: string | null) => {
   const { supabase, walletAddress } = useAuth();
@@ -327,6 +372,10 @@ export const useUpdateDailyProgress = () => {
       // Also invalidate the all-pledges daily progress cache (HomeScreen tasks view)
       queryClient.invalidateQueries({
         queryKey: ['allDailyProgress'],
+      });
+      // Invalidate active pledge progress (HomeScreen pledge cards)
+      queryClient.invalidateQueries({
+        queryKey: ['allActivePledgeProgress'],
       });
     },
   });

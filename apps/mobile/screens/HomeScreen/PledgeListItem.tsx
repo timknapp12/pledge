@@ -52,36 +52,19 @@ function formatDeadline(deadline: string, t: (key: string) => string): string {
 
 export interface PledgeListItemProps {
   pledge: Pledge;
+  completionProgress: number;
   onPress: () => void;
   animateKey?: number;
 }
 
 export const PledgeListItem = ({
   pledge,
+  completionProgress,
   onPress,
   animateKey,
 }: PledgeListItemProps) => {
   const { t } = useTranslation();
   const { theme } = useAppTheme();
-
-  // Calculate progress based on time elapsed
-  const startDate = new Date(pledge.start_date);
-  const endDate = new Date(pledge.deadline);
-  const now = new Date();
-  const totalDays = Math.max(
-    1,
-    Math.ceil(
-      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
-    ),
-  );
-  const elapsedDays = Math.max(
-    0,
-    Math.ceil((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)),
-  );
-  const timeProgress = Math.min(
-    100,
-    Math.round((elapsedDays / totalDays) * 100),
-  );
 
   return (
     <Pressable onPress={onPress}>
@@ -120,7 +103,7 @@ export const PledgeListItem = ({
         </Row>
 
         <ProgressBar
-          progress={timeProgress}
+          progress={completionProgress}
           height={6}
           style={{ marginTop: 12 }}
           animateKey={animateKey}

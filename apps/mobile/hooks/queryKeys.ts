@@ -8,5 +8,7 @@ export const queryKeys = {
     ['dailyProgress', pledgeId, date] as const,
   allDailyProgress: (walletAddress: string, date: string) =>
     ['allDailyProgress', walletAddress, date] as const,
+  allActivePledgeProgress: (walletAddress: string, pledgeIds: string[]) =>
+    ['allActivePledgeProgress', walletAddress, ...pledgeIds] as const,
   templates: (walletAddress: string) => ['templates', walletAddress] as const,
 };
