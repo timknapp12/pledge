@@ -47,14 +47,14 @@ export interface ProgramConfigAccount {
   admin: PublicKey;
   treasury: PublicKey;
   charity: PublicKey;
-  crankAuthority: PublicKey;
-  allowedMint: PublicKey;
   treasurySplitBps: number;
   partialFeeBps: number;
   editPenaltyBps: number;
   gracePeriodSeconds: BN;
   paused: boolean;
   bump: number;
+  crankAuthority: PublicKey;
+  allowedMint: PublicKey;
 }
 
 // Args for createPledge instruction
