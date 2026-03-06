@@ -76,9 +76,9 @@ const getAta = (owner: PublicKey, mint: PublicKey): PublicKey =>
 // --- On-chain account deserialization ---
 // ProgramConfig layout (after 8-byte discriminator):
 //   admin: pubkey(32), treasury: pubkey(32), charity: pubkey(32),
-//   crank_authority: pubkey(32), allowed_mint: pubkey(32),
 //   treasury_split_bps: u16, partial_fee_bps: u16, edit_penalty_bps: u16,
-//   grace_period_seconds: i64, paused: bool, bump: u8
+//   grace_period_seconds: i64, paused: bool, bump: u8,
+//   crank_authority: pubkey(32), allowed_mint: pubkey(32)
 function deserializeConfig(data: Uint8Array): { treasury: PublicKey; charity: PublicKey } {
   // Skip 8-byte discriminator + 32-byte admin
   const treasury = readPublicKey(data, 8 + 32);       // offset 40
