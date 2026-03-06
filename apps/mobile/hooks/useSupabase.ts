@@ -133,6 +133,7 @@ export interface Pledge {
   todos: PledgeTodos;
   status: 'Active' | 'Reported' | 'Completed' | 'Forfeited';
   completion_percentage: number | null;
+  settle_tx_signature: string | null;
   points_earned: number | null;
   reminder_settings: ReminderSettings | null;
   created_at: string;
