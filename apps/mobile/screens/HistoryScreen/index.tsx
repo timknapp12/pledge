@@ -16,7 +16,11 @@ import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePledges, formatUsdcAmount, getEffectiveStatus } from '@/hooks/useSupabase';
+import {
+  usePledges,
+  formatUsdcAmount,
+  getEffectiveStatus,
+} from '@/hooks/useSupabase';
 import { getAnimatedDisplayLamports } from '@/lib/animatedAmount';
 import {
   Title1,
@@ -62,13 +66,27 @@ export const HistoryScreen = () => {
   // Calculate stats
   const totalPledged =
     allPledges?.reduce((sum, p) => sum + p.stake_amount, 0) || 0;
-  const completedPledges =
-    allPledges?.filter((p) => getEffectiveStatus(p) === 'Completed') || [];
-  const settledPledges = allPledges?.filter((p) => getEffectiveStatus(p) !== 'Active') || [];
-  const successRate =
-    settledPledges.length > 0
-      ? Math.round((completedPledges.length / settledPledges.length) * 100)
+  // Avg completion across settled pledges with a recorded percentage
+  const settledWithPct = pastPledges.filter(
+    (p) => p.completion_percentage !== null,
+  );
+  const avgCompletion =
+    settledWithPct.length > 0
+      ? Math.round(
+          settledWithPct.reduce((sum, p) => sum + p.completion_percentage!, 0) /
+            settledWithPct.length,
+        )
       : 0;
+
+  // Consecutive 100% completions from most recent
+  const sortedSettled = [...pastPledges].sort(
+    (a, b) => new Date(b.deadline).getTime() - new Date(a.deadline).getTime(),
+  );
+  let perfectStreak = 0;
+  for (const p of sortedSettled) {
+    if (p.completion_percentage === 100) perfectStreak++;
+    else break;
+  }
 
   const [focusCount, setFocusCount] = useState(0);
   const [displayPledged, setDisplayPledged] = useState(0);
@@ -178,25 +196,10 @@ export const HistoryScreen = () => {
                       color={theme.colors.accent}
                     />
                   </Card>
-                  <Card
-                    style={{
-                      width: '100%',
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <Column gap={4} width='auto'>
-                      <Title3 style={{ color: theme.colors.primary }}>
-                        ({completedPledges.length}/{settledPledges.length})
-                      </Title3>
-                      <BodySmallSecondary>
-                        {t('Success Rate')}
-                      </BodySmallSecondary>
-                    </Column>
-                    {successRate > 0 && (
+                  <Row gap={8} width='100%'>
+                    <Card style={localStyles.statCard}>
                       <AnimatedCircularProgress
-                        progress={successRate}
+                        progress={avgCompletion}
                         size={66}
                         strokeWidth={5}
                         showPercentage
@@ -204,8 +207,25 @@ export const HistoryScreen = () => {
                         color={theme.colors.accent}
                         textColor={theme.colors.text}
                       />
-                    )}
-                  </Card>
+                      <BodySmallSecondary>
+                        {t('Avg Completion')}
+                      </BodySmallSecondary>
+                    </Card>
+                    <Card style={localStyles.statCard}>
+                      <AnimatedCircularProgress
+                        progress={perfectStreak > 0 ? 100 : 0}
+                        size={66}
+                        strokeWidth={5}
+                        customText={`${perfectStreak}`}
+                        animateKey={focusCount}
+                        color={theme.colors.accent}
+                        textColor={theme.colors.text}
+                      />
+                      <BodySmallSecondary>
+                        {t('Perfect Streak')}
+                      </BodySmallSecondary>
+                    </Card>
+                  </Row>
                 </CenteredColumn>
               </Column>
 
@@ -253,6 +273,12 @@ export const HistoryScreen = () => {
 const localStyles = StyleSheet.create({
   sectionHeader: {
     paddingHorizontal: 20,
+  },
+  statCard: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 8,
+    padding: 8,
   },
   contentContainer: {
     paddingBottom: 100,
