@@ -4,34 +4,34 @@
  * Called on app launch and after network reconnection.
  * On-chain is source of truth for: status, stake_amount, deadline
  * Supabase is source of truth for: name, todos, daily_progress
+ *
+ * NOTE: Status sync is now primarily handled by the Helius webhook indexer.
+ * Reconciliation is a fallback that catches metadata gaps (pledges that
+ * exist on-chain but are missing from DB).
  */
 
 import { PublicKey } from '@solana/web3.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { fetchUserPledges, ParsedPledge, PledgeStatus } from '../anchor';
-import {
-  getPendingOperations,
-  removeFromQueue,
-  incrementAttempts,
-} from './queue';
-import {
-  PendingSyncOp,
-  CreatePledgeSyncData,
-  ReportCompletionSyncData,
-  EditPledgeSyncData,
-  ReconciliationResult,
-} from './types';
+export interface ReconciliationResult {
+  processedQueueItems: number;
+  createdInDb: number;
+  updatedInDb: number;
+  errors: string[];
+}
 
 /**
  * Main reconciliation function - call on app launch and network reconnection.
  *
- * 1. Process any pending sync operations (failed DB writes)
- * 2. Fetch on-chain pledges for user
- * 3. Compare with DB and fix discrepancies
+ * 1. Fetch on-chain pledges for user
+ * 2. Compare with DB and fix discrepancies
+ *
+ * The indexer handles status sync, so reconciliation focuses on
+ * ensuring every on-chain pledge has a DB record.
  */
 export const reconcileUserPledges = async (
   supabase: SupabaseClient,
-  walletAddress: string
+  walletAddress: string,
 ): Promise<ReconciliationResult> => {
   const result: ReconciliationResult = {
     processedQueueItems: 0,
@@ -41,16 +41,11 @@ export const reconcileUserPledges = async (
   };
 
   try {
-    // 1. Process pending sync queue first
-    const queueResult = await processPendingSyncQueue(supabase);
-    result.processedQueueItems = queueResult.processed;
-    result.errors.push(...queueResult.errors);
-
-    // 2. Fetch on-chain pledges
+    // 1. Fetch on-chain pledges
     const userPubkey = new PublicKey(walletAddress);
     const onChainPledges = await fetchUserPledges(userPubkey);
 
-    // 3. Fetch DB pledges
+    // 2. Fetch DB pledges
     const { data: dbPledges, error: dbError } = await supabase
       .from('pledges')
       .select('id, on_chain_address, status, stake_amount, deadline')
@@ -63,21 +58,21 @@ export const reconcileUserPledges = async (
 
     // Create map for quick lookup
     const dbPledgeMap = new Map(
-      (dbPledges || []).map((p) => [p.on_chain_address, p])
+      (dbPledges || []).map((p) => [p.on_chain_address, p]),
     );
 
-    // 4. Reconcile differences
+    // 3. Reconcile differences
     for (const onChain of onChainPledges) {
       const address = onChain.address.toBase58();
       const dbRecord = dbPledgeMap.get(address);
 
       if (!dbRecord) {
-        // On-chain exists but not in DB - create minimal record
-        // Note: We lose metadata (name, todos) since it's not stored on-chain
+        // On-chain exists but not in DB — create minimal record.
+        // The indexer usually handles this, but this is a fallback.
         const createResult = await createRecoveredPledge(
           supabase,
           walletAddress,
-          onChain
+          onChain,
         );
         if (createResult.success) {
           result.createdInDb++;
@@ -85,13 +80,13 @@ export const reconcileUserPledges = async (
           result.errors.push(createResult.error!);
         }
       } else {
-        // Both exist - check if status needs sync
+        // Both exist — check if status needs sync (fallback for indexer)
         const onChainStatus = onChain.status;
         if (dbRecord.status !== onChainStatus) {
           const updateResult = await updatePledgeStatus(
             supabase,
             address,
-            onChainStatus
+            onChainStatus,
           );
           if (updateResult.success) {
             result.updatedInDb++;
@@ -113,146 +108,6 @@ export const reconcileUserPledges = async (
 };
 
 /**
- * Process all pending sync operations from the queue
- */
-async function processPendingSyncQueue(
-  supabase: SupabaseClient
-): Promise<{ processed: number; errors: string[] }> {
-  const queue = await getPendingOperations();
-  const errors: string[] = [];
-  let processed = 0;
-
-  for (const op of queue) {
-    try {
-      let success = false;
-
-      switch (op.type) {
-        case 'CREATE_PLEDGE':
-          success = await processCreatePledgeOp(supabase, op);
-          break;
-        case 'REPORT_COMPLETION':
-          success = await processReportCompletionOp(supabase, op);
-          break;
-        case 'EDIT_PLEDGE':
-          success = await processEditPledgeOp(supabase, op);
-          break;
-      }
-
-      if (success) {
-        await removeFromQueue(op.id);
-        processed++;
-      } else {
-        await incrementAttempts(op.id);
-      }
-    } catch (err: any) {
-      errors.push(`Failed to process ${op.type}: ${err.message}`);
-      await incrementAttempts(op.id);
-    }
-  }
-
-  return { processed, errors };
-}
-
-/**
- * Process a CREATE_PLEDGE operation from the queue
- */
-async function processCreatePledgeOp(
-  supabase: SupabaseClient,
-  op: PendingSyncOp
-): Promise<boolean> {
-  const data = op.data as unknown as CreatePledgeSyncData;
-
-  const { error } = await supabase.from('pledges').insert({
-    on_chain_address: data.onChainAddress,
-    wallet_address: data.walletAddress,
-    name: data.name,
-    stake_amount: data.stakeAmount,
-    deadline: data.deadline,
-    todos: data.todos,
-    timeframe_type: data.timeframeType,
-    start_date: data.startDate,
-    status: 'active',
-    created_at: data.createdAt,
-  });
-
-  if (error) {
-    // Check if it's a duplicate (already synced somehow)
-    if (error.code === '23505') {
-      // Unique violation - already exists, consider it success
-      return true;
-    }
-    if (__DEV__) {
-      console.error('[Sync Queue] CREATE_PLEDGE failed:', error);
-    }
-    return false;
-  }
-
-  return true;
-}
-
-/**
- * Process a REPORT_COMPLETION operation from the queue
- */
-async function processReportCompletionOp(
-  supabase: SupabaseClient,
-  op: PendingSyncOp
-): Promise<boolean> {
-  const data = op.data as unknown as ReportCompletionSyncData;
-
-  const { error } = await supabase
-    .from('pledges')
-    .update({
-      status: 'reported',
-      completion_percentage: data.completionPercentage,
-      reported_at: data.reportedAt,
-    })
-    .eq('on_chain_address', data.onChainAddress);
-
-  if (error) {
-    if (__DEV__) {
-      console.error('[Sync Queue] REPORT_COMPLETION failed:', error);
-    }
-    return false;
-  }
-
-  return true;
-}
-
-/**
- * Process an EDIT_PLEDGE operation from the queue
- */
-async function processEditPledgeOp(
-  supabase: SupabaseClient,
-  op: PendingSyncOp
-): Promise<boolean> {
-  const data = op.data as unknown as EditPledgeSyncData;
-
-  const updateData: Record<string, unknown> = {};
-  if (data.newDeadline) {
-    updateData.deadline = data.newDeadline;
-  }
-
-  if (Object.keys(updateData).length === 0) {
-    // Nothing to update
-    return true;
-  }
-
-  const { error } = await supabase
-    .from('pledges')
-    .update(updateData)
-    .eq('on_chain_address', data.onChainAddress);
-
-  if (error) {
-    if (__DEV__) {
-      console.error('[Sync Queue] EDIT_PLEDGE failed:', error);
-    }
-    return false;
-  }
-
-  return true;
-}
-
-/**
  * Create a "recovered" pledge in DB from on-chain data.
  * This is used when a pledge exists on-chain but not in DB.
  * Note: We lose metadata (name, todos) since they're not stored on-chain.
@@ -260,7 +115,7 @@ async function processEditPledgeOp(
 async function createRecoveredPledge(
   supabase: SupabaseClient,
   walletAddress: string,
-  onChain: ParsedPledge
+  onChain: ParsedPledge,
 ): Promise<{ success: boolean; error?: string }> {
   const { error } = await supabase.from('pledges').insert({
     on_chain_address: onChain.address.toBase58(),
@@ -288,7 +143,7 @@ async function createRecoveredPledge(
   if (__DEV__) {
     console.log(
       '[Reconcile] Created recovered pledge:',
-      onChain.address.toBase58()
+      onChain.address.toBase58(),
     );
   }
 
@@ -301,7 +156,7 @@ async function createRecoveredPledge(
 async function updatePledgeStatus(
   supabase: SupabaseClient,
   onChainAddress: string,
-  status: PledgeStatus
+  status: PledgeStatus,
 ): Promise<{ success: boolean; error?: string }> {
   const { error } = await supabase
     .from('pledges')
@@ -320,7 +175,7 @@ async function updatePledgeStatus(
       '[Reconcile] Updated pledge status:',
       onChainAddress,
       '->',
-      status
+      status,
     );
   }
 
