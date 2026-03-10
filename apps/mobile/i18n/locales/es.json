@@ -179,5 +179,18 @@
   "Stick": "Vara",
   "Choose how you want Pledge to speak to you": "Elige cómo quieres que Pledge te hable",
   "Encouraging & Positive: Hey! Time to crush your tasks today! You've got this!": "Motivador y Positivo: ¡Oye! ¡Es hora de completar tus tareas hoy! ¡Tú puedes!",
-  "Drill Sergeant: Hey loser! You have 3 hours left. Don't waste your money and your life!": "Sargento: ¡Oye perdedor! Te quedan 3 horas. ¡No desperdicies tu dinero y tu vida!"
+  "Drill Sergeant: Hey loser! You have 3 hours left. Don't waste your money and your life!": "Sargento: ¡Oye perdedor! Te quedan 3 horas. ¡No desperdicies tu dinero y tu vida!",
+  "FAQs": "Preguntas frecuentes",
+  "What happens to my USDC when I create a pledge?_carrot": "¿Qué pasa con mi USDC cuando creo un compromiso?",
+  "What happens to my USDC when I create a pledge?_stick": "¿Dónde va mi dinero?",
+  "Your USDC is transferred to a secure vault on the Solana blockchain. It stays there until you report your completion or the deadline passes. If you complete 100%, you get it all back with no fees._carrot": "Tu USDC se guarda en una bóveda segura en Solana. ¡Completa tu meta al 100% y recuperas todo sin comisiones! ¡Tú puedes!",
+  "Your USDC is transferred to a secure vault on the Solana blockchain. It stays there until you report your completion or the deadline passes. If you complete 100%, you get it all back with no fees._stick": "Tu dinero está bloqueado en una bóveda en Solana. Termina al 100% y lo recuperas. ¿Fallas? Adiós a tus tokens.",
+  "What if I only partially complete my goal?_carrot": "¿Qué pasa si solo completo parcialmente mi meta?",
+  "What if I only partially complete my goal?_stick": "¿Qué pasa si no termino todo?",
+  "You get back a proportional amount minus a 1% fee. For example, if you staked $10 and completed 50%, you get back $4.95 (50% minus 1% fee). The rest goes to the treasury and charity split._carrot": "Recuperas una cantidad proporcional menos una pequeña comisión del 1%. Por ejemplo, apuesta $10 y completa 50% — recibes $4.95. ¡El resto apoya a la comunidad!",
+  "You get back a proportional amount minus a 1% fee. For example, if you staked $10 and completed 50%, you get back $4.95 (50% minus 1% fee). The rest goes to the treasury and charity split._stick": "Pierdes lo que no ganaste. ¿Apostaste $10 e hiciste la mitad? Recibes $4.95. El resto se fue — donado a caridad. Debiste esforzarte más.",
+  "What happens if I forget to report?_carrot": "¿Qué pasa si olvido reportar?",
+  "What happens if I forget to report?_stick": "¿Qué pasa si soy demasiado flojo para reportar?",
+  "After your deadline plus a 24-hour grace period, our crank service will automatically process your pledge based on the tasks you checked off. So make sure to check off your tasks daily!_carrot": "¡No te preocupes! Después de tu fecha límite más 24 horas de gracia, liquidamos automáticamente tu compromiso según las tareas que marcaste. ¡Solo sigue marcando tus tareas diariamente!",
+  "After your deadline plus a 24-hour grace period, our crank service will automatically process your pledge based on the tasks you checked off. So make sure to check off your tasks daily!_stick": "El sistema lo liquida por ti después de 24 horas. Lo que marcaste es lo que cuenta. ¿No marcaste nada? Pérdida total. No seas flojo — márcalas."
 }

@@ -98,6 +98,10 @@ export const ProfileScreen = () => {
     router.push('/templates');
   };
 
+  const handleFAQ = () => {
+    router.push('/faq');
+  };
+
   const handleNotificationsToggle = useCallback(
     async (value: boolean) => {
       setIsTogglingNotifications(true);
@@ -238,6 +242,11 @@ export const ProfileScreen = () => {
                     switchValue={notificationsEnabled}
                     onSwitchChange={handleNotificationsToggle}
                     switchDisabled={isTogglingNotifications || isRegistering}
+                  />
+                  <SettingsItem
+                    icon='help-circle-outline'
+                    label={t('FAQs')}
+                    onPress={handleFAQ}
                     isLast
                   />
                 </Card>
