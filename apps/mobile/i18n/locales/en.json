@@ -179,5 +179,18 @@
   "Stick": "Stick",
   "Choose how you want Pledge to speak to you": "Choose how you want Pledge to speak to you",
   "Encouraging & Positive: Hey! Time to crush your tasks today! You've got this!": "Encouraging & Positive: Hey! Time to crush your tasks today! You've got this!",
-  "Drill Sergeant: Hey loser! You have 3 hours left. Don't waste your money and your life!": "Drill Sergeant: Hey loser! You have 3 hours left. Don't waste your money and your life!"
+  "Drill Sergeant: Hey loser! You have 3 hours left. Don't waste your money and your life!": "Drill Sergeant: Hey loser! You have 3 hours left. Don't waste your money and your life!",
+  "FAQs": "FAQs",
+  "What happens to my USDC when I create a pledge?_carrot": "What happens to my USDC when I create a pledge?",
+  "What happens to my USDC when I create a pledge?_stick": "Where does my money go?",
+  "Your USDC is transferred to a secure vault on the Solana blockchain. It stays there until you report your completion or the deadline passes. If you complete 100%, you get it all back with no fees._carrot": "Your USDC is safely stored in a vault on Solana. Complete your goal 100% and you get every penny back — no fees! You've got this!",
+  "Your USDC is transferred to a secure vault on the Solana blockchain. It stays there until you report your completion or the deadline passes. If you complete 100%, you get it all back with no fees._stick": "Your money is locked in a vault on Solana. Finish 100% and you get it back. Fail? Say goodbye to your tokens.",
+  "What if I only partially complete my goal?_carrot": "What if I only partially complete my goal?",
+  "What if I only partially complete my goal?_stick": "What if I slack off and don't finish?",
+  "You get back a proportional amount minus a 1% fee. For example, if you staked $10 and completed 50%, you get back $4.95 (50% minus 1% fee). The rest goes to the treasury and charity split._carrot": "You'll get back a proportional amount minus a small 1% fee. For example, stake $10 and complete 50% — you get $4.95 back. The rest supports the community!",
+  "You get back a proportional amount minus a 1% fee. For example, if you staked $10 and completed 50%, you get back $4.95 (50% minus 1% fee). The rest goes to the treasury and charity split._stick": "You lose what you didn't earn. Stake $10, do half the work? You get $4.95 back. The rest is gone — donated to charity. Should've tried harder.",
+  "What happens if I forget to report?_carrot": "What happens if I forget to report?",
+  "What happens if I forget to report?_stick": "What if I'm too lazy to report?",
+  "After your deadline plus a 24-hour grace period, our crank service will automatically process your pledge based on the tasks you checked off. So make sure to check off your tasks daily!_carrot": "No worries! After your deadline plus a 24-hour grace period, we'll automatically settle your pledge based on the tasks you checked off. Just keep checking those boxes daily!",
+  "After your deadline plus a 24-hour grace period, our crank service will automatically process your pledge based on the tasks you checked off. So make sure to check off your tasks daily!_stick": "The system settles it for you after 24 hours. Whatever you checked off is what counts. No checked boxes? Full forfeiture. Don't be lazy — check them off."
 }
