@@ -14,6 +14,8 @@ declare const Deno: {
     get(key: string): string | undefined;
   };
   serve(handler: (req: Request) => Response | Promise<Response>): void;
+  test(name: string, fn: () => void | Promise<void>): void;
+  test(options: { name: string; fn: () => void | Promise<void> }): void;
 };
 
 // Module declarations for npm: imports used via deno.json import maps
@@ -62,3 +64,27 @@ declare module 'jose' {
 
 // JSR import for edge runtime types
 declare module 'jsr:@supabase/functions-js/edge-runtime.d.ts' {}
+
+// Test assertion module (jsr:@std/assert)
+declare module '@std/assert' {
+  export function assertEquals(actual: unknown, expected: unknown, msg?: string): void;
+  export function assertNotEquals(actual: unknown, expected: unknown, msg?: string): void;
+  export function assertExists(actual: unknown, msg?: string): void;
+  export function assertThrows(fn: () => void, msg?: string): void;
+}
+
+// Solana web3.js for daily-reconcile
+declare module '@solana/web3.js' {
+  export class Connection {
+    constructor(endpoint: string, commitment?: string);
+    getProgramAccounts(
+      programId: PublicKey,
+      config?: { commitment?: string }
+    ): Promise<Array<{ pubkey: PublicKey; account: { data: Uint8Array; lamports: number } }>>;
+  }
+  export class PublicKey {
+    constructor(value: string | Uint8Array);
+    toBase58(): string;
+    toString(): string;
+  }
+}

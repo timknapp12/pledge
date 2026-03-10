@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2",
+    "@solana/web3.js": "npm:@solana/web3.js@1",
+    "@std/assert": "jsr:@std/assert@^1.0.19"
+  }
+}
