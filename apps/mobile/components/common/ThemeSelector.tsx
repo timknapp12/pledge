@@ -21,11 +21,13 @@ export const ThemeSelector = () => {
   const { mode, setMode } = useThemeMode();
   const slideAnim = useRef(new Animated.Value(0)).current;
   const segmentWidth = useRef(0);
+  const hasLaidOut = useRef(false);
   const [pillWidth, setPillWidth] = useState(0);
 
   const selectedIndex = OPTIONS.findIndex((o) => o.mode === mode);
 
   useEffect(() => {
+    if (!hasLaidOut.current) return;
     Animated.spring(slideAnim, {
       toValue: selectedIndex * segmentWidth.current,
       useNativeDriver: true,
@@ -40,8 +42,8 @@ export const ThemeSelector = () => {
     const sw = (width - padding * 2) / OPTIONS.length;
     segmentWidth.current = sw;
     setPillWidth(sw);
-    // Set initial position without animation
     slideAnim.setValue(selectedIndex * sw);
+    hasLaidOut.current = true;
   };
 
   return (
@@ -73,7 +75,7 @@ export const ThemeSelector = () => {
             size={20}
             color={
               mode === option.mode
-                ? theme.colors.background
+                ? theme.colors.iconOnPrimary
                 : theme.colors.textSecondary
             }
           />
