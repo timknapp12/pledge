@@ -5,8 +5,9 @@
 - [x] **i18n Setup**
 
   - i18next with expo-localization
-  - English and Spanish locale files
+  - English, Spanish, and French locale files
   - I18nProvider context
+  - Personality-aware strings via `tp()` hook (`_carrot`/`_stick` variants)
 
 - [x] **Anchor Client Integration**
 
@@ -20,9 +21,32 @@
 
 - [x] **Reconciliation System**
 
-  - AsyncStorage queue for failed DB writes
-  - Reconciliation logic (on-chain ↔ Supabase)
-  - Auto-reconcile hook (app launch, background return, network reconnect)
+  - Three-layer sync: frontend confirm-then-write → Helius webhook indexer → daily reconciliation
+  - Frontend lightweight reconciliation on app launch (on-chain ↔ Supabase status comparison)
+  - Removed legacy AsyncStorage retry queue (replaced by indexer)
+
+- [x] **Helius Webhook Indexer** ✅
+
+  - Supabase Edge Function (`supabase/functions/indexer/index.ts`)
+  - Receives enhanced transaction data from Helius webhooks within 1-5s
+  - Parses 5 Anchor events: PledgeCreated, PledgeEdited, CompletionReported, PledgeCompleted, PledgeForfeited
+  - Idempotent via `processed_transactions` table (prevents duplicate processing)
+  - Hardcoded SHA-256 event discriminators (verified in tests)
+  - Auth via WEBHOOK_SECRET header
+  - Error responses sanitized (generic 500, details logged server-side)
+  - 18 Deno tests covering discriminators, event parsing, base58, log parsing, idempotency
+
+- [x] **Daily Reconciliation** ✅
+
+  - Supabase Edge Function (`supabase/functions/daily-reconcile/index.ts`)
+  - Server-side safety net — runs once per day via pg_cron
+  - Fetches all on-chain pledge accounts via getProgramAccounts
+  - Filters by 8-byte Anchor account discriminator (not data length)
+  - Compares with Supabase DB, fixes status mismatches, creates recovered records
+  - Auth via FUNCTION_SECRET Bearer token
+  - Error responses sanitized
+  - 9 Deno tests covering discriminator verification, deserialization, filtering
+  - Deployment docs: `docs/indexer.md`
 
 - [x] **Environment Configuration**
 
@@ -69,6 +93,7 @@
 - [x] **History Tab** ✅
 
   - Stats section (Total Pledged, Success Rate)
+  - Streak card (Current Streak, Best Streak)
   - Past pledges list (Completed, Forfeited)
   - Empty state when no past pledges
   - Pull-to-refresh
@@ -76,10 +101,28 @@
 - [x] **Profile Tab** ✅
 
   - Connected wallet card with address
-  - Theme selector
-  - Settings section (Templates, Notifications - TODO handlers)
+  - Theme selector (Light/Dark/System) with animated pill indicator
+  - Personality selector (Carrot/Stick)
+  - Settings section (Templates, Notifications, FAQs, Terms & Conditions, Privacy Policy)
   - About section with version
   - Sign out with confirmation
+
+- [x] **FAQ Screen** ✅
+
+  - Animated accordion with Reanimated (expand/collapse with chevron rotation)
+  - Personality-aware Q&A via `tp()` — carrot and stick variants
+  - Hidden measurer pattern for dynamic content height
+  - Full card is tap target
+
+- [x] **Terms & Conditions Screen** ✅
+
+  - English-only legal copy
+  - Route: `/terms`
+
+- [x] **Privacy Policy Screen** ✅
+
+  - English-only legal copy
+  - Route: `/privacy`
 
 - [x] **Create Pledge Screen** ✅
 
@@ -104,10 +147,12 @@
   - Report & Settle button (available any time for Active pledges)
   - Self-settle: bundles report_completion + process_completion in one tx via MWA
   - Status goes directly to Completed/Forfeited (skips Reported intermediate state)
+  - Transaction signature link to Solana Explorer for settled pledges
 
 - [x] **Translations** ✅
 
-  - Added all new strings to en.json and es.json
+  - All user-facing strings in en.json, es.json, fr.json
+  - Personality-variant strings (`_carrot`/`_stick`) for FAQ, empty states, notifications
   - Home, History, Profile tabs
   - Create pledge flow
   - Pledge detail screen
@@ -128,7 +173,6 @@
   - Supports up to 90 days of daily tracking (`MAX_DAILY_TRACKING_DAYS = 90`)
   - Removed all legacy `Todo[]` backward compat code (`isLegacyTodos`, `isPledgeTodos`, union types)
   - Deleted unused `DailyTodosSheet.tsx`
-  - Updated `lib/sync/types.ts` to use `PledgeTodos` instead of `TodoItem[]`
 
 - [x] **Create Pledge Screen V2** ✅
 
@@ -188,6 +232,20 @@
 
 ## Session Notes
 
+### Mar 9, 2026
+
+**What was built:**
+
+- FAQ screen with animated accordion, personality-aware Q&A (carrot/stick variants)
+- Terms & Conditions and Privacy Policy screens (English-only legal copy)
+- Helius webhook indexer Edge Function (real-time on-chain event sync)
+- Daily reconciliation Edge Function (server-side safety net, pg_cron)
+- Deployment docs for indexer (`docs/indexer.md`)
+- Removed legacy AsyncStorage sync queue (replaced by indexer)
+- Edit penalty removed — edit_pledge on-chain instruction stays but won't be called from frontend
+- Security audit: sanitized error responses, hardcoded verified discriminators, updated handlePledgeEdited
+- 27 Deno tests for indexer + daily-reconcile
+
 ### Feb 24, 2026
 
 **What was built:**
@@ -241,8 +299,8 @@
 
 ### 3. Edit Pledge
 
-- [ ] Edit pledge screen/modal
-- [ ] Update DB
+- [ ] Edit pledge screen/modal (DB-only — no on-chain transaction, no penalty)
+- [ ] Update name, tasks, schedule in Supabase
 
 ### 4. HomeScreen Copy
 
@@ -257,10 +315,14 @@
 - [x] Edge Function to send notifications
 - [ ] Crank: clear old rows from notifications table after pledge expiry
 
-### 6. Mainnet Deployment
+### 6. Deployment
 
+- [ ] Register Helius webhooks (devnet + mainnet) — see `docs/indexer.md`
+- [ ] Deploy indexer + daily-reconcile Edge Functions to Supabase
+- [ ] Set up pg_cron for daily reconciliation
 - [ ] Deploy program to mainnet
 - [ ] Set `MAINNET_PROGRAM_ID` in `app.config.ts`
+- [ ] Test indexer with real devnet transaction (H1 validation)
 
 ---
 

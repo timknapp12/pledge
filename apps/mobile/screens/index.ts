@@ -6,3 +6,5 @@ export * from './PledgeDetailScreen';
 export * from './FinishedPledgeDetailScreen';
 export * from './TemplatesScreen';
 export * from './FAQScreen';
+export * from './TermsScreen';
+export * from './PrivacyScreen';

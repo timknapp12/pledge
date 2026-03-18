@@ -2,16 +2,11 @@ import { useEffect, useCallback, useRef, useState } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 import { useAuth } from '../contexts/AuthContext';
-import {
-  reconcileUserPledges,
-  ReconciliationResult,
-  getQueueStats,
-} from '../lib/sync';
+import { reconcileUserPledges, ReconciliationResult } from '../lib/sync';
 
 interface UseReconciliationReturn {
   isReconciling: boolean;
   lastResult: ReconciliationResult | null;
-  pendingCount: number;
   reconcileNow: () => Promise<void>;
 }
 
@@ -21,15 +16,15 @@ interface UseReconciliationReturn {
  * - When app returns from background
  * - When network reconnects
  *
- * Also provides manual reconcileNow() for on-demand sync.
+ * Status sync is primarily handled by the Helius webhook indexer.
+ * Reconciliation is a fallback for metadata gaps.
  */
 export const useReconciliation = (): UseReconciliationReturn => {
   const { walletAddress, supabase, user } = useAuth();
   const [isReconciling, setIsReconciling] = useState(false);
   const [lastResult, setLastResult] = useState<ReconciliationResult | null>(
-    null
+    null,
   );
-  const [pendingCount, setPendingCount] = useState(0);
 
   // Track if we've done initial reconciliation
   const hasReconciled = useRef(false);
@@ -45,10 +40,6 @@ export const useReconciliation = (): UseReconciliationReturn => {
     try {
       const result = await reconcileUserPledges(supabase, walletAddress);
       setLastResult(result);
-
-      // Update pending count
-      const stats = await getQueueStats();
-      setPendingCount(stats.total);
 
       if (__DEV__) {
         console.log('[useReconciliation] Completed:', result);
@@ -75,7 +66,6 @@ export const useReconciliation = (): UseReconciliationReturn => {
     if (!walletAddress) {
       hasReconciled.current = false;
       setLastResult(null);
-      setPendingCount(0);
     }
   }, [walletAddress]);
 
@@ -89,7 +79,7 @@ export const useReconciliation = (): UseReconciliationReturn => {
 
     const subscription = AppState.addEventListener(
       'change',
-      handleAppStateChange
+      handleAppStateChange,
     );
     return () => subscription.remove();
   }, [walletAddress, user, runReconciliation]);
@@ -110,20 +100,9 @@ export const useReconciliation = (): UseReconciliationReturn => {
     return () => unsubscribe();
   }, [walletAddress, user, runReconciliation]);
 
-  // Update pending count periodically
-  useEffect(() => {
-    const updatePendingCount = async () => {
-      const stats = await getQueueStats();
-      setPendingCount(stats.total);
-    };
-
-    updatePendingCount();
-  }, [lastResult]);
-
   return {
     isReconciling,
     lastResult,
-    pendingCount,
     reconcileNow: runReconciliation,
   };
 };

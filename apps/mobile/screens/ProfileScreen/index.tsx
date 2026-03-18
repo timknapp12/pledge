@@ -102,6 +102,14 @@ export const ProfileScreen = () => {
     router.push('/faq');
   };
 
+  const handleTerms = () => {
+    router.push('/terms');
+  };
+
+  const handlePrivacy = () => {
+    router.push('/privacy');
+  };
+
   const handleNotificationsToggle = useCallback(
     async (value: boolean) => {
       setIsTogglingNotifications(true);
@@ -247,6 +255,16 @@ export const ProfileScreen = () => {
                     icon='help-circle-outline'
                     label={t('FAQs')}
                     onPress={handleFAQ}
+                  />
+                  <SettingsItem
+                    icon='document-text-outline'
+                    label={t('Terms & Conditions')}
+                    onPress={handleTerms}
+                  />
+                  <SettingsItem
+                    icon='shield-checkmark-outline'
+                    label={t('Privacy Policy')}
+                    onPress={handlePrivacy}
                     isLast
                   />
                 </Card>
