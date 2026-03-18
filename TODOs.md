@@ -14,6 +14,7 @@ supabase:
 - run script in prod to create ATAs for treasury and charity pubkeys. there is a script in scripts folder
 - this is done on dev - deploy crank to check for forfeited pledges - look at docs/crank.md, get prod project id and set secrets after deploying crank
 - we added the crank keypair for devnet as the authority to run the crank so not just anyone can run it maliciously. so need to make sure we do it on mainnet, add crank_authority when you call initialize of the program
+- set up indexer edge function and daily reconcile crank found in docs/indexer.md
 
 firebase:
 
