@@ -110,6 +110,10 @@ export const ProfileScreen = () => {
     router.push('/privacy');
   };
 
+  const handleAppGuide = () => {
+    router.push('/onboarding?fromSettings=true');
+  };
+
   const handleNotificationsToggle = useCallback(
     async (value: boolean) => {
       setIsTogglingNotifications(true);
@@ -255,6 +259,11 @@ export const ProfileScreen = () => {
                     icon='help-circle-outline'
                     label={t('FAQs')}
                     onPress={handleFAQ}
+                  />
+                  <SettingsItem
+                    icon='book-outline'
+                    label={t('App Guide')}
+                    onPress={handleAppGuide}
                   />
                   <SettingsItem
                     icon='document-text-outline'
