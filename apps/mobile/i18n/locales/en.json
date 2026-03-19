@@ -195,5 +195,20 @@
   "What happens if I forget to report?_carrot": "What happens if I forget to report?",
   "What happens if I forget to report?_stick": "What if I'm too lazy to report?",
   "After your deadline plus a 24-hour grace period, our crank service will automatically process your pledge based on the tasks you checked off. So make sure to check off your tasks daily!_carrot": "No worries! After your deadline plus a 24-hour grace period, we'll automatically settle your pledge based on the tasks you checked off. Just keep checking those boxes daily!",
-  "After your deadline plus a 24-hour grace period, our crank service will automatically process your pledge based on the tasks you checked off. So make sure to check off your tasks daily!_stick": "The system settles it for you after 24 hours. Whatever you checked off is what counts. No checked boxes? Full forfeiture. Don't be lazy — check them off."
+  "After your deadline plus a 24-hour grace period, our crank service will automatically process your pledge based on the tasks you checked off. So make sure to check off your tasks daily!_stick": "The system settles it for you after 24 hours. Whatever you checked off is what counts. No checked boxes? Full forfeiture. Don't be lazy — check them off.",
+  "Skip": "Skip",
+  "Next": "Next",
+  "Get Started": "Get Started",
+  "App Guide": "App Guide",
+  "How It Works": "How It Works",
+  "Two Types of Tasks": "Two Types of Tasks",
+  "Fair & Simple Rules": "Fair & Simple Rules",
+  "24-Hour Grace Period": "24-Hour Grace Period",
+  "You're Ready!": "You're Ready!",
+  "onboarding_welcome_body": "Set a goal, pledge your USDC, and earn it back by following through. Pledge keeps you accountable.",
+  "onboarding_how_body": "1. Create a goal with tasks and a deadline\n2. Pledge your USDC as commitment\n3. Track your progress daily\n4. Report your completion and get your tokens back",
+  "onboarding_tasks_body": "Daily tasks repeat on your chosen schedule — every day, weekdays, weekends, or custom days. One-time tasks are marked with a \"Not daily\" button and are goals you complete once during your pledge period. Mix both types in a single pledge.",
+  "onboarding_rules_body": "Complete 100% → get your full pledge back, zero fees.\nPartial completion → proportional refund minus a small 1% fee.\n0% completion → pledge is forfeited.\n\n30% of all forfeited funds go to a non-profit organization. So your loss still helps someone in need.\n\nDetails of the non-profit organization we work with can be found in the FAQ page in Settings.",
+  "onboarding_grace_body": "After your deadline, you have 24 hours to self-report your completion for the most accurate result. If you don't report in time, we'll calculate it automatically based on the tasks you checked off.",
+  "onboarding_ready_body": "Create your first pledge and start achieving your goals. You can revisit this guide anytime in Settings."
 }

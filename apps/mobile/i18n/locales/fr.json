@@ -195,5 +195,20 @@
   "What happens if I forget to report?_carrot": "Que se passe-t-il si j'oublie de rapporter ?",
   "What happens if I forget to report?_stick": "Et si je suis trop paresseux pour rapporter ?",
   "After your deadline plus a 24-hour grace period, our crank service will automatically process your pledge based on the tasks you checked off. So make sure to check off your tasks daily!_carrot": "Pas de souci ! Après votre date limite plus 24h de grâce, nous réglons automatiquement votre engagement selon les tâches cochées. Continuez à cocher vos tâches chaque jour !",
-  "After your deadline plus a 24-hour grace period, our crank service will automatically process your pledge based on the tasks you checked off. So make sure to check off your tasks daily!_stick": "Le système règle tout après 24h. Ce que vous avez coché est ce qui compte. Rien coché ? Perte totale. Ne soyez pas paresseux — cochez-les."
+  "After your deadline plus a 24-hour grace period, our crank service will automatically process your pledge based on the tasks you checked off. So make sure to check off your tasks daily!_stick": "Le système règle tout après 24h. Ce que vous avez coché est ce qui compte. Rien coché ? Perte totale. Ne soyez pas paresseux — cochez-les.",
+  "Skip": "Passer",
+  "Next": "Suivant",
+  "Get Started": "Commencer",
+  "App Guide": "Guide de l'App",
+  "How It Works": "Comment ça marche",
+  "Two Types of Tasks": "Deux Types de Tâches",
+  "Fair & Simple Rules": "Règles Justes et Simples",
+  "24-Hour Grace Period": "Période de Grâce de 24 Heures",
+  "You're Ready!": "Vous êtes prêt !",
+  "onboarding_welcome_body": "Fixez un objectif, misez vos USDC et récupérez-les en tenant votre engagement. Pledge vous garde responsable.",
+  "onboarding_how_body": "1. Créez un objectif avec des tâches et une date limite\n2. Misez vos USDC comme engagement\n3. Suivez vos progrès quotidiennement\n4. Signalez votre achèvement et récupérez vos tokens",
+  "onboarding_tasks_body": "Les tâches quotidiennes se répètent selon votre planning — tous les jours, en semaine, le week-end ou jours personnalisés. Les tâches uniques sont marquées par un bouton \"Pas quotidien\" et sont des objectifs à compléter une fois pendant votre période. Combinez les deux types dans un seul engagement.",
+  "onboarding_rules_body": "Complété à 100% → récupérez tout votre engagement, zéro frais.\nComplétion partielle → remboursement proportionnel moins 1% de frais.\n0% complété → votre engagement est perdu.\n\n30% des fonds perdus vont à une organisation à but non lucratif. Ainsi, votre perte aide encore quelqu'un dans le besoin.\n\nLes détails de l'organisation à but non lucratif avec laquelle nous travaillons se trouvent dans la page FAQ dans les Paramètres.",
+  "onboarding_grace_body": "Après votre date limite, vous avez 24 heures pour auto-signaler votre achèvement pour le résultat le plus précis. Si vous ne signalez pas à temps, nous le calculerons automatiquement selon les tâches cochées.",
+  "onboarding_ready_body": "Créez votre premier engagement et commencez à atteindre vos objectifs. Vous pouvez revisiter ce guide à tout moment dans les Paramètres."
 }
