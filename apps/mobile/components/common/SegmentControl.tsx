@@ -19,7 +19,7 @@ interface SegmentControlProps {
   onSelect: (key: string) => void;
 }
 
-const SPRING_CONFIG = { damping: 28, stiffness: 200 };
+const SPRING_CONFIG = { damping: 70, stiffness: 800 };
 
 export const SegmentControl = ({
   segments,
@@ -42,10 +42,7 @@ export const SegmentControl = ({
     transform: [
       {
         translateX:
-          indicatorPosition.value *
-          (1 / segments.length) *
-          100 +
-          '%' === 'NaN%'
+          indicatorPosition.value * (1 / segments.length) * 100 + '%' === 'NaN%'
             ? 0
             : 0,
       },
