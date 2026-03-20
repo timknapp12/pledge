@@ -324,10 +324,10 @@ describe("update_config", () => {
     }
   });
 
-  it("fails with negative grace period", async () => {
+  it("fails with grace period below minimum", async () => {
     try {
       await ctx.program.methods
-        .updateConfig(null, null, null, null, null, null, null, new anchor.BN(-1), null)
+        .updateConfig(null, null, null, null, null, null, null, new anchor.BN(1), null)
         .accounts({
           admin: ctx.admin.publicKey,
           config: ctx.configPda,
@@ -336,9 +336,9 @@ describe("update_config", () => {
         .signers([ctx.admin])
         .rpc();
 
-      expect.fail("Should have thrown InvalidTimestamp error");
+      expect.fail("Should have thrown InvalidGracePeriod error");
     } catch (err) {
-      expect(err.message).to.include("InvalidTimestamp");
+      expect(err.message).to.include("InvalidGracePeriod");
     }
   });
 });

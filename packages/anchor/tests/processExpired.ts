@@ -30,7 +30,7 @@ describe("process_expired", () => {
     ctx = await setupTestContext();
     await initializeConfig(ctx);
 
-    // Update config with short grace period for testing (2 seconds instead of 1 day)
+    // Update config with short grace period for testing (2 seconds)
     await ctx.program.methods
       .updateConfig(null, null, null, null, null, null, null, new anchor.BN(2), null)
       .accounts({
@@ -123,9 +123,13 @@ describe("process_expired", () => {
     expect(Number(treasuryAfter - treasuryBefore)).to.equal(3_535_000);
     expect(Number(charityAfter - charityBefore)).to.equal(1_515_000);
 
-    const pledge = await ctx.program.account.pledge.fetch(pledgePda);
-    expect(pledge.status).to.deep.equal({ completed: {} });
-    expect(pledge.completionPercentage).to.equal(50);
+    // Pledge account is closed after processing (rent returned to user)
+    try {
+      await ctx.program.account.pledge.fetch(pledgePda);
+      expect.fail("Pledge account should be closed");
+    } catch (err) {
+      expect(err.message).to.include("Account does not exist");
+    }
   });
 
   it("processes expired pledge with 0% completion - full forfeiture", async () => {
@@ -200,8 +204,13 @@ describe("process_expired", () => {
     expect(Number(treasuryAfter - treasuryBefore)).to.equal(7_000_000);
     expect(Number(charityAfter - charityBefore)).to.equal(3_000_000);
 
-    const pledge = await ctx.program.account.pledge.fetch(pledgePda);
-    expect(pledge.status).to.deep.equal({ forfeited: {} });
+    // Pledge account is closed after processing (rent returned to user)
+    try {
+      await ctx.program.account.pledge.fetch(pledgePda);
+      expect.fail("Pledge account should be closed");
+    } catch (err) {
+      expect(err.message).to.include("Account does not exist");
+    }
   });
 
   it("fails if grace period has not ended", async () => {
