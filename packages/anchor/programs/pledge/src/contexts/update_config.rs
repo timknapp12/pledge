@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::constants::CONFIG_SEED;
+use crate::constants::{CONFIG_SEED, MIN_GRACE_PERIOD};
 use crate::errors::ErrorCode;
 use crate::state::{ConfigUpdated, ProgramConfig};
 
@@ -105,7 +105,10 @@ impl<'info> UpdateConfig<'info> {
         }
 
         if let Some(grace_period) = new_grace_period_seconds {
-            require!(grace_period >= 0, ErrorCode::InvalidTimestamp);
+            require!(
+                grace_period >= MIN_GRACE_PERIOD,
+                ErrorCode::InvalidGracePeriod
+            );
             emit!(ConfigUpdated {
                 field: "grace_period_seconds".to_string(),
                 old_value: self.config.grace_period_seconds.to_string(),

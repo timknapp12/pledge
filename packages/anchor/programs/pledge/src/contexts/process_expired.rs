@@ -25,7 +25,8 @@ pub struct ProcessExpired<'info> {
         mut,
         seeds = [PLEDGE_SEED, pledge.user.as_ref(), &pledge.created_at.to_le_bytes()],
         bump = pledge.bump,
-        constraint = pledge.status == PledgeStatus::Active @ ErrorCode::PledgeNotActive
+        constraint = pledge.status == PledgeStatus::Active @ ErrorCode::PledgeNotActive,
+        close = user
     )]
     pub pledge: Account<'info, Pledge>,
 

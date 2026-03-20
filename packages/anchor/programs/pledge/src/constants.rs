@@ -8,6 +8,9 @@ pub const DEFAULT_PARTIAL_FEE_BPS: u16 = 100; // 1%
 pub const DEFAULT_EDIT_PENALTY_BPS: u16 = 1000; // 10%
 pub const DEFAULT_GRACE_PERIOD: i64 = 86400; // 1 day in seconds
 
+// Minimum grace period (prevents zero-grace-period attack)
+pub const MIN_GRACE_PERIOD: i64 = 2;
+
 // Basis points
 pub const BPS_DENOMINATOR: u64 = 10000;
 

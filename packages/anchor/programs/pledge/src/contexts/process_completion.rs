@@ -25,7 +25,8 @@ pub struct ProcessCompletion<'info> {
         mut,
         seeds = [PLEDGE_SEED, pledge.user.as_ref(), &pledge.created_at.to_le_bytes()],
         bump = pledge.bump,
-        constraint = pledge.status == PledgeStatus::Reported @ ErrorCode::PledgeNotReported
+        constraint = pledge.status == PledgeStatus::Reported @ ErrorCode::PledgeNotReported,
+        close = user
     )]
     pub pledge: Account<'info, Pledge>,
 
@@ -66,6 +67,14 @@ pub struct ProcessCompletion<'info> {
 
 impl<'info> ProcessCompletion<'info> {
     pub fn process_completion(&mut self) -> Result<()> {
+        let clock = Clock::get()?;
+
+        // Settlement cannot occur before the deadline
+        require!(
+            clock.unix_timestamp >= self.pledge.deadline,
+            ErrorCode::DeadlineNotPassed
+        );
+
         let completion_percentage = self
             .pledge
             .completion_percentage
