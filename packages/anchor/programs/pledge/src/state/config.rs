@@ -14,6 +14,7 @@ pub struct ProgramConfig {
     // New fields appended at end for realloc compatibility
     pub crank_authority: Pubkey,   // Authorized crank keypair
     pub allowed_mint: Pubkey,      // Allowed token mint (USDC)
+    pub pending_admin: Option<Pubkey>, // Pending admin for two-step transfer
 }
 
 impl ProgramConfig {
@@ -28,7 +29,8 @@ impl ProgramConfig {
         1 +     // paused
         1 +     // bump
         32 +    // crank_authority (appended for realloc compat)
-        32;     // allowed_mint (appended for realloc compat)
+        32 +    // allowed_mint (appended for realloc compat)
+        1 + 32; // pending_admin (Option<Pubkey>)
 }
 
 #[event]
@@ -43,4 +45,16 @@ pub struct ConfigUpdated {
     pub field: String,
     pub old_value: String,
     pub new_value: String,
+}
+
+#[event]
+pub struct AdminTransferProposed {
+    pub current_admin: Pubkey,
+    pub pending_admin: Pubkey,
+}
+
+#[event]
+pub struct AdminTransferAccepted {
+    pub old_admin: Pubkey,
+    pub new_admin: Pubkey,
 }
