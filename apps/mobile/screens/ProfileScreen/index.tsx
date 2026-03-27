@@ -7,6 +7,7 @@ import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useUserProfile } from '@/hooks/useSupabase';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import type { Personality } from '@/hooks/useUserPreferences';
 import {
@@ -49,6 +50,7 @@ export const ProfileScreen = () => {
     supportedLanguages,
   } = useUserPreferences();
 
+  const { data: userProfile } = useUserProfile();
   const { alert } = useAlert();
   const [isTogglingNotifications, setIsTogglingNotifications] = useState(false);
 
@@ -162,8 +164,14 @@ export const ProfileScreen = () => {
       >
         <CenteredColumn flex={1} gap={24}>
           {/* HEADER ROW */}
-          <Row width='100%' justify='flex-start'>
+          <Row width='100%' justify='space-between' align='center'>
             <Title1>{t('Profile')}</Title1>
+            <Row align='center' gap={4}>
+              <Ionicons name='star' size={18} color={theme.colors.primary} />
+              <Body style={{ color: theme.colors.primary, fontWeight: '600' }}>
+                {userProfile?.points ?? 0}
+              </Body>
+            </Row>
           </Row>
           <TrackedScrollView showsVerticalScrollIndicator={false}>
             <Column flex={1} gap={24}>
@@ -197,14 +205,14 @@ export const ProfileScreen = () => {
                 <ThemeSelector />
               </Column>
 
-              {/* Personality Section */}
+              {/* Notification Personality Section */}
               <Column gap={4}>
                 <View>
                   <Title3>{t('Personality')}</Title3>
                 </View>
                 <Card>
                   <BodySecondary>
-                    {t('Choose how you want Pledge to speak to you')}
+                    {t('Choose the tone of your push notifications')}
                   </BodySecondary>
                   <SegmentControl
                     segments={personalitySegments}

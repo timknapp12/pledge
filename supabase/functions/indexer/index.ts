@@ -345,23 +345,44 @@ async function handlePledgeCompleted(
   event: PledgeCompletedEvent,
   txSignature: string,
 ): Promise<void> {
+  // Calculate points: 1 point per dollar refunded (USDC has 6 decimals)
+  const pointsEarned = Number(event.refundAmount / BigInt(1_000_000));
+
   const { data: pledge, error } = await supabase
     .from('pledges')
     .update({
       status: 'Completed',
       completion_percentage: event.completionPercentage,
       settle_tx_signature: txSignature,
+      points_earned: pointsEarned,
     })
     .eq('on_chain_address', event.pledge)
-    .select('id')
+    .select('id, user_id, points_earned')
     .maybeSingle();
 
   if (error) {
     throw new Error(`PledgeCompleted update failed: ${error.message}`);
   }
 
-  // Cancel pending notifications for this pledge
   if (pledge) {
+    // Award points to user (only if not already awarded by frontend)
+    if (pointsEarned > 0 && !pledge.points_earned) {
+      // Set points_earned on the pledge
+      await supabase
+        .from('pledges')
+        .update({ points_earned: pointsEarned })
+        .eq('id', pledge.id);
+
+      const { error: pointsError } = await supabase.rpc('increment_points', {
+        p_user_id: pledge.user_id,
+        p_points: pointsEarned,
+      });
+      if (pointsError) {
+        console.error(`[Indexer] Failed to award points: ${pointsError.message}`);
+      }
+    }
+
+    // Cancel pending notifications for this pledge
     await supabase
       .from('notifications')
       .update({ status: 'cancelled' })
@@ -370,7 +391,7 @@ async function handlePledgeCompleted(
   }
 
   console.log(
-    `[Indexer] PledgeCompleted: ${event.pledge}, refund=${event.refundAmount}, fee=${event.feeAmount}`,
+    `[Indexer] PledgeCompleted: ${event.pledge}, refund=${event.refundAmount}, fee=${event.feeAmount}, points=${pointsEarned}`,
   );
 }
 
