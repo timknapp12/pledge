@@ -11,4 +11,5 @@ export const queryKeys = {
   allActivePledgeProgress: (walletAddress: string, pledgeIds: string[]) =>
     ['allActivePledgeProgress', walletAddress, ...pledgeIds] as const,
   templates: (walletAddress: string) => ['templates', walletAddress] as const,
+  userProfile: (userId: string) => ['userProfile', userId] as const,
 };

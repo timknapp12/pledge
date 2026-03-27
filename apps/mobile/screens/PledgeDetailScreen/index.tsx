@@ -195,11 +195,18 @@ export const PledgeDetailScreen = () => {
                 pledge.on_chain_address,
                 completionPct,
               );
+              // Calculate refund and points: 1 point per dollar refunded
+              const refundAmount =
+                pledge.stake_amount *
+                (completionPct / 100) *
+                (completionPct === 100 ? 1 : 0.99);
+              const pointsEarned = Math.floor(refundAmount / 1_000_000);
               await updatePledgeStatus.mutateAsync({
                 pledgeId: pledge.id,
                 status: finalStatus,
                 completionPercentage: completionPct,
                 settleTxSignature: signature,
+                pointsEarned,
               });
               refetch();
               alert({ title: t('Success'), message: t('Pledge settled successfully') });
