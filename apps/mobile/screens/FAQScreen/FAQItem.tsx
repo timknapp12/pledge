@@ -7,8 +7,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Body, Row, Card } from '@/components';
-import { usePersonalityText } from '@/hooks/usePersonalityText';
 
 interface FAQItemProps {
   question: string;
@@ -17,7 +17,7 @@ interface FAQItemProps {
 
 export const FAQItem = ({ question, answer }: FAQItemProps) => {
   const { theme } = useAppTheme();
-  const tp = usePersonalityText();
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [contentHeight, setContentHeight] = useState(0);
 
@@ -40,7 +40,7 @@ export const FAQItem = ({ question, answer }: FAQItemProps) => {
       <Card style={styles.card}>
         <Row align='center' style={{ justifyContent: 'space-between' }}>
           <Body style={{ flex: 1, marginRight: 12, fontWeight: '600' }}>
-            {tp(question)}
+            {t(question)}
           </Body>
           <Animated.View style={chevronStyle}>
             <Ionicons
@@ -58,7 +58,7 @@ export const FAQItem = ({ question, answer }: FAQItemProps) => {
               lineHeight: 22,
             }}
           >
-            {tp(answer)}
+            {t(answer)}
           </Body>
         </Animated.View>
         {/* Hidden measurer — renders off-screen to capture content height */}
@@ -67,7 +67,7 @@ export const FAQItem = ({ question, answer }: FAQItemProps) => {
             onLayout={(e) => setContentHeight(e.nativeEvent.layout.height + 12)}
             style={{ lineHeight: 22, paddingTop: 12 }}
           >
-            {tp(answer)}
+            {t(answer)}
           </Body>
         </View>
       </Card>
