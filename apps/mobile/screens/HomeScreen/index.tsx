@@ -1,10 +1,11 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
   RefreshControl,
   StyleSheet,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/theme/ThemeProvider';
@@ -48,6 +49,18 @@ export const HomeScreen = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('tasks');
   const [focusCount, setFocusCount] = useState(0);
   const [isPullRefreshing, setIsPullRefreshing] = useState(false);
+
+  // Show onboarding on first launch after auth
+  const onboardingChecked = useRef(false);
+  useEffect(() => {
+    if (!user || onboardingChecked.current) return;
+    onboardingChecked.current = true;
+    AsyncStorage.getItem('hasSeenOnboarding').then((value) => {
+      if (!value) {
+        router.push('/onboarding');
+      }
+    });
+  }, [user, router]);
 
   useFocusEffect(
     useCallback(() => {

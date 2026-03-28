@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::constants::CONFIG_SEED;
+use crate::constants::{CONFIG_SEED, MIN_GRACE_PERIOD};
 use crate::errors::ErrorCode;
 use crate::state::{ConfigInitialized, ProgramConfig};
 
@@ -44,7 +44,10 @@ impl<'info> Initialize<'info> {
         );
         require!(partial_fee_bps <= 1000, ErrorCode::InvalidFee);
         require!(edit_penalty_bps <= 1000, ErrorCode::InvalidFee);
-        require!(grace_period_seconds >= 0, ErrorCode::InvalidTimestamp);
+        require!(
+            grace_period_seconds >= MIN_GRACE_PERIOD,
+            ErrorCode::InvalidGracePeriod
+        );
 
         // Initialize config
         self.config.set_inner(ProgramConfig {
@@ -59,6 +62,7 @@ impl<'info> Initialize<'info> {
             grace_period_seconds,
             paused: false,
             bump: bumps.config,
+            pending_admin: None,
         });
 
         emit!(ConfigInitialized {

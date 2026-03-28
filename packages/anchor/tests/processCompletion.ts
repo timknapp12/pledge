@@ -124,9 +124,13 @@ describe("process_completion", () => {
     expect(Number(treasuryAfter - treasuryBefore)).to.equal(0);
     expect(Number(charityAfter - charityBefore)).to.equal(0);
 
-    // Verify pledge status
-    const pledge = await ctx.program.account.pledge.fetch(pledgePda);
-    expect(pledge.status).to.deep.equal({ completed: {} });
+    // Pledge account is closed after processing (rent returned to user)
+    try {
+      await ctx.program.account.pledge.fetch(pledgePda);
+      expect.fail("Pledge account should be closed");
+    } catch (err) {
+      expect(err.message).to.include("Account does not exist");
+    }
   });
 
   it("processes 50% completion - proportional refund minus fee", async () => {
@@ -225,8 +229,13 @@ describe("process_completion", () => {
     expect(Number(treasuryAfter - treasuryBefore)).to.equal(3_535_000); // 70% of 5,050,000
     expect(Number(charityAfter - charityBefore)).to.equal(1_515_000); // 30% of 5,050,000
 
-    const pledge = await ctx.program.account.pledge.fetch(pledgePda);
-    expect(pledge.status).to.deep.equal({ completed: {} });
+    // Pledge account is closed after processing
+    try {
+      await ctx.program.account.pledge.fetch(pledgePda);
+      expect.fail("Pledge account should be closed");
+    } catch (err) {
+      expect(err.message).to.include("Account does not exist");
+    }
   });
 
   it("processes 0% completion - full forfeiture", async () => {
@@ -319,8 +328,13 @@ describe("process_completion", () => {
     expect(Number(treasuryAfter - treasuryBefore)).to.equal(7_000_000); // 70%
     expect(Number(charityAfter - charityBefore)).to.equal(3_000_000); // 30%
 
-    const pledge = await ctx.program.account.pledge.fetch(pledgePda);
-    expect(pledge.status).to.deep.equal({ forfeited: {} });
+    // Pledge account is closed after processing
+    try {
+      await ctx.program.account.pledge.fetch(pledgePda);
+      expect.fail("Pledge account should be closed");
+    } catch (err) {
+      expect(err.message).to.include("Account does not exist");
+    }
   });
 
   it("allows pledge owner to self-settle (user as crank)", async () => {
@@ -391,8 +405,13 @@ describe("process_completion", () => {
     );
     expect(Number(userBalanceAfter - userBalanceBefore)).to.equal(stakeAmount);
 
-    const pledge = await ctx.program.account.pledge.fetch(pledgePda);
-    expect(pledge.status).to.deep.equal({ completed: {} });
+    // Pledge account is closed after processing
+    try {
+      await ctx.program.account.pledge.fetch(pledgePda);
+      expect.fail("Pledge account should be closed");
+    } catch (err) {
+      expect(err.message).to.include("Account does not exist");
+    }
   });
 
   it("rejects random third party as crank", async () => {

@@ -61,6 +61,23 @@ export const IDL = {
       ],
       args: [],
     },
+    {
+      name: 'proposeAdminTransfer',
+      accounts: [
+        { name: 'admin', isMut: true, isSigner: true },
+        { name: 'config', isMut: true, isSigner: false },
+        { name: 'systemProgram', isMut: false, isSigner: false },
+      ],
+      args: [{ name: 'newAdmin', type: 'publicKey' }],
+    },
+    {
+      name: 'acceptAdminTransfer',
+      accounts: [
+        { name: 'newAdmin', isMut: false, isSigner: true },
+        { name: 'config', isMut: true, isSigner: false },
+      ],
+      args: [],
+    },
   ],
   accounts: [
     {
@@ -97,6 +114,7 @@ export const IDL = {
           { name: 'bump', type: 'u8' },
           { name: 'crankAuthority', type: 'publicKey' },
           { name: 'allowedMint', type: 'publicKey' },
+          { name: 'pendingAdmin', type: { option: 'publicKey' } },
         ],
       },
     },
@@ -133,9 +151,12 @@ export const IDL = {
     { code: 6013, name: 'GracePeriodEnded', msg: 'Grace period has ended - cannot report' },
     { code: 6014, name: 'AlreadyReported', msg: 'Pledge already reported - use process_completion instead' },
     { code: 6015, name: 'InvalidCompletionPercentage', msg: 'Invalid completion percentage - must be 0-100' },
-    { code: 6016, name: 'Overflow', msg: 'Numeric overflow' },
-    { code: 6017, name: 'Underflow', msg: 'Numeric underflow' },
-    { code: 6018, name: 'InvalidMint', msg: 'Invalid token mint' },
-    { code: 6019, name: 'InvalidTokenAccountOwner', msg: 'Invalid token account owner' },
+    { code: 6016, name: 'InvalidGracePeriod', msg: 'Invalid grace period - must be greater than zero' },
+    { code: 6017, name: 'NotPendingAdmin', msg: 'Not the pending admin' },
+    { code: 6018, name: 'NoPendingAdminTransfer', msg: 'No pending admin transfer' },
+    { code: 6019, name: 'Overflow', msg: 'Numeric overflow' },
+    { code: 6020, name: 'Underflow', msg: 'Numeric underflow' },
+    { code: 6021, name: 'InvalidMint', msg: 'Invalid token mint' },
+    { code: 6022, name: 'InvalidTokenAccountOwner', msg: 'Invalid token account owner' },
   ],
 } as const;

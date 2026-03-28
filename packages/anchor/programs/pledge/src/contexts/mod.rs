@@ -5,6 +5,7 @@ pub mod edit_pledge;
 pub mod report_completion;
 pub mod process_completion;
 pub mod process_expired;
+pub mod transfer_admin;
 
 pub use initialize::*;
 pub use update_config::*;
@@ -13,3 +14,4 @@ pub use edit_pledge::*;
 pub use report_completion::*;
 pub use process_completion::*;
 pub use process_expired::*;
+pub use transfer_admin::*;

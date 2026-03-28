@@ -8,6 +8,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import BottomSheet from '@gorhom/bottom-sheet';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,6 +31,7 @@ import {
   RemindersSheet,
   StakeAmountSheet,
   SaveTemplateSheet,
+  ImportTemplateSheet,
 } from '@/components';
 import { useUsdcBalance } from '@/hooks/useUsdcBalance';
 import { useCreatePledgeForm } from './useCreatePledgeForm';
@@ -46,6 +48,7 @@ export const CreatePledgeScreen = () => {
   const form = useCreatePledgeForm();
   const { balance: usdcBalance, isLoading: balanceLoading } = useUsdcBalance();
   const scrollViewRef = useRef<ScrollView>(null);
+  const importTemplateSheetRef = useRef<BottomSheet>(null);
   const inputPositions = useRef<Record<string, number>>({});
 
   const trackLayout = useCallback((key: string, e: LayoutChangeEvent) => {
@@ -99,6 +102,21 @@ export const CreatePledgeScreen = () => {
               keyboardShouldPersistTaps='handled'
             >
               <CenteredColumn flex={1}>
+                {/* Use Template button */}
+                {form.templates && form.templates.length > 0 && (
+                  <View style={{ width: '100%', marginBottom: 4 }}>
+                    <SecondaryButton
+                      icon='documents-outline'
+                      onPress={() => {
+                        Keyboard.dismiss();
+                        importTemplateSheetRef.current?.expand();
+                      }}
+                    >
+                      {t('Use Template')}
+                    </SecondaryButton>
+                  </View>
+                )}
+
                 {/* 1. Schedule (start date, duration, reminders) */}
                 <ScheduleCard
                   startDate={form.startDate}
@@ -273,6 +291,14 @@ export const CreatePledgeScreen = () => {
         defaultName={form.name.trim()}
         onSave={form.handleSaveTemplate}
       />
+
+      {form.templates && form.templates.length > 0 && (
+        <ImportTemplateSheet
+          ref={importTemplateSheetRef}
+          templates={form.templates}
+          onSelect={form.loadTemplate}
+        />
+      )}
     </ScreenContainer>
   );
 };

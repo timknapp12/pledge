@@ -96,4 +96,14 @@ pub mod pledge {
     pub fn process_expired(ctx: Context<ProcessExpired>, completion_percentage: u8) -> Result<()> {
         ctx.accounts.process_expired(completion_percentage)
     }
+
+    /// Propose admin transfer to a new wallet (current admin only)
+    pub fn propose_admin_transfer(ctx: Context<ProposeAdminTransfer>, new_admin: Pubkey) -> Result<()> {
+        ctx.accounts.propose_admin_transfer(new_admin)
+    }
+
+    /// Accept admin transfer (pending admin only)
+    pub fn accept_admin_transfer(ctx: Context<AcceptAdminTransfer>) -> Result<()> {
+        ctx.accounts.accept_admin_transfer()
+    }
 }

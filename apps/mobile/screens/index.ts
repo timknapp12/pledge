@@ -8,3 +8,4 @@ export * from './TemplatesScreen';
 export * from './FAQScreen';
 export * from './TermsScreen';
 export * from './PrivacyScreen';
+export * from './OnboardingScreen';

@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { Linking, Pressable, StyleSheet } from 'react-native';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -85,9 +85,9 @@ export const TermsScreen = () => {
             <Column gap={8}>
               <Title3>5. Editing a Pledge</Title3>
               <Body>
-                You may edit an active pledge before its deadline. Editing
-                incurs a 10% penalty on your staked amount, which is distributed
-                to the treasury and charity wallets.
+                You may edit an active pledge before its deadline. Changes to
+                your pledge name, tasks, and schedule will be saved with no
+                penalty.
               </Body>
             </Column>
 
@@ -127,6 +127,26 @@ export const TermsScreen = () => {
                 Material changes will be communicated through the app.
               </Body>
             </Column>
+
+            <Column gap={8}>
+              <Title3>10. Contact & Community</Title3>
+              <Body>
+                If you have questions about these terms, reach out to us through
+                our community channels:
+              </Body>
+              <Body
+                style={[styles.link, { color: theme.colors.primary }]}
+                onPress={() => Linking.openURL('https://t.me/+79qOqyJ_WYExYTk5')}
+              >
+                Telegram Community
+              </Body>
+              <Body
+                style={[styles.link, { color: theme.colors.primary }]}
+                onPress={() => Linking.openURL('https://x.com/Pledge_dapp')}
+              >
+                Follow us on X
+              </Body>
+            </Column>
           </Column>
         </TrackedScrollView>
       </Column>
@@ -141,5 +161,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  link: {
+    textDecorationLine: 'underline',
   },
 });

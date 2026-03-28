@@ -55,6 +55,7 @@ export interface ProgramConfigAccount {
   bump: number;
   crankAuthority: PublicKey;
   allowedMint: PublicKey;
+  pendingAdmin: PublicKey | null;
 }
 
 // Args for createPledge instruction

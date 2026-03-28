@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { Linking, Pressable, StyleSheet } from 'react-native';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -107,6 +107,26 @@ export const PrivacyScreen = () => {
                 notify users of material changes through the app.
               </Body>
             </Column>
+
+            <Column gap={8}>
+              <Title3>8. Contact & Community</Title3>
+              <Body>
+                If you have questions about your data or this privacy policy,
+                reach out to us through our community channels:
+              </Body>
+              <Body
+                style={[styles.link, { color: theme.colors.primary }]}
+                onPress={() => Linking.openURL('https://t.me/+79qOqyJ_WYExYTk5')}
+              >
+                Telegram Community
+              </Body>
+              <Body
+                style={[styles.link, { color: theme.colors.primary }]}
+                onPress={() => Linking.openURL('https://x.com/Pledge_dapp')}
+              >
+                Follow us on X
+              </Body>
+            </Column>
           </Column>
         </TrackedScrollView>
       </Column>
@@ -121,5 +141,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  link: {
+    textDecorationLine: 'underline',
   },
 });

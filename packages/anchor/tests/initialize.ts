@@ -132,12 +132,12 @@ describe('initialize', () => {
     // The validation is in the program, tested via the constraint
   });
 
-  it('fails with negative grace period', async () => {
+  it('fails with grace period below minimum', async () => {
     // Config is already initialized so we can't re-init to test this directly.
     // But we can test via updateConfig which has the same validation.
     try {
       await ctx.program.methods
-        .updateConfig(null, null, null, null, null, null, null, new anchor.BN(-1), null)
+        .updateConfig(null, null, null, null, null, null, null, new anchor.BN(1), null)
         .accounts({
           admin: ctx.admin.publicKey,
           config: ctx.configPda,
@@ -146,9 +146,9 @@ describe('initialize', () => {
         .signers([ctx.admin])
         .rpc();
 
-      expect.fail('Should have thrown InvalidTimestamp error');
+      expect.fail('Should have thrown InvalidGracePeriod error');
     } catch (err) {
-      expect(err.message).to.include('InvalidTimestamp');
+      expect(err.message).to.include('InvalidGracePeriod');
     }
   });
 });

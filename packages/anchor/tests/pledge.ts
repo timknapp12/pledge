@@ -23,6 +23,7 @@ import "./reportCompletion";
 import "./processCompletion";
 import "./processExpired";
 import "./editPledge";
+import "./transferAdmin";
 
 // Note: Tests are designed to run sequentially since some tests
 // depend on program state from previous tests.

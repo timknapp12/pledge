@@ -453,11 +453,13 @@ export const useUpdatePledgeStatus = () => {
       status,
       completionPercentage,
       settleTxSignature,
+      pointsEarned,
     }: {
       pledgeId: string;
       status: Pledge['status'];
       completionPercentage?: number;
       settleTxSignature?: string;
+      pointsEarned?: number;
     }) => {
       const updateData: Record<string, unknown> = { status };
       if (completionPercentage !== undefined) {
@@ -465,6 +467,9 @@ export const useUpdatePledgeStatus = () => {
       }
       if (settleTxSignature) {
         updateData.settle_tx_signature = settleTxSignature;
+      }
+      if (pointsEarned !== undefined) {
+        updateData.points_earned = pointsEarned;
       }
 
       const { data, error } = await supabase
@@ -475,6 +480,17 @@ export const useUpdatePledgeStatus = () => {
         .single();
 
       if (error) throw error;
+
+      // Award points to user
+      if (pointsEarned && pointsEarned > 0) {
+        const { error: pointsError } = await supabase.rpc('increment_points', {
+          p_user_id: data.user_id,
+          p_points: pointsEarned,
+        });
+        if (pointsError) {
+          console.error('Failed to award points:', pointsError);
+        }
+      }
 
       // Cancel pending notifications when pledge is completed or forfeited
       if (status === 'Completed' || status === 'Forfeited') {
@@ -495,9 +511,32 @@ export const useUpdatePledgeStatus = () => {
         queryKey: queryKeys.pledge(variables.pledgeId),
       });
       queryClient.invalidateQueries({ queryKey: ['pledges'] });
+      if (variables.pointsEarned && variables.pointsEarned > 0) {
+        queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+      }
     },
   });
 }
+
+// Fetch user profile (points, etc.)
+export const useUserProfile = () => {
+  const { supabase, user } = useAuth();
+
+  return useQuery({
+    queryKey: queryKeys.userProfile(user?.id ?? ''),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('users')
+        .select('points')
+        .eq('id', user!.id)
+        .single();
+
+      if (error) throw error;
+      return data as { points: number };
+    },
+    enabled: !!user?.id,
+  });
+};
 
 // Fetch user's templates
 export const useTemplates = () => {

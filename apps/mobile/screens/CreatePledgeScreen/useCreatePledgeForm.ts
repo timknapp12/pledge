@@ -61,23 +61,33 @@ export const useCreatePledgeForm = () => {
   const stakeAmountSheetRef = useRef<BottomSheet>(null);
   const saveTemplateSheetRef = useRef<BottomSheet>(null);
 
-  // Load template when templateId is present
+  // Apply a template's task definitions and duration to the form
+  const loadTemplate = useCallback(
+    (id: string) => {
+      if (!templates) return;
+      const template = templates.find((t) => t.id === id);
+      if (!template) return;
+
+      if (template.task_definitions) {
+        setTaskDefinitions(template.task_definitions);
+      }
+
+      const preset = (template.default_timeframe || '1week') as DurationPreset;
+      setDurationPreset(preset);
+      const days = DURATION_DAYS[preset] ?? 7;
+      const newEnd = new Date();
+      newEnd.setDate(newEnd.getDate() + days);
+      setEndDate(newEnd);
+      setTemplateDirty(false);
+    },
+    [templates],
+  );
+
+  // Load template when templateId is present (from URL params)
   useEffect(() => {
     if (!templateId || !templates) return;
-    const template = templates.find((t) => t.id === templateId);
-    if (!template) return;
-
-    if (template.task_definitions) {
-      setTaskDefinitions(template.task_definitions);
-    }
-
-    const preset = (template.default_timeframe || '1week') as DurationPreset;
-    setDurationPreset(preset);
-    const days = DURATION_DAYS[preset] ?? 7;
-    const newEnd = new Date();
-    newEnd.setDate(newEnd.getDate() + days);
-    setEndDate(newEnd);
-  }, [templateId, templates]);
+    loadTemplate(templateId);
+  }, [templateId, templates, loadTemplate]);
 
   // Computed values
   const durationDays = useMemo(() => {
@@ -307,6 +317,10 @@ export const useCreatePledgeForm = () => {
     pledgeTodos,
     isValid,
     templateDirty,
+
+    // Templates
+    templates,
+    loadTemplate,
 
     // Handlers
     addTaskDefinition,

@@ -1,12 +1,10 @@
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
-import { usePersonalityText } from '@/hooks/usePersonalityText';
 import { Title2, BodySecondary, CenteredColumn } from '@/components';
 
 export const EmptyState = () => {
   const { t } = useTranslation();
-  const tp = usePersonalityText();
   const { theme } = useAppTheme();
 
   return (
@@ -20,7 +18,7 @@ export const EmptyState = () => {
         {t('No past pledges yet')}
       </Title2>
       <BodySecondary style={{ textAlign: 'center', maxWidth: 280 }}>
-        {tp('Complete your first pledge to see it here.')}
+        {t('Complete your first pledge to see it here.')}
       </BodySecondary>
     </CenteredColumn>
   );

@@ -53,6 +53,15 @@ pub enum ErrorCode {
     #[msg("Invalid completion percentage - must be 0-100")]
     InvalidCompletionPercentage,
 
+    #[msg("Invalid grace period - must be greater than zero")]
+    InvalidGracePeriod,
+
+    #[msg("Not the pending admin")]
+    NotPendingAdmin,
+
+    #[msg("No pending admin transfer")]
+    NoPendingAdminTransfer,
+
     // Math errors
     #[msg("Numeric overflow")]
     Overflow,
