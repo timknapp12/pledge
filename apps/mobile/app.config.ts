@@ -21,7 +21,7 @@ const MAINNET_USDC = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'; // Mainnet 
 // Program IDs
 const DEVNET_PROGRAM_ID =
   process.env.EXPO_PUBLIC_PROGRAM_ID || 'YOUR_DEVNET_PROGRAM_ID';
-const MAINNET_PROGRAM_ID = 'YOUR_MAINNET_PROGRAM_ID'; // TODO: Deploy to mainnet
+const MAINNET_PROGRAM_ID = 'PLDG12YsnCxRHa9CkWDnzkA9vsbEFpThXHR9zgnDTDp';
 
 // Supabase Configuration (dev/preview share one project, production uses another)
 const DEV_SUPABASE_URL =
@@ -31,7 +31,7 @@ const DEV_SUPABASE_PUBLISHABLE_KEY =
   process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
 
 const PROD_SUPABASE_URL =
-  process.env.EXPO_PUBLIC_SUPABASE_URL || 'YOUR_PROD_SUPABASE_URL';
+  process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://xbltaxjcpthidsglslxf.supabase.co';
 const PROD_SUPABASE_PUBLISHABLE_KEY =
   process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
 
@@ -127,7 +127,7 @@ module.exports = {
         {
           android: {
             minSdkVersion: 26, // Required for MWA
-            enableProguardInReleaseBuilds: true,
+            enableProguardInReleaseBuilds: false,
           },
         },
       ],
