@@ -33,7 +33,7 @@ interface OnboardingPage {
 const PAGES: OnboardingPage[] = [
   {
     icon: 'rocket-outline',
-    titleKey: 'Pledge your tokens, achieve your goals',
+    titleKey: 'Pledge your tokens, crush your goals',
     bodyKey: 'onboarding_welcome_body',
   },
   {
