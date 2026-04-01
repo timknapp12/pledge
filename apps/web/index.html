@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pledge — Pledge your tokens. Crush your goals.</title>
+    <meta
+      name="description"
+      content="The Solana dApp that puts your USDC where your mouth is. Set a goal, pledge tokens, and get them back when you deliver. Exclusively on the Solana Seeker phone."
+    />
+
+    <!-- Open Graph -->
+    <meta
+      property="og:title"
+      content="Pledge — Pledge your tokens. Crush your goals."
+    />
+    <meta
+      property="og:description"
+      content="The Solana dApp that puts your USDC where your mouth is."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="images/P-purple-1024.png" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="images/favicon.png" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Iceberg&family=Space+Mono&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <!-- ========== Nav ========== -->
+    <nav class="nav" id="nav">
+      <div class="container nav__inner">
+        <a href="#" class="nav__logo">
+          <span>Pledge</span>
+        </a>
+
+        <div class="nav__links">
+          <a href="#how-it-works">How It Works</a>
+          <a href="#fees">Fees</a>
+          <a href="#faq">FAQ</a>
+        </div>
+
+        <div class="nav__social">
+          <a
+            href="https://t.me/+79qOqyJ_WYExYTk5"
+            target="_blank"
+            rel="noopener"
+            aria-label="Telegram"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M22 2 11 13" />
+              <path d="m22 2-7 20-4-9-9-4 20-7z" />
+            </svg>
+          </a>
+          <a
+            href="https://x.com/Pledge_dapp"
+            target="_blank"
+            rel="noopener"
+            aria-label="X (Twitter)"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+              />
+            </svg>
+          </a>
+        </div>
+
+        <button class="nav__hamburger" id="navOpen" aria-label="Open menu">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          >
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Mobile nav overlay -->
+    <div class="nav__mobile" id="navMobile">
+      <button class="nav__close" id="navClose" aria-label="Close menu">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+        >
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+      <a href="#how-it-works" class="nav-mobile-link">How It Works</a>
+      <a href="#fees" class="nav-mobile-link">Fees</a>
+      <a href="#faq" class="nav-mobile-link">FAQ</a>
+      <a href="https://t.me/+79qOqyJ_WYExYTk5" target="_blank" rel="noopener"
+        >Telegram</a
+      >
+      <a href="https://x.com/Pledge_dapp" target="_blank" rel="noopener"
+        >X (Twitter)</a
+      >
+    </div>
+
+    <!-- ========== Hero ========== -->
+    <section class="hero">
+      <div class="hero__content">
+        <img
+          src="images/pledge-white.png"
+          alt="Pledge"
+          class="hero__logo"
+          width="180"
+          height="180"
+        />
+        <h1 class="hero__title">Pledge your tokens. Crush your goals.</h1>
+        <p class="hero__subtitle">
+          The Solana dApp that puts your USDC where your mouth is. Set a goal,
+          pledge tokens, and get them back when you deliver. Exclusively on the
+          Solana Seeker phone.
+        </p>
+        <div class="hero__ctas">
+          <a
+            href="https://t.me/+79qOqyJ_WYExYTk5"
+            target="_blank"
+            rel="noopener"
+            class="btn btn--primary"
+            >Get It on Seeker</a
+          >
+          <a
+            href="https://t.me/+79qOqyJ_WYExYTk5"
+            target="_blank"
+            rel="noopener"
+            class="btn btn--secondary"
+            >Join Community</a
+          >
+        </div>
+      </div>
+      <div class="hero__scroll" aria-hidden="true">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </div>
+    </section>
+
+    <!-- ========== How It Works ========== -->
+    <section class="section how-it-works" id="how-it-works">
+      <div class="container">
+        <div class="section-header">
+          <h2>How It Works</h2>
+          <p>Three steps. Real accountability. No excuses.</p>
+        </div>
+
+        <div class="grid-3">
+          <div class="card animate-on-scroll stagger-1">
+            <div class="step-number">1</div>
+            <h3 class="title3">Set Your Goal</h3>
+            <p>
+              Create a pledge with daily tasks, set your deadline, and choose
+              how much USDC to put on the line.
+            </p>
+          </div>
+
+          <div class="card animate-on-scroll stagger-2">
+            <div class="step-number">2</div>
+            <h3 class="title3">Pledge USDC</h3>
+            <p>
+              Your USDC goes into a secure on-chain vault on Solana. It stays
+              there until your deadline passes.
+            </p>
+          </div>
+
+          <div class="card animate-on-scroll stagger-3">
+            <div class="step-number">3</div>
+            <h3 class="title3">Deliver or Lose It</h3>
+            <p>
+              Complete 100% and get it all back, fee-free. Fall short and
+              forfeit proportionally. No wiggle room.
+            </p>
+          </div>
+        </div>
+
+        <div
+          class="card animate-on-scroll"
+          style="
+            margin-top: 32px;
+            text-align: center;
+            max-width: 720px;
+            margin-left: auto;
+            margin-right: auto;
+          "
+        >
+          <h3 class="title3" style="margin-bottom: 8px">
+            Built on trust, not surveillance.
+          </h3>
+          <p
+            style="
+              color: var(--text-secondary);
+              font-size: 0.9375rem;
+              line-height: 1.7;
+            "
+          >
+            Pledge doesn't verify your progress — you do. There's no camera
+            watching you, no GPS tracking your steps. You check off your tasks
+            and report your own results. The point isn't to catch you lying —
+            it's to give you a tool that holds you accountable to yourself. The
+            tokens are your motivation, the reminders are your nudge.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== Fees ========== -->
+    <section class="section" id="fees">
+      <div class="container">
+        <div class="section-header">
+          <h2>Transparent Fees. No Surprises.</h2>
+          <p>You only pay fees if you don't finish what you started.</p>
+        </div>
+
+        <div class="grid-3">
+          <div class="card fee-card animate-on-scroll stagger-1">
+            <span class="badge badge--green">100% Complete</span>
+            <div class="fee-amount" style="color: var(--completed)">0%</div>
+            <p class="fee-detail">Get every cent back. No fee. Period.</p>
+          </div>
+
+          <div class="card fee-card animate-on-scroll stagger-2">
+            <span class="badge badge--coral">Partial</span>
+            <div class="fee-amount" style="color: var(--expired)">1%</div>
+            <p class="fee-detail">Fee on the returned amount only.</p>
+            <div class="fee-example">50% on $10 = $4.95 back</div>
+          </div>
+
+          <div class="card fee-card animate-on-scroll stagger-3">
+            <span class="badge badge--red">0% Complete</span>
+            <div class="fee-amount" style="color: var(--forfeited)">100%</div>
+            <p class="fee-detail">Full forfeiture. 30% goes to charity.</p>
+          </div>
+        </div>
+
+        <p
+          class="text-center text-secondary"
+          style="margin-top: 32px; font-size: 0.875rem"
+        >
+          All fee percentages are configured on-chain and fully verifiable.
+        </p>
+      </div>
+    </section>
+
+    <!-- ========== Trust & Tech ========== -->
+    <section class="section" id="trust">
+      <div class="container">
+        <div class="section-header">
+          <h2>Built on Solana. Built in the Open.</h2>
+        </div>
+
+        <div class="trust-grid">
+          <div class="trust-list">
+            <div class="trust-item animate-on-scroll stagger-1">
+              <div class="trust-item__icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                >
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+              </div>
+              <div>
+                <h4>On-Chain Vaults</h4>
+                <p>
+                  Your USDC is held by a Solana program, not a company wallet.
+                  Trustless by design.
+                </p>
+              </div>
+            </div>
+
+            <div class="trust-item animate-on-scroll stagger-3">
+              <div class="trust-item__icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                >
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              </div>
+              <div>
+                <h4>No Custody</h4>
+                <p>
+                  We never touch your private keys. Sign in with your existing
+                  Solana wallet.
+                </p>
+              </div>
+            </div>
+
+            <div class="trust-item animate-on-scroll">
+              <div class="trust-item__icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="m2 12h20" />
+                  <path
+                    d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4>Multiple Languages</h4>
+                <p>Available in several languages.</p>
+              </div>
+            </div>
+
+            <div class="trust-item animate-on-scroll">
+              <div class="trust-item__icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </div>
+              <div>
+                <h4>Automatic Fallback</h4>
+                <p>
+                  Forgot to report? A crank service settles your pledge based on
+                  the tasks you checked off.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="trust-program animate-on-scroll">
+            <span class="trust-program__label">Solana Program ID</span>
+            <div class="trust-program__address">
+              PLDG12YsnCxRHa9CkWDnzkA9vsbEFpThXHR9zgnDTDp
+            </div>
+            <p>
+              Verify the program yourself on any Solana block explorer. All
+              pledge vaults, fee splits, and settlement logic live on-chain.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== FAQ ========== -->
+    <section class="section" id="faq">
+      <div class="container">
+        <div class="section-header">
+          <h2>Frequently Asked Questions</h2>
+        </div>
+
+        <div class="faq-list">
+          <details class="faq-item animate-on-scroll">
+            <summary>
+              What happens to my USDC when I create a pledge?
+              <svg
+                class="faq-chevron"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </summary>
+            <div class="faq-answer">
+              <div class="faq-answer__inner">
+                <p>
+                  Your USDC is transferred to a secure vault on the Solana
+                  blockchain. It stays there until you report your completion or
+                  the deadline passes. If you complete 100%, you get it all back
+                  with no fees.
+                </p>
+              </div>
+            </div>
+          </details>
+
+          <details class="faq-item animate-on-scroll">
+            <summary>
+              What if I only partially complete my goal?
+              <svg
+                class="faq-chevron"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </summary>
+            <div class="faq-answer">
+              <div class="faq-answer__inner">
+                <p>
+                  You get back a proportional amount minus a 1% fee. For
+                  example, if you pledged $10 and completed 50%, you get back
+                  $4.95 (50% minus 1% fee). The rest goes to the treasury and
+                  charity split.
+                </p>
+              </div>
+            </div>
+          </details>
+
+          <details class="faq-item animate-on-scroll">
+            <summary>
+              What happens if I forget to report?
+              <svg
+                class="faq-chevron"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </summary>
+            <div class="faq-answer">
+              <div class="faq-answer__inner">
+                <p>
+                  After your deadline plus a 24-hour grace period, our crank
+                  service will automatically process your pledge based on the
+                  tasks you checked off. So make sure to check off your tasks
+                  daily!
+                </p>
+              </div>
+            </div>
+          </details>
+
+          <details class="faq-item animate-on-scroll">
+            <summary>
+              What are daily tasks vs one-time tasks?
+              <svg
+                class="faq-chevron"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </summary>
+            <div class="faq-answer">
+              <div class="faq-answer__inner">
+                <p>
+                  Daily tasks repeat on your chosen schedule — every day,
+                  weekdays, weekends, or custom days. One-time tasks (goals) are
+                  things you complete once during your pledge period. You can
+                  mix both types in a single pledge.
+                </p>
+              </div>
+            </div>
+          </details>
+
+          <details class="faq-item animate-on-scroll">
+            <summary>
+              Can I edit a pledge after creating it?
+              <svg
+                class="faq-chevron"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </summary>
+            <div class="faq-answer">
+              <div class="faq-answer__inner">
+                <p>
+                  Yes, you can edit your pledge name, tasks, and schedule before
+                  the deadline with no penalty. However, you cannot change the
+                  pledge amount or deadline once the pledge is created on-chain.
+                </p>
+              </div>
+            </div>
+          </details>
+
+          <details class="faq-item animate-on-scroll">
+            <summary>
+              What is the grace period?
+              <svg
+                class="faq-chevron"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </summary>
+            <div class="faq-answer">
+              <div class="faq-answer__inner">
+                <p>
+                  After your deadline passes, you have a 24-hour grace period to
+                  self-report your completion percentage. This gives you the
+                  most accurate result. After the grace period, the crank
+                  service settles your pledge automatically based on checked-off
+                  tasks.
+                </p>
+              </div>
+            </div>
+          </details>
+
+          <details class="faq-item animate-on-scroll">
+            <summary>
+              Where do forfeited funds go?
+              <svg
+                class="faq-chevron"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </summary>
+            <div class="faq-answer">
+              <div class="faq-answer__inner">
+                <p>
+                  Forfeited funds are split between the Pledge treasury and a
+                  charity wallet. 30% of all forfeited funds go to a non-profit
+                  organization. The split is configured on-chain and fully
+                  transparent.
+                </p>
+              </div>
+            </div>
+          </details>
+
+          <details class="faq-item animate-on-scroll">
+            <summary>
+              Is Pledge safe to use?
+              <svg
+                class="faq-chevron"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </summary>
+            <div class="faq-answer">
+              <div class="faq-answer__inner">
+                <p>
+                  Pledge is open-source software — all code is publicly
+                  available for review. However, the smart contracts have NOT
+                  been formally audited by a third-party security firm. You use
+                  Pledge at your own risk. Never pledge more than you can afford
+                  to lose.
+                </p>
+              </div>
+            </div>
+          </details>
+
+          <details class="faq-item animate-on-scroll">
+            <summary>
+              Which wallets work with Pledge?
+              <svg
+                class="faq-chevron"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </summary>
+            <div class="faq-answer">
+              <div class="faq-answer__inner">
+                <p>
+                  Pledge uses Mobile Wallet Adapter (MWA) for Solana. Compatible
+                  wallets include Phantom and Solflare on Android. You need a
+                  wallet that supports MWA to connect and sign transactions.
+                </p>
+              </div>
+            </div>
+          </details>
+
+          <details class="faq-item animate-on-scroll">
+            <summary>
+              How can I contact the team?
+              <svg
+                class="faq-chevron"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </summary>
+            <div class="faq-answer">
+              <div class="faq-answer__inner">
+                <p>
+                  You can reach us through our
+                  <a
+                    href="https://t.me/+79qOqyJ_WYExYTk5"
+                    target="_blank"
+                    rel="noopener"
+                    style="color: var(--primary); text-decoration: underline"
+                    >Telegram community</a
+                  >
+                  or follow us on
+                  <a
+                    href="https://x.com/Pledge_dapp"
+                    target="_blank"
+                    rel="noopener"
+                    style="color: var(--primary); text-decoration: underline"
+                    >X (Twitter)</a
+                  >.
+                </p>
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== CTA ========== -->
+    <section class="section--gradient cta-section">
+      <div class="container">
+        <h2 class="animate-on-scroll">
+          Ready to Put Your Money<br />Where Your Goals Are?
+        </h2>
+        <p class="animate-on-scroll">
+          Join the community of goal-crushers on Solana.
+        </p>
+        <div class="hero__ctas animate-on-scroll">
+          <a
+            href="https://t.me/+79qOqyJ_WYExYTk5"
+            target="_blank"
+            rel="noopener"
+            class="btn btn--primary"
+            >Get Started</a
+          >
+          <a
+            href="https://t.me/+79qOqyJ_WYExYTk5"
+            target="_blank"
+            rel="noopener"
+            class="btn btn--secondary"
+            >Join Telegram</a
+          >
+        </div>
+        <div class="cta-social animate-on-scroll">
+          <a
+            href="https://t.me/+79qOqyJ_WYExYTk5"
+            target="_blank"
+            rel="noopener"
+            aria-label="Telegram"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M22 2 11 13" />
+              <path d="m22 2-7 20-4-9-9-4 20-7z" />
+            </svg>
+          </a>
+          <a
+            href="https://x.com/Pledge_dapp"
+            target="_blank"
+            rel="noopener"
+            aria-label="X (Twitter)"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+              />
+            </svg>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== Footer ========== -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer__inner">
+          <a href="#" class="footer__logo">
+            <span>Pledge</span>
+          </a>
+
+          <div class="footer__links">
+            <a href="terms.html">Terms</a>
+            <a href="privacy.html">Privacy</a>
+            <a href="#faq">FAQ</a>
+          </div>
+
+          <div class="footer__social">
+            <a
+              href="https://t.me/+79qOqyJ_WYExYTk5"
+              target="_blank"
+              rel="noopener"
+              aria-label="Telegram"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M22 2 11 13" />
+                <path d="m22 2-7 20-4-9-9-4 20-7z" />
+              </svg>
+            </a>
+            <a
+              href="https://x.com/Pledge_dapp"
+              target="_blank"
+              rel="noopener"
+              aria-label="X (Twitter)"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+                />
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        <div class="footer__bottom">
+          Built on Solana &middot; &copy; 2026 Pledge
+        </div>
+      </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+  </body>
+</html>
