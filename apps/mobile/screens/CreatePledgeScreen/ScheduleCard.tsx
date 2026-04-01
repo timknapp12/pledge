@@ -96,6 +96,14 @@ export const ScheduleCard = ({
             >
               <Body>{formatDate(endDate)}</Body>
             </View>
+            <View
+              style={[
+                styles.dateChip,
+                { backgroundColor: theme.colors.background },
+              ]}
+            >
+              <Body>{formatTime(endDate)}</Body>
+            </View>
             <Ionicons
               name='chevron-forward'
               size={16}

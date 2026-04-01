@@ -212,6 +212,7 @@
   "Fair & Simple Rules": "Reglas Justas y Simples",
   "24-Hour Grace Period": "Período de Gracia de 24 Horas",
   "You're Ready!": "¡Estás Listo!",
+  "You can report after {{deadline}}": "Puedes reportar después del {{deadline}}",
   "onboarding_welcome_body": "Establece una meta, apuesta tu USDC y recupéralo al cumplir. Pledge te mantiene comprometido.",
   "onboarding_how_body": "1. Crea una meta con tareas y fecha límite\n2. Apuesta tu USDC como compromiso\n3. Registra tu progreso diariamente\n4. Reporta tu completado y recupera tus tokens",
   "onboarding_tasks_body": "Las tareas diarias se repiten según tu horario elegido — todos los días, entre semana, fines de semana o días personalizados. Las tareas únicas están marcadas con un botón \"No diario\" y son metas que completas una vez durante tu período. Combina ambos tipos en un solo compromiso.",

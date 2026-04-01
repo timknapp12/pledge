@@ -46,10 +46,13 @@ import {
 function formatDeadline(deadline: string): string {
   const date = new Date(deadline);
   return date.toLocaleDateString(undefined, {
-    weekday: 'long',
-    month: 'long',
+    weekday: 'short',
+    month: 'short',
     day: 'numeric',
     year: 'numeric',
+  }) + ' ' + date.toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
   });
 }
 
@@ -370,13 +373,19 @@ export const PledgeDetailScreen = () => {
 
       {pledge.status === 'Active' && (
         <CenteredColumn>
-          <PrimaryButton
-            onPress={handleReportAndSettle}
-            disabled={isReporting}
-            loading={isReporting}
-          >
-            {t('Report Completion')}
-          </PrimaryButton>
+          {new Date(pledge.deadline) <= new Date() ? (
+            <PrimaryButton
+              onPress={handleReportAndSettle}
+              disabled={isReporting}
+              loading={isReporting}
+            >
+              {t('Report Completion')}
+            </PrimaryButton>
+          ) : (
+            <BodySecondary style={{ textAlign: 'center' }}>
+              {t('You can report after {{deadline}}', { deadline: formatDeadline(pledge.deadline) })}
+            </BodySecondary>
+          )}
         </CenteredColumn>
       )}
     </ScreenContainer>

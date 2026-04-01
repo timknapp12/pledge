@@ -212,6 +212,7 @@
   "Fair & Simple Rules": "Règles Justes et Simples",
   "24-Hour Grace Period": "Période de Grâce de 24 Heures",
   "You're Ready!": "Vous êtes prêt !",
+  "You can report after {{deadline}}": "Vous pourrez signaler après le {{deadline}}",
   "onboarding_welcome_body": "Fixez un objectif, misez vos USDC et récupérez-les en tenant votre engagement. Pledge vous garde responsable.",
   "onboarding_how_body": "1. Créez un objectif avec des tâches et une date limite\n2. Misez vos USDC comme engagement\n3. Suivez vos progrès quotidiennement\n4. Signalez votre achèvement et récupérez vos tokens",
   "onboarding_tasks_body": "Les tâches quotidiennes se répètent selon votre planning — tous les jours, en semaine, le week-end ou jours personnalisés. Les tâches uniques sont marquées par un bouton \"Pas quotidien\" et sont des objectifs à compléter une fois pendant votre période. Combinez les deux types dans un seul engagement.",
