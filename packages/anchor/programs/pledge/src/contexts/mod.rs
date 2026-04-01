@@ -1,4 +1,5 @@
 pub mod initialize;
+pub mod extend_config_layout;
 pub mod update_config;
 pub mod create_pledge;
 pub mod edit_pledge;
@@ -8,6 +9,7 @@ pub mod process_expired;
 pub mod transfer_admin;
 
 pub use initialize::*;
+pub use extend_config_layout::*;
 pub use update_config::*;
 pub use create_pledge::*;
 pub use edit_pledge::*;
