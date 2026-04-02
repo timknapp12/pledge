@@ -2,17 +2,9 @@
 // Supports: development, preview, production environments
 // Android only
 
-// Helius API Key (works for both devnet and mainnet)
-const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
-
-// Solana Network Configuration
-const DEVNET_RPC = HELIUS_API_KEY
-  ? `https://devnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`
-  : 'https://api.devnet.solana.com';
-
-const MAINNET_RPC = HELIUS_API_KEY
-  ? `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`
-  : 'https://api.mainnet-beta.solana.com';
+// RPC URLs - proxied through Supabase Edge Functions to keep Helius API key server-side
+// The rpc-proxy edge function forwards JSON-RPC requests to Helius
+// Fallback to public RPCs if Supabase URL is not configured
 
 // USDC Mint Addresses
 const DEVNET_USDC = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'; // Devnet USDC
@@ -47,7 +39,7 @@ let packageName = 'com.pledge.dev';
 let scheme = 'pledgedev';
 let env = 'development';
 let solanaNetwork = 'devnet';
-let solanaRpcUrl = DEVNET_RPC;
+let solanaRpcUrl = `${DEV_SUPABASE_URL}/functions/v1/rpc-proxy`;
 let usdcMint = DEVNET_USDC;
 let programId = DEVNET_PROGRAM_ID;
 let supabaseUrl = DEV_SUPABASE_URL;
@@ -71,7 +63,7 @@ if (process.env.DEPLOY_ENVIRONMENT === 'production') {
   scheme = 'pledge';
   env = 'production';
   solanaNetwork = 'mainnet-beta';
-  solanaRpcUrl = MAINNET_RPC;
+  solanaRpcUrl = `${PROD_SUPABASE_URL}/functions/v1/rpc-proxy`;
   usdcMint = MAINNET_USDC;
   programId = MAINNET_PROGRAM_ID;
   supabaseUrl = PROD_SUPABASE_URL;
