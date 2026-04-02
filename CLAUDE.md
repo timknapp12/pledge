@@ -53,7 +53,7 @@ Use MCP tools for documentation and project management:
 | Wallet          | Solana Mobile Wallet Adapter (MWA)              |
 | Blockchain      | Anchor 0.31.0                                   |
 | Frontend Solana | @solana/web3.js v1.x, @coral-xyz/anchor v0.28.0 |
-| RPC             | Helius (free tier)                              |
+| RPC             | Helius (free tier), proxied via Supabase Edge Function |
 | Database        | Supabase (Postgres)                             |
 | Notifications   | Supabase pg_cron + Edge Functions               |
 | i18n            | i18next (en, es, fr), personality-aware via `tp()` |
@@ -639,15 +639,14 @@ ts-node scripts/update-split.ts --treasury 70 --charity 30
 ## Environment Variables
 
 ```env
-# Mobile App
 # Mobile App (apps/mobile/.env)
-HELIUS_API_KEY=           # Works for both devnet and mainnet
+# Note: HELIUS_API_KEY is NOT in the mobile app — it lives only in Supabase Edge Function secrets
 EXPO_PUBLIC_SUPABASE_URL=
 EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 EXPO_PUBLIC_PROGRAM_ID=
 
 # Supabase Functions (supabase/.env)
-HELIUS_API_KEY=           # Same key, used by Edge Functions
+HELIUS_API_KEY=           # Used by rpc-proxy and other Edge Functions (never in client bundle)
 SOLANA_NETWORK=           # 'devnet' or 'mainnet' (defaults to mainnet)
 PROGRAM_ID=
 CRANK_KEYPAIR=            # Base58 encoded

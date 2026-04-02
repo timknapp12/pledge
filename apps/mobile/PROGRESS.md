@@ -51,8 +51,17 @@
 - [x] **Environment Configuration**
 
   - app.config.ts with environment-based settings
-  - HELIUS_API_KEY for RPC URL construction
   - Devnet/mainnet switching
+
+- [x] **RPC Proxy (Security)** ✅
+
+  - Supabase Edge Function (`supabase/functions/rpc-proxy/index.ts`)
+  - Proxies JSON-RPC requests to Helius, keeping API key server-side
+  - Prevents Helius API key from being embedded in the app bundle
+  - `SOLANA_NETWORK` env var controls devnet vs mainnet Helius endpoint
+  - Deployed to both dev (`ejgcfgjkwlkblwrqtqbr`) and prod (`xbltaxjcpthidsglslxf`)
+  - `app.config.ts` updated: RPC URL now points to `{supabaseUrl}/functions/v1/rpc-proxy`
+  - No JWT verification (RPC calls are public, the proxy protects the API key)
 
 - [x] **Auth Flow (Sign in with Solana)** ✅
 
@@ -223,6 +232,14 @@
   - DB migration: `task_definitions` column on templates table
 
 ---
+
+### Apr 1, 2026
+
+**What was built:**
+
+- RPC Proxy Edge Function: proxies Solana JSON-RPC requests through Supabase to keep Helius API key server-side
+- Deployed to both dev and prod Supabase projects
+- Updated `app.config.ts` to use proxy URL instead of embedding Helius key in app bundle
 
 ## In Progress
 

@@ -493,11 +493,12 @@ USING ((SELECT auth.uid())::text = wallet_address);
 
 ### Edge Functions
 
-| Function            | Purpose                          | Auth         |
-| ------------------- | -------------------------------- | ------------ |
-| `verify-wallet`     | Verify SIWS signature, issue JWT | Public       |
-| `process-crank`     | Process expired pledges          | Service role |
-| `send-notification` | Send push notifications          | Service role |
+| Function            | Purpose                                        | Auth         |
+| ------------------- | ---------------------------------------------- | ------------ |
+| `verify-wallet`     | Verify SIWS signature, issue JWT               | Public       |
+| `rpc-proxy`         | Proxy JSON-RPC to Helius (API key server-side) | Public       |
+| `process-crank`     | Process expired pledges                        | Service role |
+| `send-notification` | Send push notifications                        | Service role |
 
 ---
 
