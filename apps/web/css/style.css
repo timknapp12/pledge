@@ -782,6 +782,31 @@ h1, h2, h3, h4 {
   color: var(--white);
 }
 
+/* --- Points Page --- */
+.points-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin: 24px 0;
+}
+
+.points-card__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.points-card__header .step-number {
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .points-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* --- Section Headers --- */
 .section-header {
   text-align: center;
