@@ -19,6 +19,7 @@ import {
   ScreenContainer,
   PrimaryButton,
 } from '@/components';
+import { usePledges } from '@/hooks/useSupabase';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -70,15 +71,24 @@ export const OnboardingScreen = () => {
   const { fromSettings } = useLocalSearchParams<{ fromSettings?: string }>();
   const isFromSettings = fromSettings === 'true';
 
+  const { data: pledges } = usePledges();
+  const hasPledges = (pledges?.length ?? 0) > 0;
+
   const flatListRef = useRef<FlatList>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleDone = useCallback(async () => {
     if (!isFromSettings) {
       await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+      if (hasPledges) {
+        router.replace('/');
+      } else {
+        router.replace('/referral-code');
+      }
+    } else {
+      router.back();
     }
-    router.back();
-  }, [isFromSettings, router]);
+  }, [isFromSettings, hasPledges, router]);
 
   const handleNext = useCallback(() => {
     if (currentIndex < PAGES.length - 1) {

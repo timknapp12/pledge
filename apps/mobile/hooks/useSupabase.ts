@@ -436,8 +436,9 @@ export const useCreatePledgeInDb = () => {
       return data;
     },
     onSuccess: () => {
-      // Invalidate pledges list
       queryClient.invalidateQueries({ queryKey: ['pledges'] });
+      queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['pointEvents'] });
     },
   });
 }
@@ -496,6 +497,7 @@ export const useUpdatePledgeStatus = () => {
       });
       queryClient.invalidateQueries({ queryKey: ['pledges'] });
       queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['pointEvents'] });
     },
   });
 }
