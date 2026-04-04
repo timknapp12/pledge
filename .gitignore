@@ -28,6 +28,9 @@ packages/anchor/target/
 packages/anchor/.anchor/
 packages/anchor/test-ledger/
 
+# Deploy tools (kept locally, not in repo)
+apps/web/deploy.html
+
 # Environment
 .env
 .env.local
