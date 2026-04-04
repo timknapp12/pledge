@@ -35,7 +35,6 @@ export const ConnectWalletScreen = () => {
           />
           <Title1>{t('Pledge')}</Title1>
           <Gap gap={32} />
-          {/* // TODO - think of new copy */}
           <BodySecondary style={{ textAlign: 'center', maxWidth: 280 }}>
             {t(
               'Pledge your tokens, crush your goals. Connect your wallet to get started.',
