@@ -19,9 +19,11 @@ import * as Clipboard from 'expo-clipboard';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  useAnimatedReaction,
   withTiming,
   withSequence,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import {
   Title1,
   Title2,
@@ -46,6 +48,7 @@ import {
   useReferralCount,
 } from '@/hooks/useSupabase';
 import { PointEventItem } from './PointEventItem';
+import { getAnimatedDisplayInteger } from '@/lib/animatedAmount';
 
 const POINTS_URL = 'https://pledgeapp.xyz/points.html';
 
@@ -57,6 +60,45 @@ export const PointsScreen = () => {
   const { data: seasonData } = useSeasonPoints();
   const { data: pointEvents } = usePointEvents();
   const { data: referralCount } = useReferralCount();
+
+  const totalPoints = userProfile?.points ?? 0;
+  const seasonPoints = seasonData?.seasonPoints ?? 0;
+
+  // Animated points count-up
+  const [displayPoints, setDisplayPoints] = useState(0);
+  const [displaySeasonPoints, setDisplaySeasonPoints] = useState(0);
+  const pointsProgress = useSharedValue(0);
+  const totalPointsRef = useSharedValue(totalPoints);
+  const seasonPointsRef = useSharedValue(seasonPoints);
+
+  useEffect(() => {
+    totalPointsRef.value = totalPoints;
+    seasonPointsRef.value = seasonPoints;
+    setDisplayPoints(0);
+    setDisplaySeasonPoints(0);
+    pointsProgress.value = 0;
+    pointsProgress.value = withTiming(100, { duration: 1000 });
+  }, [totalPoints, seasonPoints, pointsProgress, totalPointsRef, seasonPointsRef]);
+
+  const updateDisplayPoints = useCallback(
+    (progress: number, total: number, season: number) => {
+      setDisplayPoints(getAnimatedDisplayInteger(progress, total));
+      setDisplaySeasonPoints(getAnimatedDisplayInteger(progress, season));
+    },
+    [],
+  );
+
+  useAnimatedReaction(
+    () => pointsProgress.value,
+    (progress) => {
+      scheduleOnRN(
+        updateDisplayPoints,
+        progress,
+        totalPointsRef.value,
+        seasonPointsRef.value,
+      );
+    },
+  );
 
   const referralCode = userProfile?.referral_code ?? '';
   const [_copied, setCopied] = useState(false);
@@ -156,14 +198,14 @@ export const PointsScreen = () => {
           <Card style={localStyles.statCard}>
             <Ionicons name='star' size={28} color={theme.colors.primary} />
             <Title2 style={{ color: theme.colors.primary }}>
-              {userProfile?.points ?? 0}
+              {displayPoints}
             </Title2>
             <BodySmallSecondary>{t('Total Points')}</BodySmallSecondary>
           </Card>
           <Card style={localStyles.statCard}>
             <Ionicons name='trophy' size={28} color={theme.colors.accent} />
             <Title2 style={{ color: theme.colors.accent }}>
-              {seasonData?.seasonPoints ?? 0}
+              {displaySeasonPoints}
             </Title2>
             <BodySmallSecondary>
               {seasonData?.seasonName ?? t('Season Points')}
