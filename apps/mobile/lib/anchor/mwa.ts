@@ -1,4 +1,4 @@
-import { Transaction } from '@solana/web3.js';
+import { Transaction, Connection } from '@solana/web3.js';
 import {
   transact,
   Web3MobileWallet,
@@ -49,27 +49,51 @@ export const signAndSendTransaction = async (
       },
     );
 
-    // Wait for confirmation
-    const confirmation = await connection.confirmTransaction(
-      {
-        signature,
-        blockhash: transaction.recentBlockhash!,
-        lastValidBlockHeight: transaction.lastValidBlockHeight!,
-      },
-      'confirmed',
-    );
-
-    if (confirmation.value.err) {
-      throw new Error(
-        `Transaction failed: ${JSON.stringify(confirmation.value.err)}`,
-      );
-    }
+    // Poll for confirmation (HTTP-only, works through RPC proxy)
+    await pollForConfirmation(connection, signature);
 
     return {
       signature,
       confirmed: true,
     };
   });
+};
+
+/**
+ * Poll for transaction confirmation using getSignatureStatuses.
+ * Works over HTTP — no WebSocket needed.
+ */
+const pollForConfirmation = async (
+  connection: Connection,
+  signature: string,
+  timeoutMs = 60000,
+  intervalMs = 2000,
+): Promise<void> => {
+  const start = Date.now();
+
+  while (Date.now() - start < timeoutMs) {
+    const { value } = await connection.getSignatureStatuses([signature]);
+    const status = value?.[0];
+
+    if (status) {
+      if (status.err) {
+        throw new Error(
+          `Transaction failed: ${JSON.stringify(status.err)}`,
+        );
+      }
+      // 'confirmed' or 'finalized' means success
+      if (
+        status.confirmationStatus === 'confirmed' ||
+        status.confirmationStatus === 'finalized'
+      ) {
+        return;
+      }
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+
+  throw new Error('Transaction confirmation timed out');
 };
 
 /**
