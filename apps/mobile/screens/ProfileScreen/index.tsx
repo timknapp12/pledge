@@ -96,6 +96,10 @@ export const ProfileScreen = () => {
     });
   };
 
+  const handlePoints = () => {
+    router.push('/points');
+  };
+
   const handleTemplates = () => {
     router.push('/templates');
   };
@@ -251,6 +255,11 @@ export const ProfileScreen = () => {
                   <Title3>{t('Settings')}</Title3>
                 </View>
                 <Card>
+                  <SettingsItem
+                    icon='star-outline'
+                    label={t('Points & Referrals')}
+                    onPress={handlePoints}
+                  />
                   <SettingsItem
                     icon='documents-outline'
                     label={t('Templates')}

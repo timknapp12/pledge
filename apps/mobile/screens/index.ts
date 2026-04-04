@@ -9,3 +9,5 @@ export * from './FAQScreen';
 export * from './TermsScreen';
 export * from './PrivacyScreen';
 export * from './OnboardingScreen';
+export * from './PointsScreen';
+export * from './ReferralCodeScreen';
