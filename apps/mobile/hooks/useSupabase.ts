@@ -453,13 +453,11 @@ export const useUpdatePledgeStatus = () => {
       status,
       completionPercentage,
       settleTxSignature,
-      pointsEarned,
     }: {
       pledgeId: string;
       status: Pledge['status'];
       completionPercentage?: number;
       settleTxSignature?: string;
-      pointsEarned?: number;
     }) => {
       const updateData: Record<string, unknown> = { status };
       if (completionPercentage !== undefined) {
@@ -467,9 +465,6 @@ export const useUpdatePledgeStatus = () => {
       }
       if (settleTxSignature) {
         updateData.settle_tx_signature = settleTxSignature;
-      }
-      if (pointsEarned !== undefined) {
-        updateData.points_earned = pointsEarned;
       }
 
       const { data, error } = await supabase
@@ -480,17 +475,6 @@ export const useUpdatePledgeStatus = () => {
         .single();
 
       if (error) throw error;
-
-      // Award points to user
-      if (pointsEarned && pointsEarned > 0) {
-        const { error: pointsError } = await supabase.rpc('increment_points', {
-          p_user_id: data.user_id,
-          p_points: pointsEarned,
-        });
-        if (pointsError) {
-          console.error('Failed to award points:', pointsError);
-        }
-      }
 
       // Cancel pending notifications when pledge is completed or forfeited
       if (status === 'Completed' || status === 'Forfeited') {
@@ -511,14 +495,12 @@ export const useUpdatePledgeStatus = () => {
         queryKey: queryKeys.pledge(variables.pledgeId),
       });
       queryClient.invalidateQueries({ queryKey: ['pledges'] });
-      if (variables.pointsEarned && variables.pointsEarned > 0) {
-        queryClient.invalidateQueries({ queryKey: ['userProfile'] });
-      }
+      queryClient.invalidateQueries({ queryKey: ['userProfile'] });
     },
   });
 }
 
-// Fetch user profile (points, etc.)
+// Fetch user profile (points, referral code, etc.)
 export const useUserProfile = () => {
   const { supabase, user } = useAuth();
 
@@ -527,14 +509,135 @@ export const useUserProfile = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('users')
-        .select('points')
+        .select('points, referral_code')
         .eq('id', user!.id)
         .single();
 
       if (error) throw error;
-      return data as { points: number };
+      return data as { points: number; referral_code: string | null };
     },
     enabled: !!user?.id,
+  });
+};
+
+// Point event type for the points history list
+export interface PointEvent {
+  id: string;
+  event_type: string;
+  points: number;
+  pledge_id: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
+// Fetch season points for current active season
+export const useSeasonPoints = () => {
+  const { supabase, user } = useAuth();
+
+  return useQuery({
+    queryKey: queryKeys.seasonPoints(user?.id ?? ''),
+    queryFn: async () => {
+      // Get the active season
+      const { data: season, error: seasonError } = await supabase
+        .from('seasons')
+        .select('id, name')
+        .eq('is_active', true)
+        .single();
+
+      if (seasonError || !season) return { seasonName: null, seasonPoints: 0 };
+
+      // Sum points for this user in this season
+      const { data, error } = await supabase
+        .from('point_events')
+        .select('points')
+        .eq('user_id', user!.id)
+        .eq('season_id', season.id);
+
+      if (error) throw error;
+
+      const seasonPoints = (data ?? []).reduce(
+        (sum: number, e: { points: number }) => sum + e.points,
+        0,
+      );
+      return { seasonName: season.name as string, seasonPoints };
+    },
+    enabled: !!user?.id,
+  });
+};
+
+// Fetch point events history
+export const usePointEvents = () => {
+  const { supabase, user } = useAuth();
+
+  return useQuery({
+    queryKey: queryKeys.pointEvents(user?.id ?? ''),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('point_events')
+        .select('id, event_type, points, pledge_id, metadata, created_at')
+        .eq('user_id', user!.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      return (data ?? []) as PointEvent[];
+    },
+    enabled: !!user?.id,
+  });
+};
+
+// Fetch referral count (how many users used this user's referral code)
+export const useReferralCount = () => {
+  const { supabase, user } = useAuth();
+
+  return useQuery({
+    queryKey: queryKeys.referralCount(user?.id ?? ''),
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('referrals')
+        .select('id', { count: 'exact', head: true })
+        .eq('referrer_id', user!.id);
+
+      if (error) throw error;
+      return count ?? 0;
+    },
+    enabled: !!user?.id,
+  });
+};
+
+// Submit a referral code (enter someone else's code)
+export const useSubmitReferralCode = () => {
+  const { supabase } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (code: string) => {
+      const { error } = await supabase.rpc('submit_referral_code', {
+        code: code.toUpperCase().trim(),
+      });
+
+      if (error) {
+        // Map Postgres exceptions to user-friendly messages
+        const msg = error.message || '';
+        if (msg.includes('Invalid referral code')) {
+          throw new Error('Invalid referral code');
+        }
+        if (msg.includes('Cannot use your own')) {
+          throw new Error('Cannot use your own referral code');
+        }
+        if (error.code === '23505') {
+          throw new Error('You have already used a referral code');
+        }
+        if (msg.includes('Cannot apply referral code after')) {
+          throw new Error('Cannot apply referral code after creating a pledge');
+        }
+        throw new Error(msg || 'Something went wrong');
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['pointEvents'] });
+    },
   });
 };
 
