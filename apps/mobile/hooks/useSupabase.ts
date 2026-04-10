@@ -719,6 +719,46 @@ export const useDeleteTemplate = () => {
   });
 }
 
+// Update pledge name and/or todos (DB-only, no on-chain transaction)
+export const useUpdatePledge = () => {
+  const { supabase } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      pledgeId,
+      name,
+      todos,
+    }: {
+      pledgeId: string;
+      name?: string;
+      todos?: PledgeTodos;
+    }) => {
+      const updateData: Record<string, unknown> = {};
+      if (name !== undefined) updateData.name = name;
+      if (todos !== undefined) updateData.todos = todos;
+
+      if (Object.keys(updateData).length === 0) return null;
+
+      const { data, error } = await supabase
+        .from('pledges')
+        .update(updateData)
+        .eq('id', pledgeId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pledge(variables.pledgeId),
+      });
+      queryClient.invalidateQueries({ queryKey: ['pledges'] });
+    },
+  });
+};
+
 // Calculate completion percentage from daily progress.
 // Only daily tasks count toward percentage. Goals are tracked separately.
 export const calculateCompletionPercentage = (
