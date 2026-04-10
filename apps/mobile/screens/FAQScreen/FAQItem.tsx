@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -12,7 +12,7 @@ import { Body, Row, Card } from '@/components';
 
 interface FAQItemProps {
   question: string;
-  answer: string;
+  answer: string | ReactNode;
 }
 
 export const FAQItem = ({ question, answer }: FAQItemProps) => {
@@ -51,24 +51,39 @@ export const FAQItem = ({ question, answer }: FAQItemProps) => {
           </Animated.View>
         </Row>
         <Animated.View style={bodyStyle}>
-          <Body
-            style={{
-              color: theme.colors.textSecondary,
-              paddingTop: 12,
-              lineHeight: 22,
-            }}
-          >
-            {t(answer)}
-          </Body>
+          {typeof answer === 'string' ? (
+            <Body
+              style={{
+                color: theme.colors.textSecondary,
+                paddingTop: 12,
+                lineHeight: 22,
+              }}
+            >
+              {t(answer)}
+            </Body>
+          ) : (
+            <View style={{ paddingTop: 12 }}>
+              {answer}
+            </View>
+          )}
         </Animated.View>
         {/* Hidden measurer — renders off-screen to capture content height */}
         <View style={styles.measurer} pointerEvents='none'>
-          <Body
-            onLayout={(e) => setContentHeight(e.nativeEvent.layout.height + 12)}
-            style={{ lineHeight: 22, paddingTop: 12 }}
-          >
-            {t(answer)}
-          </Body>
+          {typeof answer === 'string' ? (
+            <Body
+              onLayout={(e) => setContentHeight(e.nativeEvent.layout.height + 12)}
+              style={{ lineHeight: 22, paddingTop: 12 }}
+            >
+              {t(answer)}
+            </Body>
+          ) : (
+            <View
+              onLayout={(e) => setContentHeight(e.nativeEvent.layout.height + 12)}
+              style={{ paddingTop: 12 }}
+            >
+              {answer}
+            </View>
+          )}
         </View>
       </Card>
     </Pressable>
