@@ -43,6 +43,11 @@ const PAGES: OnboardingPage[] = [
     bodyKey: 'onboarding_how_body',
   },
   {
+    icon: 'checkbox-outline',
+    titleKey: 'Check Off Your Tasks Daily',
+    bodyKey: 'onboarding_checkoff_body',
+  },
+  {
     icon: 'calendar-outline',
     titleKey: 'Two Types of Tasks',
     bodyKey: 'onboarding_tasks_body',
