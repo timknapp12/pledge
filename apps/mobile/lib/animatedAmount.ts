@@ -1,4 +1,32 @@
 /**
+ * Returns the display increment for animated integer counting based on total value.
+ * Used so large numbers animate in sensible steps.
+ */
+function getIncrementForInteger(total: number): number {
+  if (total < 10) return 1;
+  if (total < 100) return 1;
+  if (total < 1_000) return 10;
+  if (total < 10_000) return 100;
+  if (total < 100_000) return 1_000;
+  return 10_000;
+}
+
+/**
+ * Given animation progress (0-100) and a total integer value,
+ * returns the stepped integer to display.
+ */
+export function getAnimatedDisplayInteger(
+  progress: number,
+  total: number,
+): number {
+  if (total <= 0) return 0;
+  const increment = getIncrementForInteger(total);
+  const ideal = total * (Math.min(100, Math.max(0, progress)) / 100);
+  const stepped = Math.round(ideal / increment) * increment;
+  return Math.min(total, stepped);
+}
+
+/**
  * Returns the display increment for animated amount counting based on total value.
  * Used so large amounts animate in sensible steps (cents for <$3, dollars for <$100, etc.)
  */

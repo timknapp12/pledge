@@ -73,18 +73,65 @@ declare module '@std/assert' {
   export function assertThrows(fn: () => void, msg?: string): void;
 }
 
-// Solana web3.js for daily-reconcile
+// Solana web3.js types used by Edge Functions (process-crank, daily-reconcile)
 declare module '@solana/web3.js' {
   export class Connection {
     constructor(endpoint: string, commitment?: string);
+    getAccountInfo(
+      publicKey: PublicKey,
+      commitment?: string
+    ): Promise<{ data: Uint8Array; lamports: number } | null>;
+    getLatestBlockhash(
+      commitment?: string
+    ): Promise<{ blockhash: string; lastValidBlockHeight: number }>;
     getProgramAccounts(
       programId: PublicKey,
       config?: { commitment?: string }
     ): Promise<Array<{ pubkey: PublicKey; account: { data: Uint8Array; lamports: number } }>>;
+    sendRawTransaction(
+      rawTransaction: Uint8Array | Buffer,
+      options?: { skipPreflight?: boolean; preflightCommitment?: string }
+    ): Promise<string>;
+    confirmTransaction(
+      signature: string,
+      commitment?: string
+    ): Promise<{ value: { err: unknown } }>;
   }
+
   export class PublicKey {
     constructor(value: string | Uint8Array);
+    static findProgramAddressSync(
+      seeds: Array<Uint8Array | Buffer>,
+      programId: PublicKey
+    ): [PublicKey, number];
     toBase58(): string;
+    toBuffer(): Buffer;
+    toBytes(): Uint8Array;
     toString(): string;
+    equals(other: PublicKey): boolean;
+  }
+
+  export class Keypair {
+    static fromSecretKey(secretKey: Uint8Array): Keypair;
+    static generate(): Keypair;
+    publicKey: PublicKey;
+    secretKey: Uint8Array;
+  }
+
+  export class Transaction {
+    constructor();
+    add(...instructions: TransactionInstruction[]): Transaction;
+    sign(...signers: Keypair[]): void;
+    serialize(): Buffer;
+    recentBlockhash: string;
+    feePayer: PublicKey;
+  }
+
+  export class TransactionInstruction {
+    constructor(opts: {
+      keys: Array<{ pubkey: PublicKey; isSigner: boolean; isWritable: boolean }>;
+      programId: PublicKey;
+      data?: Buffer;
+    });
   }
 }

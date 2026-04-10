@@ -38,10 +38,9 @@ export const EmptyState = ({ onCreatePress }: EmptyStateProps) => {
         </Title2>
 
         <Gap gap={32} />
-        {/* // TODO - think of new copy */}
         <BodySecondary style={{ textAlign: 'center', maxWidth: 280 }}>
           {t(
-            'Create your first pledge to start achieving your goals with skin in the game.'
+            'Create your first pledge to start achieving your goals with skin in the game.',
           )}
         </BodySecondary>
       </CenteredColumn>

@@ -20,8 +20,13 @@ import {
   usePledges,
   formatUsdcAmount,
   getEffectiveStatus,
+  useUserProfile,
+  useSeasonPoints,
 } from '@/hooks/useSupabase';
-import { getAnimatedDisplayLamports } from '@/lib/animatedAmount';
+import {
+  getAnimatedDisplayLamports,
+  getAnimatedDisplayInteger,
+} from '@/lib/animatedAmount';
 import {
   Title1,
   Title2,
@@ -55,6 +60,8 @@ export const HistoryScreen = () => {
     refetch,
     isRefetching,
   } = usePledges();
+  const { data: userProfile } = useUserProfile();
+  const { data: seasonData } = useSeasonPoints();
 
   // Filter for past pledges (completed, forfeited, or expired)
   const pastPledges =
@@ -88,10 +95,18 @@ export const HistoryScreen = () => {
     else break;
   }
 
+  const totalPoints = userProfile?.points ?? 0;
+  const seasonPoints = seasonData?.seasonPoints ?? 0;
+
   const [focusCount, setFocusCount] = useState(0);
   const [displayPledged, setDisplayPledged] = useState(0);
+  const [displayPoints, setDisplayPoints] = useState(0);
+  const [displaySeasonPoints, setDisplaySeasonPoints] = useState(0);
   const pledgedProgress = useSharedValue(0);
+  const pointsProgress = useSharedValue(0);
   const totalPledgedRef = useSharedValue(totalPledged);
+  const totalPointsRef = useSharedValue(totalPoints);
+  const seasonPointsRef = useSharedValue(seasonPoints);
 
   useFocusEffect(
     useCallback(() => {
@@ -104,10 +119,16 @@ export const HistoryScreen = () => {
   }, [totalPledged, totalPledgedRef]);
 
   useEffect(() => {
+    totalPointsRef.value = totalPoints;
+    seasonPointsRef.value = seasonPoints;
     setDisplayPledged(0);
+    setDisplayPoints(0);
+    setDisplaySeasonPoints(0);
     pledgedProgress.value = 0;
+    pointsProgress.value = 0;
     pledgedProgress.value = withTiming(100, { duration: 1000 });
-  }, [totalPledged, focusCount, pledgedProgress]);
+    pointsProgress.value = withTiming(100, { duration: 1000 });
+  }, [totalPledged, totalPoints, seasonPoints, focusCount, pledgedProgress, pointsProgress, totalPointsRef, seasonPointsRef]);
 
   const updateDisplayPledged = useCallback(
     (progress: number, total: number) => {
@@ -116,10 +137,30 @@ export const HistoryScreen = () => {
     [],
   );
 
+  const updateDisplayPoints = useCallback(
+    (progress: number, total: number, season: number) => {
+      setDisplayPoints(getAnimatedDisplayInteger(progress, total));
+      setDisplaySeasonPoints(getAnimatedDisplayInteger(progress, season));
+    },
+    [],
+  );
+
   useAnimatedReaction(
     () => pledgedProgress.value,
     (progress) => {
       scheduleOnRN(updateDisplayPledged, progress, totalPledgedRef.value);
+    },
+  );
+
+  useAnimatedReaction(
+    () => pointsProgress.value,
+    (progress) => {
+      scheduleOnRN(
+        updateDisplayPoints,
+        progress,
+        totalPointsRef.value,
+        seasonPointsRef.value,
+      );
     },
   );
 
@@ -196,6 +237,34 @@ export const HistoryScreen = () => {
                       color={theme.colors.accent}
                     />
                   </Card>
+                  <Row gap={8} width='100%'>
+                    <Card style={localStyles.statCard}>
+                      <Ionicons
+                        name='star'
+                        size={28}
+                        color={theme.colors.primary}
+                      />
+                      <Title2 style={{ color: theme.colors.primary }}>
+                        {displayPoints}
+                      </Title2>
+                      <BodySmallSecondary>
+                        {t('Total Points')}
+                      </BodySmallSecondary>
+                    </Card>
+                    <Card style={localStyles.statCard}>
+                      <Ionicons
+                        name='trophy'
+                        size={28}
+                        color={theme.colors.accent}
+                      />
+                      <Title2 style={{ color: theme.colors.accent }}>
+                        {displaySeasonPoints}
+                      </Title2>
+                      <BodySmallSecondary>
+                        {seasonData?.seasonName ?? t('Season Points')}
+                      </BodySmallSecondary>
+                    </Card>
+                  </Row>
                   <Row gap={8} width='100%'>
                     <Card style={localStyles.statCard}>
                       <AnimatedCircularProgress

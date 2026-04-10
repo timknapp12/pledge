@@ -40,6 +40,11 @@ pub mod pledge {
         )
     }
 
+    /// One-time realloc: 184-byte config → full layout (adds `pending_admin` slot). Admin only.
+    pub fn extend_config_layout(ctx: Context<ExtendConfigLayout>) -> Result<()> {
+        ctx.accounts.extend_config_layout()
+    }
+
     /// Update program config parameters (admin only)
     pub fn update_config(
         ctx: Context<UpdateConfig>,

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Points & Referrals — Pledge</title>
+  <meta name="description" content="Earn points for creating pledges, completing goals, building streaks, and referring friends. Learn how the Pledge points system works.">
+  <link rel="icon" type="image/png" href="images/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Iceberg&family=Space+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav class="nav scrolled">
+    <div class="container nav__inner">
+      <a href="index.html" class="nav__logo">
+        <span>Pledge</span>
+      </a>
+      <div class="nav__links">
+        <a href="index.html#how-it-works">How It Works</a>
+        <a href="index.html#fees">Fees</a>
+        <a href="index.html#faq">FAQ</a>
+      </div>
+      <div class="nav__social">
+        <a href="https://t.me/+79qOqyJ_WYExYTk5" target="_blank" rel="noopener" aria-label="Telegram">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4 20-7z"/></svg>
+        </a>
+        <a href="https://x.com/Pledge_dapp" target="_blank" rel="noopener" aria-label="X (Twitter)">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        </a>
+      </div>
+      <button class="nav__hamburger" id="navOpen" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <div class="nav__mobile" id="navMobile">
+    <button class="nav__close" id="navClose" aria-label="Close menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <a href="index.html#how-it-works" class="nav-mobile-link">How It Works</a>
+    <a href="index.html#fees" class="nav-mobile-link">Fees</a>
+    <a href="index.html#faq" class="nav-mobile-link">FAQ</a>
+    <a href="https://t.me/+79qOqyJ_WYExYTk5" target="_blank" rel="noopener">Telegram</a>
+    <a href="https://x.com/Pledge_dapp" target="_blank" rel="noopener">X (Twitter)</a>
+  </div>
+
+  <!-- Content -->
+  <main class="legal-page">
+    <div class="container--narrow">
+      <h1>Points &amp; Referrals</h1>
+      <p class="legal-date">Season 0 is live</p>
+
+      <h2>How Points Work</h2>
+      <p>Pledge rewards you with points for being active and achieving your goals. Points are tracked per season and accumulate to your total lifetime score.</p>
+
+      <h2>Earning Points</h2>
+
+      <div class="points-grid">
+        <div class="card animate-on-scroll">
+          <div class="points-card__header">
+            <div class="step-number">1</div>
+            <h3 class="title3">Create Pledges</h3>
+          </div>
+          <p>Earn <strong>10 base points</strong> for every pledge you create, plus <strong>10 points per $1 USDC</strong> pledged. Duration bonus (<strong>50 points per week</strong>) is awarded when the pledge is completed, based on actual time elapsed.</p>
+        </div>
+
+        <div class="card animate-on-scroll stagger-1">
+          <div class="points-card__header">
+            <div class="step-number">2</div>
+            <h3 class="title3">Complete Goals</h3>
+          </div>
+          <p>At completion, your creation points plus duration bonus are multiplied based on completion:</p>
+          <ul>
+            <li><strong>100% completion:</strong> 2x multiplier</li>
+            <li><strong>50&ndash;99%:</strong> 1x multiplier</li>
+            <li><strong>1&ndash;49%:</strong> 0.5x multiplier</li>
+          </ul>
+        </div>
+
+        <div class="card animate-on-scroll stagger-2">
+          <div class="points-card__header">
+            <div class="step-number">3</div>
+            <h3 class="title3">Build Streaks</h3>
+          </div>
+          <p>Consecutive 100% completions multiply all points earned:</p>
+          <ul>
+            <li><strong>2 in a row:</strong> 1.25x multiplier</li>
+            <li><strong>5 in a row:</strong> 1.5x multiplier</li>
+            <li><strong>10 in a row:</strong> 2x multiplier</li>
+          </ul>
+        </div>
+      </div>
+
+      <h2>Referral Program</h2>
+      <p>Every Pledge user gets a unique referral code. Share it with friends and you both benefit:</p>
+
+      <div class="card animate-on-scroll">
+        <div class="points-card__header">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="32" height="32">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <h3 class="title3">Refer Friends</h3>
+        </div>
+        <ul>
+          <li><strong>25 bonus points</strong> for you when a friend signs up with your code</li>
+          <li><strong>25 bonus points</strong> for your friend too</li>
+          <li>You earn <strong>10% of their pledge points</strong> for the rest of the season</li>
+        </ul>
+        <p style="margin-top: 12px; opacity: 0.7;">Your referral code is in the app under <strong>Profile &rarr; Points &amp; Referrals</strong>.</p>
+      </div>
+
+      <h2>Seasons</h2>
+      <p>Points are organized into seasons. Each season may have different earning rules and multipliers. Your total lifetime points are the sum of all seasons.</p>
+      <p>Season 0 is currently active with the rules described above. Future seasons may introduce new ways to earn points, leaderboards, and rewards.</p>
+
+      <h2>Example</h2>
+      <div class="card animate-on-scroll">
+        <p>You create a 2-week pledge pledging $20 USDC:</p>
+        <ul>
+          <li>Base creation: <span class="mono">10 pts</span></li>
+          <li>Pledge bonus ($20): <span class="mono">200 pts</span></li>
+          <li><strong>Creation total: <span class="mono">210 pts</span></strong></li>
+        </ul>
+        <p style="margin-top: 12px;">You complete 100% after the full 2 weeks:</p>
+        <ul>
+          <li>Duration bonus (2 weeks): <span class="mono">100 pts</span></li>
+          <li>Subtotal (creation + duration): <span class="mono">310 pts</span></li>
+          <li>100% completion &rarr; 2x multiplier = <strong class="mono">620 pts</strong></li>
+        </ul>
+        <p style="margin-top: 12px;">If this is your 5th consecutive 100% completion, the streak multiplier adds another 1.5x = <strong class="mono">930 pts</strong>.</p>
+        <p style="margin-top: 8px; opacity: 0.7;">Note: If you close a pledge early, duration points are based on actual time elapsed &mdash; not the original deadline.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__inner">
+        <a href="index.html" class="footer__logo">
+          <span>Pledge</span>
+        </a>
+        <div class="footer__links">
+          <a href="terms.html">Terms</a>
+          <a href="privacy.html">Privacy</a>
+          <a href="index.html#faq">FAQ</a>
+        </div>
+        <div class="footer__social">
+          <a href="https://t.me/+79qOqyJ_WYExYTk5" target="_blank" rel="noopener" aria-label="Telegram">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4 20-7z"/></svg>
+          </a>
+          <a href="https://x.com/Pledge_dapp" target="_blank" rel="noopener" aria-label="X (Twitter)">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          </a>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        Built on Solana &middot; &copy; 2026 Pledge
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

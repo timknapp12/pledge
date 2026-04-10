@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Pressable, View, StyleSheet } from 'react-native';
+import { Pressable, View, StyleSheet, Keyboard } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/theme/ThemeProvider';
@@ -41,7 +41,7 @@ type TodoSectionProps = {
 
 const getScheduleLabel = (
   def: TaskDefinition,
-  t: (key: string) => string
+  t: (key: string) => string,
 ): string | null => {
   switch (def.schedule) {
     case 'not_daily':
@@ -104,7 +104,7 @@ export const TodoSection = ({
     setCustomDays((prev) =>
       prev.includes(dayIndex)
         ? prev.filter((d) => d !== dayIndex)
-        : [...prev, dayIndex].sort((a, b) => a - b)
+        : [...prev, dayIndex].sort((a, b) => a - b),
     );
   }, []);
 
@@ -203,7 +203,9 @@ export const TodoSection = ({
               if (showEmptyError) setShowEmptyError(false);
               setNewTodo(text);
             }}
-            onSubmitEditing={handleAdd}
+            onSubmitEditing={
+              newTodo.trim().length > 0 ? handleAdd : Keyboard.dismiss
+            }
             returnKeyType='done'
             onFocus={onInputFocus}
           />

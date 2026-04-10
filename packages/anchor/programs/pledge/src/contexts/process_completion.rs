@@ -67,13 +67,15 @@ pub struct ProcessCompletion<'info> {
 
 impl<'info> ProcessCompletion<'info> {
     pub fn process_completion(&mut self) -> Result<()> {
-        let clock = Clock::get()?;
-
-        // Settlement cannot occur before the deadline
-        require!(
-            clock.unix_timestamp >= self.pledge.deadline,
-            ErrorCode::DeadlineNotPassed
-        );
+        // If the crank (not the pledge owner) is settling, enforce the deadline
+        let is_self_settle = self.crank.key() == self.pledge.user;
+        if !is_self_settle {
+            let clock = Clock::get()?;
+            require!(
+                clock.unix_timestamp >= self.pledge.deadline,
+                ErrorCode::DeadlineNotPassed
+            );
+        }
 
         let completion_percentage = self
             .pledge

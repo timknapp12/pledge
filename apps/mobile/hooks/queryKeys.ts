@@ -12,4 +12,7 @@ export const queryKeys = {
     ['allActivePledgeProgress', walletAddress, ...pledgeIds] as const,
   templates: (walletAddress: string) => ['templates', walletAddress] as const,
   userProfile: (userId: string) => ['userProfile', userId] as const,
+  seasonPoints: (userId: string) => ['seasonPoints', userId] as const,
+  pointEvents: (userId: string) => ['pointEvents', userId] as const,
+  referralCount: (userId: string) => ['referralCount', userId] as const,
 };

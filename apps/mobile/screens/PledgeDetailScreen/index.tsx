@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   ActivityIndicator,
   ScrollView,
@@ -6,6 +6,7 @@ import {
   View,
   StyleSheet,
 } from 'react-native';
+import BottomSheet from '@gorhom/bottom-sheet';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { getStatusBgColor, getStatusTextColor } from '@/theme';
@@ -17,11 +18,14 @@ import {
   useDailyProgress,
   useUpdateDailyProgress,
   useUpdatePledgeStatus,
+  useUpdatePledge,
   calculateCompletionPercentage,
   formatUsdcAmount,
   getDailyTasksForDate,
   getGoals,
   toLocalDateStr,
+  type PledgeTodos,
+  type DailyProgress,
 } from '@/hooks/useSupabase';
 import { useProgram } from '@/hooks/useProgram';
 import {
@@ -42,14 +46,18 @@ import {
   Checkbox,
   useAlert,
 } from '@/components';
+import { EditPledgeSheet } from '@/components/sheets';
 
 function formatDeadline(deadline: string): string {
   const date = new Date(deadline);
   return date.toLocaleDateString(undefined, {
-    weekday: 'long',
-    month: 'long',
+    weekday: 'short',
+    month: 'short',
     day: 'numeric',
     year: 'numeric',
+  }) + ' ' + date.toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
   });
 }
 
@@ -68,6 +76,72 @@ function formatTimeRemaining(deadline: string, t: (key: string) => string): stri
   } else {
     return `${diffDays} ${t('days left')}`;
   }
+}
+
+/** Count tasks scheduled for dates strictly after today */
+function countFutureTasks(todos: PledgeTodos): number {
+  const todayStr = toLocalDateStr(new Date());
+  let count = 0;
+  for (const [dateStr, tasks] of Object.entries(todos.daily)) {
+    if (dateStr > todayStr) {
+      count += tasks.length;
+    }
+  }
+  return count;
+}
+
+/**
+ * Calculate completion across the FULL pledge duration (including future tasks).
+ * Used for early settlement so future uncompleted tasks reduce the percentage.
+ */
+function calculateFullDurationCompletion(
+  todos: PledgeTodos,
+  dailyProgress: DailyProgress[],
+  startDate: Date,
+  endDate: Date,
+): number {
+  let totalTasks = 0;
+  let completedTasks = 0;
+
+  const todayStr = toLocalDateStr(new Date());
+
+  // Count ALL daily tasks across entire duration
+  const currentDate = new Date(startDate);
+  currentDate.setHours(0, 0, 0, 0);
+  const end = new Date(endDate);
+  end.setHours(23, 59, 59, 999);
+
+  while (currentDate <= end) {
+    const dateStr = toLocalDateStr(currentDate);
+    const dayTasks = todos.daily[dateStr] || [];
+    totalTasks += dayTasks.length;
+
+    // Only count completions for days up to today
+    if (dateStr <= todayStr) {
+      const dayProgress = dailyProgress.find((p) => p.date === dateStr);
+      const completedIndices = dayProgress?.todos_completed ?? [];
+      completedTasks += completedIndices.filter(
+        (i) => i >= 0 && i < dayTasks.length,
+      ).length;
+    }
+
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  // Goals count once
+  const goalCount = todos.goals.length;
+  if (goalCount > 0) {
+    totalTasks += goalCount;
+    const todayProgress = dailyProgress.find((p) => p.date === todayStr);
+    const todayDayTasks = todos.daily[todayStr] || [];
+    const completedIndices = todayProgress?.todos_completed ?? [];
+    completedTasks += completedIndices.filter(
+      (i) => i >= todayDayTasks.length && i < todayDayTasks.length + goalCount,
+    ).length;
+  }
+
+  if (totalTasks === 0) return 0;
+  return Math.round((completedTasks / totalTasks) * 100);
 }
 
 export const PledgeDetailScreen = () => {
@@ -89,11 +163,14 @@ export const PledgeDetailScreen = () => {
   const updateProgress = useUpdateDailyProgress();
   const updatePledgeStatus = useUpdatePledgeStatus();
   const { reportAndSettle } = useProgram();
+  const updatePledge = useUpdatePledge();
+  const editSheetRef = useRef<BottomSheet>(null);
 
   const { alert } = useAlert();
   const [completedTodos, setCompletedTodos] = useState<number[]>([]);
   const [overrideProgress, setOverrideProgress] = useState<number | null>(null);
   const [isReporting, setIsReporting] = useState(false);
+  const isCompletionBusy = updateProgress.isPending || isReporting;
 
   // Initialize completed todos from today's progress
   const today = toLocalDateStr(new Date());
@@ -166,10 +243,9 @@ export const PledgeDetailScreen = () => {
     setOverrideProgress(null);
   }, [completedTodos.length]);
 
-  const handleReportAndSettle = async () => {
+  const executeSettlement = async (completionPct: number) => {
     if (!pledge || !walletAddress) return;
 
-    const completionPct = progress;
     const finalStatus: 'Completed' | 'Forfeited' =
       completionPct > 0 ? 'Completed' : 'Forfeited';
 
@@ -195,18 +271,11 @@ export const PledgeDetailScreen = () => {
                 pledge.on_chain_address,
                 completionPct,
               );
-              // Calculate refund and points: 1 point per dollar refunded
-              const refundAmount =
-                pledge.stake_amount *
-                (completionPct / 100) *
-                (completionPct === 100 ? 1 : 0.99);
-              const pointsEarned = Math.floor(refundAmount / 1_000_000);
               await updatePledgeStatus.mutateAsync({
                 pledgeId: pledge.id,
                 status: finalStatus,
                 completionPercentage: completionPct,
                 settleTxSignature: signature,
-                pointsEarned,
               });
               refetch();
               alert({ title: t('Success'), message: t('Pledge settled successfully') });
@@ -221,6 +290,79 @@ export const PledgeDetailScreen = () => {
       ],
     });
   };
+
+  const handleReportAndSettle = async () => {
+    if (!pledge || !walletAddress || !allProgress) return;
+
+    const deadlinePassed = new Date(pledge.deadline) <= new Date();
+
+    if (deadlinePassed) {
+      // Deadline passed — use normal progress (capped at today)
+      await executeSettlement(progress);
+      return;
+    }
+
+    // Early settlement — check for future tasks
+    const futureTasks = countFutureTasks(pledge.todos);
+
+    if (futureTasks === 0) {
+      // No future tasks — settle immediately with normal progress
+      await executeSettlement(progress);
+      return;
+    }
+
+    // Future tasks exist — calculate completion across full duration
+    const progressWithLocalState = allProgress.map((p) =>
+      p.date === today ? { ...p, todos_completed: completedTodos } : p,
+    );
+    if (
+      completedTodos.length > 0 &&
+      !allProgress.find((p) => p.date === today)
+    ) {
+      progressWithLocalState.push({
+        id: '',
+        pledge_id: pledge.id,
+        date: today,
+        todos_completed: completedTodos,
+        created_at: '',
+      });
+    }
+
+    const earlyCompletionPct = calculateFullDurationCompletion(
+      pledge.todos,
+      progressWithLocalState,
+      new Date(pledge.start_date),
+      new Date(pledge.end_date),
+    );
+
+    alert({
+      title: t('Settle Early?'),
+      message: t(
+        'You still have {{count}} tasks scheduled. Settling now means those count as incomplete and will reduce your return.',
+        { count: futureTasks },
+      ),
+      buttons: [
+        { text: t('Cancel'), style: 'cancel' },
+        {
+          text: t('Settle Now'),
+          onPress: () => executeSettlement(earlyCompletionPct),
+        },
+      ],
+    });
+  };
+
+  const handleEditSave = useCallback(
+    async (newName: string, newTodos: PledgeTodos) => {
+      if (!pledge) return;
+      await updatePledge.mutateAsync({
+        pledgeId: pledge.id,
+        name: newName,
+        todos: newTodos,
+      });
+      alert({ title: t('Success'), message: t('Pledge updated successfully') });
+    },
+    [pledge, updatePledge, alert, t],
+  );
 
   if (pledgeLoading || progressLoading) {
     return (
@@ -268,6 +410,17 @@ export const PledgeDetailScreen = () => {
         <Column flex={1}>
           <Title1 numberOfLines={1}>{pledge.name}</Title1>
         </Column>
+        {pledge.status === 'Active' && (
+          <Pressable
+            onPress={() => editSheetRef.current?.expand()}
+            style={[
+              styles.editButton,
+              { backgroundColor: theme.colors.cardBackground },
+            ]}
+          >
+            <Ionicons name="create-outline" size={20} color={theme.colors.text} />
+          </Pressable>
+        )}
         <View
           style={[
             styles.statusBadge,
@@ -319,7 +472,7 @@ export const PledgeDetailScreen = () => {
             <Slider
               value={progress}
               onValueChange={(v) => setOverrideProgress(Math.round(v))}
-              disabled={pledge.status !== 'Active'}
+              disabled={pledge.status !== 'Active' || isCompletionBusy}
             />
           </View>
 
@@ -345,10 +498,10 @@ export const PledgeDetailScreen = () => {
                           : theme.colors.border,
                       },
                     ]}
-                    onPress={() =>
-                      pledge.status === 'Active' && handleTodoToggle(index)
+                    onPress={() => handleTodoToggle(index)}
+                    disabled={
+                      pledge.status !== 'Active' || isCompletionBusy
                     }
-                    disabled={pledge.status !== 'Active'}
                   >
                     <Checkbox checked={completed} />
                     <Body
@@ -375,9 +528,21 @@ export const PledgeDetailScreen = () => {
             disabled={isReporting}
             loading={isReporting}
           >
-            {t('Report Completion')}
+            {progress === 100
+              ? t('Claim Your Pledge')
+              : new Date(pledge.deadline) <= new Date()
+                ? t('Report Completion')
+                : t('Settle Early')}
           </PrimaryButton>
         </CenteredColumn>
+      )}
+
+      {pledge.status === 'Active' && (
+        <EditPledgeSheet
+          ref={editSheetRef}
+          pledge={pledge}
+          onSave={handleEditSave}
+        />
       )}
     </ScreenContainer>
   );
@@ -390,6 +555,14 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  editButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
   },
   contentContainer: {
     gap: 24,

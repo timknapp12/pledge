@@ -75,4 +75,10 @@ pub enum ErrorCode {
 
     #[msg("Invalid token account owner")]
     InvalidTokenAccountOwner,
+
+    #[msg("Config account size does not match expected migration step")]
+    ConfigMigrationSizeMismatch,
+
+    #[msg("Account is not owned by the pledge program")]
+    InvalidProgramAccount,
 }
