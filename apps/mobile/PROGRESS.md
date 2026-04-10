@@ -243,8 +243,6 @@
 
 ## In Progress
 
-(None currently)
-
 ---
 
 ## Session Notes
@@ -303,25 +301,25 @@
 
 ### 1. Testing & Bug Fixes
 
-- [ ] Test full create pledge flow on device with V2 todos
-- [ ] Test report completion flow
-- [ ] Test daily progress persistence across days
+- [x] Test full create pledge flow on device
+- [x] Test report completion flow
+- [x] Test daily progress persistence across days
 - [ ] Handle edge cases (network errors, wallet disconnection)
 
 ### 2. Goal Completion Tracking
 
-- [ ] Goals are currently display-only on PledgeDetailScreen (flag icon, non-checkable)
-- [ ] Allow checking off goals and persisting state
-- [ ] Decide if goals count toward completion percentage or are separate
+- [x] Goals are currently display-only on PledgeDetailScreen (flag icon, non-checkable)
+- [x] Allow checking off goals and persisting state
+- [x] Decide if goals count toward completion percentage or are separate
 
 ### 3. Edit Pledge
 
-- [ ] Edit pledge screen/modal (DB-only — no on-chain transaction, no penalty)
-- [ ] Update name, tasks, schedule in Supabase
+- [x] Edit pledge screen/modal (DB-only — no on-chain transaction, no penalty)
+- [x] Update name, tasks, schedule in Supabase
 
 ### 4. HomeScreen Copy
 
-- [ ] Update empty state copy for `EmptyState.tsx` and `ConnectWalletScreen.tsx`
+- [x] Update empty state copy for `EmptyState.tsx` and `ConnectWalletScreen.tsx`
 - _Reference: TODO comments in those files_
 
 ### 5. Notifications (Future)
@@ -330,16 +328,16 @@
 - [x] Expo push notifications config
 - [x] Supabase pg_cron for scheduled notifications
 - [x] Edge Function to send notifications
-- [ ] Crank: clear old rows from notifications table after pledge expiry
+- [x] Crank: clear old rows from notifications table after pledge expiry
 
 ### 6. Deployment
 
-- [ ] Register Helius webhooks (devnet + mainnet) — see `docs/indexer.md`
-- [ ] Deploy indexer + daily-reconcile Edge Functions to Supabase
-- [ ] Set up pg_cron for daily reconciliation
-- [ ] Deploy program to mainnet
-- [ ] Set `MAINNET_PROGRAM_ID` in `app.config.ts`
-- [ ] Test indexer with real devnet transaction (H1 validation)
+- [x] Register Helius webhooks (devnet + mainnet) — see `docs/indexer.md`
+- [x] Deploy indexer + daily-reconcile Edge Functions to Supabase
+- [x] Set up pg_cron for daily reconciliation
+- [x] Deploy program to mainnet
+- [x] Set `MAINNET_PROGRAM_ID` in `app.config.ts`
+- [x] Test indexer with real devnet transaction (H1 validation)
 
 ---
 
