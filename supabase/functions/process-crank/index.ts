@@ -1,6 +1,10 @@
 // Crank service - processes expired pledges past deadline + grace period
 // Runs periodically via pg_cron or manual invocation
 // Uses raw @solana/web3.js (no Anchor — incompatible with Deno Edge Runtime)
+//
+// 100% completed pledges: user must self-claim via "Claim Your Pledge" button.
+// Crank skips them and sends monthly claim_reminder notifications instead.
+// After deadline + 180 days, crank forfeits unclaimed 100% pledges (processes as 0%).
 
 /// <reference path="../shims.d.ts" />
 
@@ -23,6 +27,8 @@ const MAINNET_USDC = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
 const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL');
 const GRACE_PERIOD_SECONDS = 24 * 60 * 60; // 1 day
+const CLAIM_EXPIRY_SECONDS = 180 * 24 * 60 * 60; // 6 months
+const REMINDER_INTERVAL_SECONDS = 30 * 24 * 60 * 60; // 30 days between reminders
 
 // Anchor discriminators from IDL
 const PROCESS_EXPIRED_DISCRIMINATOR = Uint8Array.from([128, 182, 159, 31, 232, 19, 28, 61]);
@@ -246,7 +252,7 @@ Deno.serve(async (req) => {
 
     const { data: expiredPledges, error: queryError } = await supabase
       .from('pledges')
-      .select('*, daily_progress(*), users!inner(wallet_address)')
+      .select('*, daily_progress(*), users!inner(wallet_address, personality, language)')
       .eq('status', 'Active')
       .lt('deadline', cutoffTime);
 
@@ -318,6 +324,90 @@ Deno.serve(async (req) => {
 
         console.log(`Pledge ${pledge.id}: ${completionPct}% completion`);
 
+        // --- 2b. Handle 100% completed pledges ---
+        // User must self-claim. Crank only forfeits after 6-month expiry.
+        if (completionPct === 100) {
+          const deadlineTs = Math.floor(new Date(pledge.deadline).getTime() / 1000);
+          const daysSinceDeadline = now - deadlineTs;
+
+          if (daysSinceDeadline < CLAIM_EXPIRY_SECONDS) {
+            // Within 6-month window — skip settlement, send monthly reminder
+            console.log(`Pledge ${pledge.id}: 100% complete, skipping (user must claim)`);
+
+            // Check if a claim_reminder was sent in the last 30 days
+            const { data: recentReminder } = await supabase
+              .from('notifications')
+              .select('id')
+              .eq('pledge_id', pledge.id)
+              .eq('type', 'claim_reminder')
+              .gte('created_at', new Date((now - REMINDER_INTERVAL_SECONDS) * 1000).toISOString())
+              .limit(1);
+
+            if (!recentReminder || recentReminder.length === 0) {
+              // Create a claim_reminder notification using user's personality + language
+              const pledgeName = pledge.name || 'your pledge';
+              const userPersonality = (pledge as any).users?.personality || 'carrot';
+              const userLanguage = (pledge as any).users?.language || 'en';
+
+              // Look up template in user's language, fall back to English
+              const { data: templates } = await supabase
+                .from('notification_templates')
+                .select('language, title, body_template')
+                .eq('key', 'claim_reminder')
+                .eq('personality', userPersonality)
+                .in('language', userLanguage !== 'en' ? [userLanguage, 'en'] : ['en'])
+                .order('language', { ascending: userLanguage < 'en' });
+
+              // Prefer user's language, fall back to English
+              const template = templates?.find((t: { language: string; title: string; body_template: string }) => t.language === userLanguage)
+                || templates?.find((t: { language: string; title: string; body_template: string }) => t.language === 'en');
+
+              if (!template) {
+                console.error(`Pledge ${pledge.id}: No notification template found for claim_reminder/${userPersonality} (tried ${userLanguage} + en)`);
+                results.push({
+                  pledgeId: pledge.id,
+                  completionPercentage: 100,
+                  status: 'Skipped (user must claim)',
+                  success: true,
+                  skipped: true,
+                  warning: 'Missing notification template',
+                });
+                continue;
+              }
+              const title = template.title;
+              const body = template.body_template.replace('{{pledge_name}}', pledgeName);
+
+              await supabase.from('notifications').insert({
+                user_id: pledge.user_id,
+                pledge_id: pledge.id,
+                type: 'claim_reminder',
+                title,
+                body,
+                scheduled_for: new Date().toISOString(),
+              });
+              console.log(`Pledge ${pledge.id}: Created claim_reminder notification (${userPersonality}/${userLanguage})`);
+            } else {
+              console.log(`Pledge ${pledge.id}: Reminder already sent recently, skipping`);
+            }
+
+            results.push({
+              pledgeId: pledge.id,
+              completionPercentage: 100,
+              status: 'Skipped (user must claim)',
+              success: true,
+              skipped: true,
+            });
+            continue;
+          } else {
+            // Past 6-month expiry — forfeit unclaimed pledge (process as 0%)
+            console.log(`Pledge ${pledge.id}: 100% but expired (${Math.floor(daysSinceDeadline / 86400)} days since deadline), forfeiting`);
+            // Fall through to settlement with 0% completion
+          }
+        }
+
+        // If we reach here for an expired 100% pledge, override to 0% forfeiture
+        const settlementPct = (completionPct === 100 ? 0 : completionPct);
+
         // --- 3. Derive all accounts ---
         const vaultPda = getVaultPda(pledgePda);
         const userTokenAccount = getAta(userPubkey, USDC_MINT);
@@ -325,7 +415,7 @@ Deno.serve(async (req) => {
         const charityTokenAccount = getAta(config.charity, USDC_MINT);
 
         // --- 4. Build and send transaction ---
-        const ix = buildProcessExpiredIx(completionPct, {
+        const ix = buildProcessExpiredIx(settlementPct, {
           crank: crankKeypair.publicKey,
           config: configPda,
           pledge: pledgePda,
@@ -352,11 +442,13 @@ Deno.serve(async (req) => {
         await connection.confirmTransaction(txSignature, 'confirmed');
 
         // --- 6. Update DB status ---
-        const finalStatus = completionPct > 0 ? 'Completed' : 'Forfeited';
+        const finalStatus = settlementPct > 0 ? 'Completed' : 'Forfeited';
         await supabase
           .from('pledges')
           .update({
             status: finalStatus,
+            // DB stores actual completion (100% for expired-unclaimed pledges),
+            // not the settlement percentage used on-chain
             completion_percentage: completionPct,
             settle_tx_signature: txSignature,
           })
@@ -371,7 +463,7 @@ Deno.serve(async (req) => {
 
         results.push({
           pledgeId: pledge.id,
-          completionPercentage: completionPct,
+          completionPercentage: settlementPct,
           status: finalStatus,
           txSignature,
           success: true,

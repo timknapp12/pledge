@@ -414,6 +414,235 @@ describe("process_completion", () => {
     }
   });
 
+  it("allows pledge owner to self-settle BEFORE deadline (early settlement)", async () => {
+    const user = await createTestUser(ctx, HUNDRED_USDC);
+    const stakeAmount = TEN_USDC;
+
+    const currentTimestamp = await getCurrentTimestamp(ctx.provider.connection);
+    const createdAt = new anchor.BN(currentTimestamp);
+    // Deadline far in the future — settlement happens before it
+    const deadline = new anchor.BN(currentTimestamp + 3600);
+
+    const [pledgePda] = derivePledgePda(
+      ctx.program.programId,
+      user.keypair.publicKey,
+      createdAt
+    );
+    const [vaultPda] = deriveVaultPda(ctx.program.programId, pledgePda);
+
+    await ctx.program.methods
+      .createPledge(new anchor.BN(stakeAmount), deadline, createdAt)
+      .accounts({
+        user: user.keypair.publicKey,
+        pledge: pledgePda,
+        vault: vaultPda,
+        userTokenAccount: user.tokenAccount,
+        mint: ctx.usdcMint,
+      })
+      .signers([user.keypair])
+      .rpc();
+
+    // Report completion immediately (no sleep — deadline is 1 hour away)
+    await ctx.program.methods
+      .reportCompletion(100)
+      .accounts({
+        user: user.keypair.publicKey,
+        pledge: pledgePda,
+      })
+      .signers([user.keypair])
+      .rpc();
+
+    const userBalanceBefore = await getTokenBalance(
+      ctx.provider.connection,
+      user.tokenAccount
+    );
+
+    const treasuryTokenAccount = await getTreasuryTokenAccount(ctx);
+    const charityTokenAccount = await getCharityTokenAccount(ctx);
+
+    // Self-settle BEFORE deadline — user signs as crank
+    await ctx.program.methods
+      .processCompletion()
+      .accounts({
+        crank: user.keypair.publicKey,
+        pledge: pledgePda,
+        vault: vaultPda,
+        user: user.keypair.publicKey,
+        userTokenAccount: user.tokenAccount,
+        treasuryTokenAccount,
+        charityTokenAccount,
+      })
+      .signers([user.keypair])
+      .rpc();
+
+    // Verify user got full refund
+    const userBalanceAfter = await getTokenBalance(
+      ctx.provider.connection,
+      user.tokenAccount
+    );
+    expect(Number(userBalanceAfter - userBalanceBefore)).to.equal(stakeAmount);
+
+    // Pledge account is closed
+    try {
+      await ctx.program.account.pledge.fetch(pledgePda);
+      expect.fail("Pledge account should be closed");
+    } catch (err) {
+      expect(err.message).to.include("Account does not exist");
+    }
+  });
+
+  it("allows partial-completion early self-settle (50% before deadline)", async () => {
+    const user = await createTestUser(ctx, HUNDRED_USDC);
+    const stakeAmount = TEN_USDC;
+
+    const currentTimestamp = await getCurrentTimestamp(ctx.provider.connection);
+    const createdAt = new anchor.BN(currentTimestamp);
+    // Deadline far in the future
+    const deadline = new anchor.BN(currentTimestamp + 3600);
+
+    const [pledgePda] = derivePledgePda(
+      ctx.program.programId,
+      user.keypair.publicKey,
+      createdAt
+    );
+    const [vaultPda] = deriveVaultPda(ctx.program.programId, pledgePda);
+
+    await ctx.program.methods
+      .createPledge(new anchor.BN(stakeAmount), deadline, createdAt)
+      .accounts({
+        user: user.keypair.publicKey,
+        pledge: pledgePda,
+        vault: vaultPda,
+        userTokenAccount: user.tokenAccount,
+        mint: ctx.usdcMint,
+      })
+      .signers([user.keypair])
+      .rpc();
+
+    // Report 50% completion immediately (no sleep — deadline is 1 hour away)
+    await ctx.program.methods
+      .reportCompletion(50)
+      .accounts({
+        user: user.keypair.publicKey,
+        pledge: pledgePda,
+      })
+      .signers([user.keypair])
+      .rpc();
+
+    const userBalanceBefore = await getTokenBalance(
+      ctx.provider.connection,
+      user.tokenAccount
+    );
+
+    const treasuryTokenAccount = await getTreasuryTokenAccount(ctx);
+    const charityTokenAccount = await getCharityTokenAccount(ctx);
+    const treasuryBefore = await getTokenBalance(ctx.provider.connection, treasuryTokenAccount);
+    const charityBefore = await getTokenBalance(ctx.provider.connection, charityTokenAccount);
+
+    // Self-settle BEFORE deadline with partial completion
+    await ctx.program.methods
+      .processCompletion()
+      .accounts({
+        crank: user.keypair.publicKey,
+        pledge: pledgePda,
+        vault: vaultPda,
+        user: user.keypair.publicKey,
+        userTokenAccount: user.tokenAccount,
+        treasuryTokenAccount,
+        charityTokenAccount,
+      })
+      .signers([user.keypair])
+      .rpc();
+
+    // 50% of 10 USDC = 5 USDC proportional
+    // 1% fee on 5 USDC = 0.05 USDC (50,000 micro USDC)
+    // Refund = 5 - 0.05 = 4.95 USDC (4,950,000 micro USDC)
+    // Forfeited = 10 - 5 = 5 USDC
+    // Total to split = fee (50,000) + forfeited (5,000,000) = 5,050,000
+    // Treasury (70%) = 3,535,000
+    // Charity (30%) = 1,515,000
+
+    const userBalanceAfter = await getTokenBalance(
+      ctx.provider.connection,
+      user.tokenAccount
+    );
+    expect(Number(userBalanceAfter - userBalanceBefore)).to.equal(4_950_000);
+
+    const treasuryAfter = await getTokenBalance(ctx.provider.connection, treasuryTokenAccount);
+    const charityAfter = await getTokenBalance(ctx.provider.connection, charityTokenAccount);
+    expect(Number(treasuryAfter - treasuryBefore)).to.equal(3_535_000);
+    expect(Number(charityAfter - charityBefore)).to.equal(1_515_000);
+
+    // Pledge account is closed
+    try {
+      await ctx.program.account.pledge.fetch(pledgePda);
+      expect.fail("Pledge account should be closed");
+    } catch (err) {
+      expect(err.message).to.include("Account does not exist");
+    }
+  });
+
+  it("rejects crank settling before deadline", async () => {
+    const user = await createTestUser(ctx, HUNDRED_USDC);
+    const stakeAmount = TEN_USDC;
+
+    const currentTimestamp = await getCurrentTimestamp(ctx.provider.connection);
+    const createdAt = new anchor.BN(currentTimestamp);
+    const deadline = new anchor.BN(currentTimestamp + 3600);
+
+    const [pledgePda] = derivePledgePda(
+      ctx.program.programId,
+      user.keypair.publicKey,
+      createdAt
+    );
+    const [vaultPda] = deriveVaultPda(ctx.program.programId, pledgePda);
+
+    await ctx.program.methods
+      .createPledge(new anchor.BN(stakeAmount), deadline, createdAt)
+      .accounts({
+        user: user.keypair.publicKey,
+        pledge: pledgePda,
+        vault: vaultPda,
+        userTokenAccount: user.tokenAccount,
+        mint: ctx.usdcMint,
+      })
+      .signers([user.keypair])
+      .rpc();
+
+    await ctx.program.methods
+      .reportCompletion(100)
+      .accounts({
+        user: user.keypair.publicKey,
+        pledge: pledgePda,
+      })
+      .signers([user.keypair])
+      .rpc();
+
+    const treasuryTokenAccount = await getTreasuryTokenAccount(ctx);
+    const charityTokenAccount = await getCharityTokenAccount(ctx);
+
+    // Crank tries to settle before deadline — should fail
+    try {
+      await ctx.program.methods
+        .processCompletion()
+        .accounts({
+          crank: crank.publicKey,
+          pledge: pledgePda,
+          vault: vaultPda,
+          user: user.keypair.publicKey,
+          userTokenAccount: user.tokenAccount,
+          treasuryTokenAccount,
+          charityTokenAccount,
+        })
+        .signers([crank])
+        .rpc();
+
+      expect.fail("Should have thrown DeadlineNotPassed error");
+    } catch (err) {
+      expect(err.message).to.include("DeadlineNotPassed");
+    }
+  });
+
   it("rejects random third party as crank", async () => {
     const user = await createTestUser(ctx, HUNDRED_USDC);
     const currentTimestamp = await getCurrentTimestamp(ctx.provider.connection);

@@ -23,10 +23,10 @@ CREATE TABLE seasons (
 -- H3: Only one active season at a time
 CREATE UNIQUE INDEX idx_one_active_season ON seasons (is_active) WHERE is_active = true;
 
--- Seed Season 0 (displayed as "Season 1" in UI)
+-- Seed Season 0
 INSERT INTO seasons (id, name, starts_at, is_active)
 OVERRIDING SYSTEM VALUE
-VALUES (0, 'Season 1', now(), true);
+VALUES (0, 'Season 0', now(), true);
 ALTER SEQUENCE seasons_id_seq RESTART WITH 1;
 
 -- ============================================================
@@ -106,7 +106,7 @@ CREATE INDEX idx_referrals_code    ON referrals(referral_code);
 -- ============================================================
 ALTER TABLE users ADD COLUMN referral_code text UNIQUE;
 
--- M3: Generate a unique 8-char alphanumeric referral code (base64 stripped)
+-- M3: Generate a unique 6-char alphanumeric referral code (base64 stripped)
 CREATE OR REPLACE FUNCTION generate_referral_code()
 RETURNS text
 LANGUAGE plpgsql
