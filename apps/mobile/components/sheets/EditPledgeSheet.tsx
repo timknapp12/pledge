@@ -20,7 +20,7 @@ import {
   Row,
   PrimaryButton,
   FloatingLabelInput,
-} from '@/components';
+} from '@/components/common';
 import type { Pledge, PledgeTodos } from '@/hooks/useSupabase';
 import type { AppTheme } from '@/theme';
 
