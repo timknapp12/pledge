@@ -1,10 +1,26 @@
-import { forwardRef, useCallback, useRef, useImperativeHandle } from 'react';
-import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import {
+  forwardRef,
+  useCallback,
+  useRef,
+  useImperativeHandle,
+  type RefObject,
+} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  useWindowDimensions,
+  StyleProp,
+  ViewStyle,
+} from 'react-native';
 import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetView,
+  BottomSheetScrollView,
+  BottomSheetFooter,
   BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
+import type { BottomSheetScrollViewMethods } from '@gorhom/bottom-sheet';
 import { useThemeMode } from '@/theme/ThemeProvider';
 import { SHEET_COLORS } from '@/theme/colors';
 
@@ -17,6 +33,13 @@ interface BaseSheetProps {
   onClose?: () => void;
   /** Called when sheet opens (index >= 0). Use to defer mounting heavy/picker content and avoid Android auto-open. */
   onOpen?: () => void;
+  style?: StyleProp<ViewStyle>;
+  /** When true, uses BottomSheetScrollView as direct child of BottomSheet (required for scrollable content with fixed snap points). */
+  scrollable?: boolean;
+  /** Render a sticky footer at the bottom of the sheet (e.g. a Save button). Only works with scrollable sheets. */
+  renderFooter?: () => React.ReactNode;
+  /** Ref to the inner BottomSheetScrollView (only available when scrollable=true). */
+  scrollViewRef?: RefObject<BottomSheetScrollViewMethods | null>;
 }
 
 export const BaseSheet = forwardRef<BottomSheet, BaseSheetProps>(
@@ -28,8 +51,12 @@ export const BaseSheet = forwardRef<BottomSheet, BaseSheetProps>(
       children,
       onClose,
       onOpen,
+      style,
+      scrollable = false,
+      renderFooter,
+      scrollViewRef,
     },
-    ref
+    ref,
   ) => {
     const { isDark } = useThemeMode();
     const { height: windowHeight } = useWindowDimensions();
@@ -41,25 +68,29 @@ export const BaseSheet = forwardRef<BottomSheet, BaseSheetProps>(
     // Wrap the ref so we can track user-initiated opens vs Android auto-opens.
     // Only expand/snapToIndex called via the ref set the flag; spurious opens
     // from the library (common on Android re-renders) get force-closed.
-    useImperativeHandle(ref, () => ({
-      expand: () => {
-        userTriggered.current = true;
-        innerRef.current?.expand();
-      },
-      snapToIndex: (index: number) => {
-        userTriggered.current = true;
-        innerRef.current?.snapToIndex(index);
-      },
-      close: () => {
-        innerRef.current?.close();
-      },
-      collapse: () => {
-        innerRef.current?.collapse();
-      },
-      forceClose: () => {
-        innerRef.current?.forceClose();
-      },
-    } as unknown as BottomSheet));
+    useImperativeHandle(
+      ref,
+      () =>
+        ({
+          expand: () => {
+            userTriggered.current = true;
+            innerRef.current?.expand();
+          },
+          snapToIndex: (index: number) => {
+            userTriggered.current = true;
+            innerRef.current?.snapToIndex(index);
+          },
+          close: () => {
+            innerRef.current?.close();
+          },
+          collapse: () => {
+            innerRef.current?.collapse();
+          },
+          forceClose: () => {
+            innerRef.current?.forceClose();
+          },
+        } as unknown as BottomSheet),
+    );
 
     const renderBackdrop = useCallback(
       (props: BottomSheetBackdropProps) => (
@@ -71,7 +102,7 @@ export const BaseSheet = forwardRef<BottomSheet, BaseSheetProps>(
           pressBehavior='close'
         />
       ),
-      []
+      [],
     );
 
     const handleSheetChanges = useCallback(
@@ -88,8 +119,29 @@ export const BaseSheet = forwardRef<BottomSheet, BaseSheetProps>(
           onOpen?.();
         }
       },
-      [onClose, onOpen]
+      [onClose, onOpen],
     );
+
+    const footerComponent = renderFooter
+      ? (props: any) => (
+          <BottomSheetFooter {...props}>
+            <View
+              style={[
+                styles.footerContainer,
+                { backgroundColor: colors.background },
+              ]}
+            >
+              {renderFooter()}
+            </View>
+          </BottomSheetFooter>
+        )
+      : undefined;
+
+    const titleElement = title ? (
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+      </View>
+    ) : null;
 
     return (
       <BottomSheet
@@ -110,26 +162,46 @@ export const BaseSheet = forwardRef<BottomSheet, BaseSheetProps>(
           backgroundColor: colors.textSecondary,
           width: 40,
         }}
+        footerComponent={footerComponent}
       >
-        <BottomSheetView
-          style={[
-            styles.content,
-            { backgroundColor: colors.background },
-            enableDynamicSizing && styles.contentDynamic,
-          ]}
-        >
-          {title && (
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <Text style={[styles.title, { color: colors.text }]}>
-                {title}
-              </Text>
+        {scrollable ? (
+          <>
+            <View
+              style={[
+                styles.scrollHeader,
+                { backgroundColor: colors.background },
+              ]}
+            >
+              {titleElement}
             </View>
-          )}
-          {children}
-        </BottomSheetView>
+            <BottomSheetScrollView
+              ref={scrollViewRef}
+              style={[{ backgroundColor: colors.background }, style]}
+              contentContainerStyle={[
+                styles.scrollContent,
+                renderFooter && styles.scrollContentWithFooter,
+              ]}
+              keyboardShouldPersistTaps="handled"
+            >
+              {children}
+            </BottomSheetScrollView>
+          </>
+        ) : (
+          <BottomSheetView
+            style={[
+              styles.content,
+              { backgroundColor: colors.background },
+              enableDynamicSizing && styles.contentDynamic,
+              style,
+            ]}
+          >
+            {titleElement}
+            {children}
+          </BottomSheetView>
+        )}
       </BottomSheet>
     );
-  }
+  },
 );
 
 BaseSheet.displayName = 'BaseSheet';
@@ -143,6 +215,20 @@ const styles = StyleSheet.create({
   },
   contentDynamic: {
     flex: 0,
+  },
+  scrollHeader: {
+    paddingHorizontal: 20,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
+  scrollContentWithFooter: {
+    paddingBottom: 80,
+  },
+  footerContainer: {
+    padding: 20,
+    paddingTop: 12,
   },
   header: {
     paddingBottom: 16,
