@@ -26,6 +26,7 @@ import {
   toLocalDateStr,
   type PledgeTodos,
   type DailyProgress,
+  type ReminderSettings,
 } from '@/hooks/useSupabase';
 import { useProgram } from '@/hooks/useProgram';
 import {
@@ -352,12 +353,17 @@ export const PledgeDetailScreen = () => {
   };
 
   const handleEditSave = useCallback(
-    async (newName: string, newTodos: PledgeTodos) => {
+    async (
+      newName: string,
+      newTodos: PledgeTodos,
+      newReminderSettings: ReminderSettings | null,
+    ) => {
       if (!pledge) return;
       await updatePledge.mutateAsync({
         pledgeId: pledge.id,
         name: newName,
         todos: newTodos,
+        reminder_settings: newReminderSettings,
       });
       alert({ title: t('Success'), message: t('Pledge updated successfully') });
     },
