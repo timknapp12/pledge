@@ -11,6 +11,7 @@ import Animated, {
   withSpring,
   withTiming,
   useDerivedValue,
+  useReducedMotion,
 } from 'react-native-reanimated';
 import { useAppTheme, useThemeMode } from '@/theme/ThemeProvider';
 import { useScrollContext } from '@/contexts/ScrollContext';
@@ -42,9 +43,8 @@ const TAB_CONFIG: Record<string, TabConfig> = {
 };
 
 const SPRING_CONFIG = {
-  damping: 12,
-  stiffness: 600,
-  mass: 0.1,
+  damping: 20,
+  stiffness: 400,
 };
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -58,6 +58,7 @@ interface TabItemProps {
 
 function TabItem({ routeName, isFocused, onPress, onLongPress }: TabItemProps) {
   const { theme } = useAppTheme();
+  const reduceMotion = useReducedMotion();
   const scale = useSharedValue(1);
 
   const config = TAB_CONFIG[routeName] || {
@@ -67,13 +68,12 @@ function TabItem({ routeName, isFocused, onPress, onLongPress }: TabItemProps) {
   };
 
   useEffect(() => {
-    if (isFocused) {
-      // Scale up then spring back
-      scale.value = withSpring(1.2, SPRING_CONFIG, () => {
+    if (isFocused && !reduceMotion) {
+      scale.value = withSpring(1.08, SPRING_CONFIG, () => {
         scale.value = withSpring(1, SPRING_CONFIG);
       });
     }
-  }, [isFocused, scale]);
+  }, [isFocused, scale, reduceMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -107,7 +107,7 @@ export const CustomTabBar = ({ state, navigation }: BottomTabBarProps) => {
 
   // Animated background opacity based on scroll state
   const backgroundOpacity = useDerivedValue(() => {
-    return withTiming(isScrolling.value ? 0 : 1, { duration: 50 });
+    return withTiming(isScrolling.value ? 0 : 1, { duration: 150 });
   });
 
   useEffect(() => {
