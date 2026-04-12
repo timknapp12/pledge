@@ -1,14 +1,9 @@
 P0
 
-- Edit pledge bottom sheet needs some love
-
 P1
 
 - diagnose recovered pledges
 
-- update animations for alerts - audit animations
-
-- faqs
 - db strings for noties
 
 - audit error handling
