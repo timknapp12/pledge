@@ -1,7 +1,6 @@
-import { useRef, useCallback } from 'react';
+import { useCallback } from 'react';
 import {
   Pressable,
-  Animated,
   PressableProps,
   ViewStyle,
   ActivityIndicator,
@@ -9,6 +8,13 @@ import {
   Text,
   StyleSheet,
 } from 'react-native';
+import ReanimatedAnimated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  useReducedMotion,
+} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/ThemeProvider';
@@ -37,6 +43,8 @@ interface RoundButtonProps extends Omit<AnimatedPressableProps, 'children'> {
   size?: number;
 }
 
+const PRESS_SPRING = { damping: 25, stiffness: 400 };
+
 const AnimatedPressable = ({
   children,
   onPressIn,
@@ -49,44 +57,35 @@ const AnimatedPressable = ({
   ...props
 }: AnimatedPressableProps) => {
   const isDisabled = disabled || loading;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const opacityAnim = useRef(new Animated.Value(1)).current;
+  const reduceMotion = useReducedMotion();
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
 
   const handlePressIn = useCallback(
     (e: any) => {
       if (isDisabled) return;
-      Animated.parallel([
-        Animated.spring(scaleAnim, {
-          toValue: 0.97,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 0.8,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      if (reduceMotion) {
+        opacity.value = 0.8;
+      } else {
+        scale.value = withSpring(0.97, PRESS_SPRING);
+        opacity.value = withTiming(0.8, { duration: 100 });
+      }
       onPressIn?.(e);
     },
-    [scaleAnim, opacityAnim, onPressIn, isDisabled],
+    [scale, opacity, onPressIn, isDisabled, reduceMotion],
   );
 
   const handlePressOut = useCallback(
     (e: any) => {
-      Animated.parallel([
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 1,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      if (reduceMotion) {
+        opacity.value = 1;
+      } else {
+        scale.value = withSpring(1, PRESS_SPRING);
+        opacity.value = withTiming(1, { duration: 100 });
+      }
       onPressOut?.(e);
     },
-    [scaleAnim, opacityAnim, onPressOut],
+    [scale, opacity, onPressOut, reduceMotion],
   );
 
   const handlePress = useCallback(
@@ -102,6 +101,11 @@ const AnimatedPressable = ({
     [onPress, isDisabled],
   );
 
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+
   return (
     <Pressable
       onPressIn={handlePressIn}
@@ -111,19 +115,16 @@ const AnimatedPressable = ({
       style={fullWidth ? { width: '100%' } : undefined}
       {...props}
     >
-      <Animated.View
+      <ReanimatedAnimated.View
         style={[
           fullWidth && { width: '100%' },
           style,
-          {
-            transform: [{ scale: scaleAnim }],
-            opacity: opacityAnim,
-          },
+          animatedStyle,
           isDisabled && { opacity: 0.5 },
         ]}
       >
         {children}
-      </Animated.View>
+      </ReanimatedAnimated.View>
     </Pressable>
   );
 }

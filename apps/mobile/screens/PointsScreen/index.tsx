@@ -50,7 +50,7 @@ import {
 import { PointEventItem } from './PointEventItem';
 import { getAnimatedDisplayInteger } from '@/lib/animatedAmount';
 
-const POINTS_URL = 'https://pledgeapp.xyz/points.html';
+const POINTS_URL = 'https://sol-pledge.com/points.html';
 
 export const PointsScreen = () => {
   const { t } = useTranslation();

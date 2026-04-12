@@ -1,9 +1,12 @@
-import { Pressable, View, StyleSheet } from 'react-native';
+import { useState, useCallback } from 'react';
+import { Pressable, View, StyleSheet, LayoutChangeEvent } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
+  withTiming,
+  Easing,
+  useReducedMotion,
 } from 'react-native-reanimated';
 import { useAppTheme } from '@/theme/ThemeProvider';
 import { BodySmall } from './texts';
@@ -19,7 +22,8 @@ interface SegmentControlProps {
   onSelect: (key: string) => void;
 }
 
-const SPRING_CONFIG = { damping: 70, stiffness: 800 };
+const SLIDE_TIMING = { duration: 200, easing: Easing.out(Easing.cubic) };
+const TEXT_FADE_MS = 150;
 
 export const SegmentControl = ({
   segments,
@@ -27,28 +31,38 @@ export const SegmentControl = ({
   onSelect,
 }: SegmentControlProps) => {
   const { theme } = useAppTheme();
+  const reduceMotion = useReducedMotion();
   const selectedIndex = segments.findIndex((s) => s.key === selectedKey);
 
-  // Animated indicator position
-  const indicatorPosition = useSharedValue(selectedIndex);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const indicatorX = useSharedValue(0);
+
+  const segmentWidth = containerWidth > 0 ? (containerWidth - 8) / segments.length : 0;
+
+  const handleLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      const width = e.nativeEvent.layout.width;
+      setContainerWidth(width);
+      const sw = (width - 8) / segments.length;
+      // Set initial position without animation
+      indicatorX.value = selectedIndex * sw;
+    },
+    [segments.length, selectedIndex, indicatorX],
+  );
 
   const handleSelect = (key: string, index: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    indicatorPosition.value = withSpring(index, SPRING_CONFIG);
+    if (reduceMotion) {
+      indicatorX.value = index * segmentWidth;
+    } else {
+      indicatorX.value = withTiming(index * segmentWidth, SLIDE_TIMING);
+    }
     onSelect(key);
   };
 
   const indicatorStyle = useAnimatedStyle(() => ({
-    transform: [
-      {
-        translateX:
-          indicatorPosition.value * (1 / segments.length) * 100 + '%' === 'NaN%'
-            ? 0
-            : 0,
-      },
-    ],
-    left: `${(indicatorPosition.value / segments.length) * 100}%`,
-    width: `${100 / segments.length}%`,
+    transform: [{ translateX: indicatorX.value }],
+    width: segmentWidth,
   }));
 
   return (
@@ -57,6 +71,7 @@ export const SegmentControl = ({
         styles.container,
         { backgroundColor: theme.colors.cardBackground },
       ]}
+      onLayout={handleLayout}
     >
       {/* Animated indicator */}
       <Animated.View
@@ -76,20 +91,61 @@ export const SegmentControl = ({
             style={styles.segment}
             onPress={() => handleSelect(segment.key, index)}
           >
-            <BodySmall
-              style={{
-                color: isSelected
-                  ? theme.colors.iconOnPrimary
-                  : theme.colors.textSecondary,
-                fontWeight: isSelected ? '700' : '500',
-              }}
+            <AnimatedSegmentText
+              isSelected={isSelected}
+              selectedColor={theme.colors.iconOnPrimary}
+              unselectedColor={theme.colors.textSecondary}
+              reduceMotion={reduceMotion}
             >
               {segment.label}
-            </BodySmall>
+            </AnimatedSegmentText>
           </Pressable>
         );
       })}
     </View>
+  );
+};
+
+const AnimatedSegmentText = ({
+  isSelected,
+  selectedColor,
+  unselectedColor,
+  reduceMotion,
+  children,
+}: {
+  isSelected: boolean;
+  selectedColor: string;
+  unselectedColor: string;
+  reduceMotion: boolean;
+  children: string;
+}) => {
+  const opacity = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
+
+  // Cross-fade on selection change: brief dip then restore
+  const prevSelected = useSharedValue(isSelected);
+  if (prevSelected.value !== isSelected) {
+    prevSelected.value = isSelected;
+    if (!reduceMotion) {
+      opacity.value = 0.5;
+      opacity.value = withTiming(1, { duration: TEXT_FADE_MS });
+    }
+  }
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <BodySmall
+        style={{
+          color: isSelected ? selectedColor : unselectedColor,
+          fontWeight: '600',
+        }}
+      >
+        {children}
+      </BodySmall>
+    </Animated.View>
   );
 };
 
@@ -108,6 +164,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 4,
     bottom: 4,
+    left: 4,
     borderBottomRightRadius: 16,
     borderTopLeftRadius: 2,
     borderTopRightRadius: 16,

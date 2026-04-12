@@ -44,7 +44,7 @@
   const navClose = document.getElementById('navClose');
 
   if (navOpen && navMobile && navClose) {
-    navOpen.addEventListener('click', () => navMobile.classList.add('open'));
+    navOpen.addEventListener('click', () => navMobile.classList.toggle('open'));
     navClose.addEventListener('click', () => navMobile.classList.remove('open'));
 
     navMobile.querySelectorAll('a').forEach((link) => {

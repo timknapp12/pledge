@@ -729,14 +729,18 @@ export const useUpdatePledge = () => {
       pledgeId,
       name,
       todos,
+      reminder_settings,
     }: {
       pledgeId: string;
       name?: string;
       todos?: PledgeTodos;
+      reminder_settings?: ReminderSettings | null;
     }) => {
       const updateData: Record<string, unknown> = {};
       if (name !== undefined) updateData.name = name;
       if (todos !== undefined) updateData.todos = todos;
+      if (reminder_settings !== undefined)
+        updateData.reminder_settings = reminder_settings;
 
       if (Object.keys(updateData).length === 0) return null;
 
