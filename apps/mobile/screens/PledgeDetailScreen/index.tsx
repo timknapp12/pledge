@@ -224,9 +224,11 @@ export const PledgeDetailScreen = () => {
       progressWithLocalState.push({
         id: '',
         pledge_id: pledge.id,
+        user_id: pledge.user_id,
         date: today,
         todos_completed: completedTodos,
         created_at: '',
+        updated_at: '',
       });
     }
     return calculateCompletionPercentage(
@@ -323,9 +325,11 @@ export const PledgeDetailScreen = () => {
       progressWithLocalState.push({
         id: '',
         pledge_id: pledge.id,
+        user_id: pledge.user_id,
         date: today,
         todos_completed: completedTodos,
         created_at: '',
+        updated_at: '',
       });
     }
 

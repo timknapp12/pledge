@@ -153,9 +153,11 @@ export const getEffectiveStatus = (pledge: Pledge): PledgeDisplayStatus => {
 export interface DailyProgress {
   id: string;
   pledge_id: string;
+  user_id: string;
   date: string;
   todos_completed: number[]; // indices of completed todos
   created_at: string;
+  updated_at: string;
 }
 
 export interface Template {
@@ -333,7 +335,7 @@ export const useAllDailyProgress = (date: string) => {
 
 // Update daily progress (check/uncheck todos)
 export const useUpdateDailyProgress = () => {
-  const { supabase } = useAuth();
+  const { supabase, user } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -346,12 +348,14 @@ export const useUpdateDailyProgress = () => {
       date: string;
       todosCompleted: number[];
     }) => {
+      if (!user) throw new Error('Not authenticated');
       // Upsert - create if doesn't exist, update if does
       const { data, error } = await supabase
         .from('daily_progress')
         .upsert(
           {
             pledge_id: pledgeId,
+            user_id: user.id,
             date,
             todos_completed: todosCompleted,
           },
