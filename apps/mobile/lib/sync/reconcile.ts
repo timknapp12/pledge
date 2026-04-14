@@ -120,7 +120,7 @@ async function createRecoveredPledge(
   const { error } = await supabase.from('pledges').insert({
     on_chain_address: onChain.address.toBase58(),
     wallet_address: walletAddress,
-    name: 'Recovered Pledge', // Metadata lost
+    name: '',
     stake_amount: onChain.stakeAmount,
     deadline: onChain.deadline.toISOString(),
     todos: [], // Metadata lost

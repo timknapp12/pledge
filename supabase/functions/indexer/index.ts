@@ -268,7 +268,7 @@ async function handlePledgeCreated(
   const { error } = await supabase.from('pledges').insert({
     user_id: userRecord.id,
     on_chain_address: event.pledge,
-    name: 'Recovered Pledge',
+    name: '',
     timeframe_type: 'custom',
     start_date: new Date().toISOString(),
     end_date: deadlineDate.toISOString(),

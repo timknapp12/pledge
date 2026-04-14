@@ -187,7 +187,7 @@ Deno.serve(async (req) => {
         const { error: insertError } = await supabase.from('pledges').insert({
           user_id: userRecord.id,
           on_chain_address: onChain.address,
-          name: 'Recovered Pledge',
+          name: '',
           timeframe_type: 'custom',
           start_date: new Date().toISOString(),
           end_date: deadlineDate.toISOString(),
