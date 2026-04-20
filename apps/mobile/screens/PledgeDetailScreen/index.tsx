@@ -46,23 +46,32 @@ import {
   Slider,
   Checkbox,
   useAlert,
+  useToast,
 } from '@/components';
 import { EditPledgeSheet } from '@/components/sheets';
+import { isUserCancellation, getTransactionErrorMessage } from '@/lib/errors';
 
 function formatDeadline(deadline: string): string {
   const date = new Date(deadline);
-  return date.toLocaleDateString(undefined, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  }) + ' ' + date.toLocaleTimeString(undefined, {
-    hour: 'numeric',
-    minute: '2-digit',
-  });
+  return (
+    date.toLocaleDateString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }) +
+    ' ' +
+    date.toLocaleTimeString(undefined, {
+      hour: 'numeric',
+      minute: '2-digit',
+    })
+  );
 }
 
-function formatTimeRemaining(deadline: string, t: (key: string) => string): string {
+function formatTimeRemaining(
+  deadline: string,
+  t: (key: string) => string,
+): string {
   const date = new Date(deadline);
   const now = new Date();
   const diffMs = date.getTime() - now.getTime();
@@ -168,6 +177,7 @@ export const PledgeDetailScreen = () => {
   const editSheetRef = useRef<BottomSheet>(null);
 
   const { alert } = useAlert();
+  const { toast } = useToast();
   const [completedTodos, setCompletedTodos] = useState<number[]>([]);
   const [overrideProgress, setOverrideProgress] = useState<number | null>(null);
   const [isReporting, setIsReporting] = useState(false);
@@ -201,10 +211,14 @@ export const PledgeDetailScreen = () => {
         });
       } catch (err) {
         console.error('Failed to update progress:', err);
-        // Revert on error
         setCompletedTodos(completedTodos);
+        toast({
+          message: t("Couldn't save progress. Please try again."),
+          variant: 'error',
+        });
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [completedTodos, id, updateProgress],
   );
 
@@ -217,10 +231,13 @@ export const PledgeDetailScreen = () => {
     if (!pledge || !allProgress) return 0;
     // Build progress array with today's local state for immediate feedback
     const progressWithLocalState = allProgress.map((p) =>
-      p.date === today ? { ...p, todos_completed: completedTodos } : p
+      p.date === today ? { ...p, todos_completed: completedTodos } : p,
     );
     // If no record for today yet but user has checked items, add it
-    if (completedTodos.length > 0 && !allProgress.find((p) => p.date === today)) {
+    if (
+      completedTodos.length > 0 &&
+      !allProgress.find((p) => p.date === today)
+    ) {
       progressWithLocalState.push({
         id: '',
         pledge_id: pledge.id,
@@ -235,7 +252,7 @@ export const PledgeDetailScreen = () => {
       pledge.todos,
       progressWithLocalState,
       new Date(pledge.start_date),
-      new Date(pledge.end_date)
+      new Date(pledge.end_date),
     );
   };
 
@@ -281,10 +298,16 @@ export const PledgeDetailScreen = () => {
                 settleTxSignature: signature,
               });
               refetch();
-              alert({ title: t('Success'), message: t('Pledge settled successfully') });
+              toast({
+                message: t('Pledge settled successfully'),
+                variant: 'success',
+              });
             } catch (err: any) {
               console.error('Report and settle error:', err);
-              alert({ title: t('Error'), message: err.message || t('Something went wrong') });
+              if (!isUserCancellation(err)) {
+                const message = getTransactionErrorMessage(err);
+                alert({ title: t('Error'), message: t(message!) });
+              }
             } finally {
               setIsReporting(false);
             }
@@ -369,9 +392,9 @@ export const PledgeDetailScreen = () => {
         todos: newTodos,
         reminder_settings: newReminderSettings,
       });
-      alert({ title: t('Success'), message: t('Pledge updated successfully') });
+      toast({ message: t('Pledge updated successfully'), variant: 'success' });
     },
-    [pledge, updatePledge, alert, t],
+    [pledge, updatePledge, toast, t],
   );
 
   if (pledgeLoading || progressLoading) {
@@ -428,7 +451,11 @@ export const PledgeDetailScreen = () => {
               { backgroundColor: theme.colors.cardBackground },
             ]}
           >
-            <Ionicons name="create-outline" size={20} color={theme.colors.text} />
+            <Ionicons
+              name='create-outline'
+              size={20}
+              color={theme.colors.text}
+            />
           </Pressable>
         )}
         <View
@@ -509,9 +536,7 @@ export const PledgeDetailScreen = () => {
                       },
                     ]}
                     onPress={() => handleTodoToggle(index)}
-                    disabled={
-                      pledge.status !== 'Active' || isCompletionBusy
-                    }
+                    disabled={pledge.status !== 'Active' || isCompletionBusy}
                   >
                     <Checkbox checked={completed} />
                     <Body
@@ -541,8 +566,8 @@ export const PledgeDetailScreen = () => {
             {progress === 100
               ? t('Claim Your Pledge')
               : new Date(pledge.deadline) <= new Date()
-                ? t('Report Completion')
-                : t('Settle Early')}
+              ? t('Report Completion')
+              : t('Settle Early')}
           </PrimaryButton>
         </CenteredColumn>
       )}

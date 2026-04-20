@@ -28,6 +28,7 @@ import {
   supabaseAnon,
 } from '../lib/supabase';
 import { queryKeys } from '@/hooks/queryKeys';
+import { isUserCancellation, getWalletErrorMessage } from '../lib/errors';
 
 // Read cluster from app.config.ts (set based on DEPLOY_ENVIRONMENT)
 type SolanaCluster = 'devnet' | 'testnet' | 'mainnet-beta';
@@ -282,9 +283,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         storeTimezoneAndLanguage(authenticatedClient, userData.id);
       });
     } catch (err: any) {
+      // User dismissed the wallet prompt — not an error, just do nothing
+      if (isUserCancellation(err)) {
+        return;
+      }
       console.error('Connection error:', err);
-      setError(err.message || 'Failed to connect wallet');
-      throw err;
+      const friendlyMessage = getWalletErrorMessage(err);
+      setError(friendlyMessage);
     } finally {
       setIsConnecting(false);
     }

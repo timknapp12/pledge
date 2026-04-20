@@ -14,6 +14,7 @@ import {
   Row,
   Card,
   Checkbox,
+  useToast,
 } from '@/components';
 import {
   type Pledge,
@@ -52,6 +53,7 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
   const { theme } = useAppTheme();
   const router = useRouter();
   const updateProgress = useUpdateDailyProgress();
+  const { toast } = useToast();
 
   // Date state: today or yesterday
   const [showYesterday, setShowYesterday] = useState(false);
@@ -140,9 +142,10 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
         });
       } catch (err) {
         console.error('Failed to update progress:', err);
+        toast({ message: t("Couldn't save progress. Please try again."), variant: 'error' });
       }
     },
-    [selectedDate, updateProgress],
+    [selectedDate, updateProgress, toast, t],
   );
 
   const handleSelectAll = useCallback(
@@ -162,9 +165,10 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
         });
       } catch (err) {
         console.error('Failed to update progress:', err);
+        toast({ message: t("Couldn't save progress. Please try again."), variant: 'error' });
       }
     },
-    [selectedDate, updateProgress],
+    [selectedDate, updateProgress, toast, t],
   );
 
   const noTasksForSelectedDate =
