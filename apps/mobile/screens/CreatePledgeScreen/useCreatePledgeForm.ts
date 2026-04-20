@@ -304,7 +304,9 @@ export const useCreatePledgeForm = () => {
         });
       }
 
-      router.back();
+      // Defer navigation to let React Query's onSuccess re-renders
+      // settle before the screen unmounts (prevents Android crash)
+      requestAnimationFrame(() => router.back());
     } catch (err: any) {
       console.error('Create pledge error:', err);
       if (!isUserCancellation(err)) {

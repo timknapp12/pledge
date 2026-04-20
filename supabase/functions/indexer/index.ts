@@ -435,11 +435,12 @@ Deno.serve(async (req) => {
       return new Response('Method not allowed', { status: 405 });
     }
 
-    // Verify webhook auth token
+    // Verify webhook auth token (passed as query param to avoid
+    // Supabase intercepting the Authorization header)
     const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
     if (webhookSecret) {
-      const authHeader = req.headers.get('Authorization');
-      const token = authHeader?.replace('Bearer ', '');
+      const url = new URL(req.url);
+      const token = url.searchParams.get('webhook_secret');
       if (token !== webhookSecret) {
         return new Response('Unauthorized', { status: 401 });
       }
