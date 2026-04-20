@@ -23,6 +23,7 @@ import { ScrollProvider } from '@/contexts/ScrollContext';
 import { ThemeProvider, useThemeMode } from '@/theme/ThemeProvider';
 import { lightTheme, darkTheme } from '@/theme';
 import { AlertProvider } from '@/components/common/Alert';
+import { ToastProvider } from '@/components/common/Toast';
 import { NotificationsProvider } from '@/hooks/useNotifications';
 import { UserPreferencesProvider } from '@/contexts/UserPreferencesContext';
 
@@ -91,7 +92,9 @@ function RootLayoutNav() {
             <UserPreferencesProvider>
             <ThemeProvider>
               <AlertProvider>
-                <ThemedNavigation />
+                <ToastProvider>
+                  <ThemedNavigation />
+                </ToastProvider>
               </AlertProvider>
             </ThemeProvider>
             </UserPreferencesProvider>
