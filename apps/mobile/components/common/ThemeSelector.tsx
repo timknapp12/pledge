@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Pressable, View, StyleSheet, LayoutChangeEvent } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as Haptics from 'expo-haptics';
@@ -110,14 +110,16 @@ const AnimatedIcon = ({
     opacity: opacity.value,
   }));
 
-  const prevSelected = useSharedValue(isSelected);
-  if (prevSelected.value !== isSelected) {
-    prevSelected.value = isSelected;
-    if (!reduceMotion) {
-      opacity.value = 0.5;
-      opacity.value = withTiming(1, { duration: ICON_FADE_MS });
+  const prevSelected = useRef(isSelected);
+  useEffect(() => {
+    if (prevSelected.current !== isSelected) {
+      prevSelected.current = isSelected;
+      if (!reduceMotion) {
+        opacity.value = 0.5;
+        opacity.value = withTiming(1, { duration: ICON_FADE_MS });
+      }
     }
-  }
+  }, [isSelected, reduceMotion, opacity]);
 
   return (
     <Animated.View style={animatedStyle}>

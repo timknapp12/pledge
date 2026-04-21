@@ -120,10 +120,11 @@ const AnimatedPressable = ({
           fullWidth && { width: '100%' },
           style,
           animatedStyle,
-          isDisabled && { opacity: 0.5 },
         ]}
       >
-        {children}
+        <View style={isDisabled ? { opacity: 0.5 } : undefined}>
+          {children}
+        </View>
       </ReanimatedAnimated.View>
     </Pressable>
   );

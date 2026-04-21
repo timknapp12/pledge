@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Pressable, View, StyleSheet, LayoutChangeEvent } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import Animated, {
@@ -126,14 +126,16 @@ const AnimatedSegmentText = ({
   }));
 
   // Cross-fade on selection change: brief dip then restore
-  const prevSelected = useSharedValue(isSelected);
-  if (prevSelected.value !== isSelected) {
-    prevSelected.value = isSelected;
-    if (!reduceMotion) {
-      opacity.value = 0.5;
-      opacity.value = withTiming(1, { duration: TEXT_FADE_MS });
+  const prevSelected = useRef(isSelected);
+  useEffect(() => {
+    if (prevSelected.current !== isSelected) {
+      prevSelected.current = isSelected;
+      if (!reduceMotion) {
+        opacity.value = 0.5;
+        opacity.value = withTiming(1, { duration: TEXT_FADE_MS });
+      }
     }
-  }
+  }, [isSelected, reduceMotion, opacity]);
 
   return (
     <Animated.View style={animatedStyle}>

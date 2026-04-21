@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
       .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
       .setIssuer('supabase')
       .setIssuedAt()
-      .setExpirationTime('24h')
+      .setExpirationTime('30d')
       .sign(secret);
 
     return new Response(JSON.stringify({ token, user }), {

@@ -15,7 +15,9 @@ import {
 } from '@/hooks/useSupabase';
 import { useProgram } from '@/hooks/useProgram';
 import { useNotifications } from '@/hooks/useNotifications';
-import { type DurationPreset } from '@/components';
+import { type DurationPreset, useToast } from '@/components';
+import { isUserCancellation, getTransactionErrorMessage } from '@/lib/errors';
+import { enqueueRetry } from '@/lib/sync';
 
 const MAX_DAILY_TRACKING_DAYS = 90;
 
@@ -31,6 +33,7 @@ export const useCreatePledgeForm = () => {
   const { templateId } = useLocalSearchParams<{ templateId?: string }>();
   const { walletAddress } = useAuth();
 
+  const { toast } = useToast();
   const { createPledge, error: programError } = useProgram();
   const createPledgeInDb = useCreatePledgeInDb();
   const createTemplate = useCreateTemplate();
@@ -100,7 +103,7 @@ export const useCreatePledgeForm = () => {
 
   const pledgeTodos: PledgeTodos = useMemo(
     () => computePledgeTodos(taskDefinitions, startDate, endDate),
-    [taskDefinitions, startDate, endDate]
+    [taskDefinitions, startDate, endDate],
   );
 
   const isValid = taskDefinitions.length > 0 && parseFloat(stakeAmount) > 0;
@@ -127,7 +130,7 @@ export const useCreatePledgeForm = () => {
         setDurationPreset('1week');
       }
     },
-    [endDate]
+    [endDate],
   );
 
   const handleDurationConfirm = useCallback(
@@ -135,30 +138,31 @@ export const useCreatePledgeForm = () => {
       setEndDate(end);
       setDurationPreset(preset);
       const newDurationDays = Math.ceil(
-        (end.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+        (end.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
       );
       // If daily options become unavailable, convert daily tasks to goals
-      if (
-        newDurationDays < 2 ||
-        newDurationDays > MAX_DAILY_TRACKING_DAYS
-      ) {
+      if (newDurationDays < 2 || newDurationDays > MAX_DAILY_TRACKING_DAYS) {
         setTaskDefinitions((prev) =>
           prev.map((def) =>
             def.schedule !== 'not_daily'
-              ? { ...def, schedule: 'not_daily' as const, customDays: undefined }
-              : def
-          )
+              ? {
+                  ...def,
+                  schedule: 'not_daily' as const,
+                  customDays: undefined,
+                }
+              : def,
+          ),
         );
       }
     },
-    [startDate]
+    [startDate],
   );
 
   const handleRemindersConfirm = useCallback(
     (settings: ReminderSettings | null) => {
       setReminderSettings(settings);
     },
-    []
+    [],
   );
 
   // Save as template
@@ -172,11 +176,17 @@ export const useCreatePledgeForm = () => {
           default_timeframe: durationPreset,
         });
         setTemplateDirty(false);
+        toast({ message: t('Template saved'), variant: 'success' });
       } catch (err) {
         console.error('Failed to save template:', err);
+        toast({
+          message: t("Couldn't save template. Please try again."),
+          variant: 'error',
+        });
       }
     },
-    [createTemplate, pledgeTodos, taskDefinitions, durationPreset]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [createTemplate, pledgeTodos, taskDefinitions, durationPreset],
   );
 
   // Label helpers
@@ -218,7 +228,7 @@ export const useCreatePledgeForm = () => {
     }
     const parts: string[] = [];
     const dailyReminder = reminderSettings.reminders.find(
-      (r) => r.type === 'daily'
+      (r) => r.type === 'daily',
     );
     if (dailyReminder?.time) {
       parts.push(`${t('Daily at')} ${formatReminderTime(dailyReminder.time)}`);
@@ -268,7 +278,7 @@ export const useCreatePledgeForm = () => {
         }
       }
 
-      await createPledgeInDb.mutateAsync({
+      const dbPayload = {
         on_chain_address: result.pledgeAddress.toString(),
         name: pledgeName,
         timeframe_type: durationPreset,
@@ -278,12 +288,33 @@ export const useCreatePledgeForm = () => {
         stake_amount: parseUsdcToLamports(stakeAmount),
         todos: pledgeTodos,
         reminder_settings: reminderSettings,
-      });
+      };
 
-      router.back();
+      try {
+        await createPledgeInDb.mutateAsync(dbPayload);
+      } catch (dbErr) {
+        console.error('DB write failed, queuing for retry:', dbErr);
+        await enqueueRetry({
+          on_chain_address: result.pledgeAddress.toString(),
+          payload: dbPayload,
+        });
+        toast({
+          message: t('Pledge created! Data will sync shortly.'),
+          variant: 'info',
+        });
+      }
+
+      // Defer navigation to let React Query's onSuccess re-renders
+      // settle before the screen unmounts (prevents Android crash)
+      requestAnimationFrame(() => router.back());
     } catch (err: any) {
       console.error('Create pledge error:', err);
-      setError(err.message || 'Failed to create pledge');
+      if (!isUserCancellation(err)) {
+        setError(
+          getTransactionErrorMessage(err) ??
+            'Something went wrong. Please try again.',
+        );
+      }
     } finally {
       setIsSubmitting(false);
     }

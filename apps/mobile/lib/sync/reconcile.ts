@@ -13,6 +13,8 @@
 import { PublicKey } from '@solana/web3.js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { fetchUserPledges, ParsedPledge, PledgeStatus } from '../anchor';
+import { processRetryQueue } from './retryQueue';
+
 export interface ReconciliationResult {
   processedQueueItems: number;
   createdInDb: number;
@@ -23,8 +25,9 @@ export interface ReconciliationResult {
 /**
  * Main reconciliation function - call on app launch and network reconnection.
  *
- * 1. Fetch on-chain pledges for user
- * 2. Compare with DB and fix discrepancies
+ * 1. Process any pending retry queue items (preserves full metadata)
+ * 2. Fetch on-chain pledges for user
+ * 3. Compare with DB and fix discrepancies
  *
  * The indexer handles status sync, so reconciliation focuses on
  * ensuring every on-chain pledge has a DB record.
@@ -32,6 +35,7 @@ export interface ReconciliationResult {
 export const reconcileUserPledges = async (
   supabase: SupabaseClient,
   walletAddress: string,
+  userId: string,
 ): Promise<ReconciliationResult> => {
   const result: ReconciliationResult = {
     processedQueueItems: 0,
@@ -41,15 +45,19 @@ export const reconcileUserPledges = async (
   };
 
   try {
-    // 1. Fetch on-chain pledges
+    // 1. Process any pending retry queue items first
+    const queueResult = await processRetryQueue(supabase, userId);
+    result.processedQueueItems = queueResult.processed;
+
+    // 2. Fetch on-chain pledges
     const userPubkey = new PublicKey(walletAddress);
     const onChainPledges = await fetchUserPledges(userPubkey);
 
-    // 2. Fetch DB pledges
+    // 3. Fetch DB pledges
     const { data: dbPledges, error: dbError } = await supabase
       .from('pledges')
       .select('id, on_chain_address, status, stake_amount, deadline')
-      .eq('wallet_address', walletAddress);
+      .eq('user_id', userId);
 
     if (dbError) {
       result.errors.push(`Failed to fetch DB pledges: ${dbError.message}`);
@@ -61,7 +69,7 @@ export const reconcileUserPledges = async (
       (dbPledges || []).map((p) => [p.on_chain_address, p]),
     );
 
-    // 3. Reconcile differences
+    // 4. Reconcile differences
     for (const onChain of onChainPledges) {
       const address = onChain.address.toBase58();
       const dbRecord = dbPledgeMap.get(address);
@@ -71,7 +79,7 @@ export const reconcileUserPledges = async (
         // The indexer usually handles this, but this is a fallback.
         const createResult = await createRecoveredPledge(
           supabase,
-          walletAddress,
+          userId,
           onChain,
         );
         if (createResult.success) {
@@ -114,19 +122,25 @@ export const reconcileUserPledges = async (
  */
 async function createRecoveredPledge(
   supabase: SupabaseClient,
-  walletAddress: string,
+  userId: string,
   onChain: ParsedPledge,
 ): Promise<{ success: boolean; error?: string }> {
+  const deadlineIso = onChain.deadline.toISOString();
+  const createdIso = onChain.createdAt.toISOString();
+
   const { error } = await supabase.from('pledges').insert({
+    user_id: userId,
     on_chain_address: onChain.address.toBase58(),
-    wallet_address: walletAddress,
-    name: 'Recovered Pledge', // Metadata lost
+    name: '',
+    timeframe_type: 'custom',
+    start_date: createdIso,
+    end_date: deadlineIso,
+    deadline: deadlineIso,
     stake_amount: onChain.stakeAmount,
-    deadline: onChain.deadline.toISOString(),
-    todos: [], // Metadata lost
+    todos: { goals: [], daily: {} },
     status: onChain.status,
     completion_percentage: onChain.completionPercentage,
-    created_at: onChain.createdAt.toISOString(),
+    created_at: createdIso,
   });
 
   if (error) {

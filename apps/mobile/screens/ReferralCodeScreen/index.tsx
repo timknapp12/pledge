@@ -51,8 +51,18 @@ export const ReferralCodeScreen = () => {
       });
     } catch (err) {
       console.error('Referral code error:', err);
-      const message =
-        err instanceof Error ? err.message : t('Something went wrong');
+      const raw = err instanceof Error ? err.message : '';
+      // Map known referral errors to user-friendly messages
+      let message: string;
+      if (raw.includes('already used') || raw.includes('already_used')) {
+        message = t('You have already used a referral code.');
+      } else if (raw.includes('own code') || raw.includes('own_code') || raw.includes('self')) {
+        message = t("You can't use your own referral code.");
+      } else if (raw.includes('not found') || raw.includes('invalid')) {
+        message = t('Invalid referral code. Please check and try again.');
+      } else {
+        message = t('Something went wrong. Please try again.');
+      }
       setError(message);
     }
   };

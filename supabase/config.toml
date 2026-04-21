@@ -22,3 +22,9 @@ jwt_expiry = 86400
 
 [functions.verify-wallet]
 verify_jwt = false
+
+[functions.indexer]
+verify_jwt = false
+
+[functions.rpc-proxy]
+verify_jwt = true

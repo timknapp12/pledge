@@ -1,0 +1,16 @@
+{
+  "name": "Pledge",
+  "description": "Stake USDC on personal goals. 100% completion returns full stake; partial completion returns a proportional amount minus fee; failure forfeits tokens to treasury/charity.",
+  "project_url": "https://github.com/timknapp12/pledge",
+  "contacts": [
+    "email:timknapp12@gmail.com"
+  ],
+  "policy": "Please report vulnerabilities privately by emailing timknapp12@gmail.com. Include a clear description, reproduction steps, and an assessment of impact. Do not disclose publicly until the issue is patched and deployed. A good-faith acknowledgement will be provided; there is no formal bounty program at this time.",
+  "preferred_languages": ["en"],
+  "source_code": "https://github.com/timknapp12/pledge",
+  "source_release": "main",
+  "source_revision": "c048f107d1767f4dc8f28a439c79bb4326d80528",
+  "auditors": [],
+  "expiry": "2027-04-18",
+  "version": "0.1.0"
+}

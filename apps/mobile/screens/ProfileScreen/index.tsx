@@ -27,6 +27,7 @@ import {
   OutlineButton,
   Row,
   useAlert,
+  useToast,
 } from '@/components';
 import { SettingsItem } from './SettingsItem';
 
@@ -52,6 +53,7 @@ export const ProfileScreen = () => {
 
   const { data: userProfile } = useUserProfile();
   const { alert } = useAlert();
+  const { toast } = useToast();
   const [isTogglingNotifications, setIsTogglingNotifications] = useState(false);
 
   const personalitySegments = useMemo(
@@ -131,10 +133,15 @@ export const ProfileScreen = () => {
         }
       } catch (err) {
         console.error('Failed to toggle notifications:', err);
+        toast({
+          message: t("Couldn't update notifications. Please try again."),
+          variant: 'error',
+        });
       } finally {
         setIsTogglingNotifications(false);
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [registerForPushNotifications, disableNotifications],
   );
 

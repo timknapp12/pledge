@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { PublicKey } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
 import { useAuth } from '../contexts/AuthContext';
+import { isUserCancellation, getTransactionErrorMessage } from '../lib/errors';
 import {
   fetchUserPledges,
   fetchPledge,
@@ -68,7 +69,7 @@ export const useProgram = (): UseProgramReturn => {
       const userPubkey = new PublicKey(walletAddress);
       return await fetchUserPledges(userPubkey);
     } catch (err: any) {
-      const message = err.message || 'Failed to fetch pledges';
+      const message = getTransactionErrorMessage(err) ?? 'Something went wrong. Please try again.';
       setError(message);
       throw err;
     } finally {
@@ -89,7 +90,7 @@ export const useProgram = (): UseProgramReturn => {
       try {
         return await fetchPledge(address);
       } catch (err: any) {
-        const message = err.message || 'Failed to fetch pledge';
+        const message = getTransactionErrorMessage(err) ?? 'Something went wrong. Please try again.';
         setError(message);
         throw err;
       } finally {
@@ -111,7 +112,7 @@ export const useProgram = (): UseProgramReturn => {
     try {
       return await fetchProgramConfig();
     } catch (err: any) {
-      const message = err.message || 'Failed to fetch config';
+      const message = getTransactionErrorMessage(err) ?? 'Something went wrong. Please try again.';
       setError(message);
       throw err;
     } finally {
@@ -148,8 +149,11 @@ export const useProgram = (): UseProgramReturn => {
 
         return { signature, pledgeAddress, createdAt: createdAt.toNumber() };
       } catch (err: any) {
-        const message = err.message || 'Failed to create pledge';
-        setError(message);
+        console.error('createPledge error:', err);
+        if (!isUserCancellation(err)) {
+          const message = getTransactionErrorMessage(err) ?? 'Something went wrong. Please try again.';
+          setError(message);
+        }
         throw err;
       } finally {
         setIsLoading(false);
@@ -197,8 +201,11 @@ export const useProgram = (): UseProgramReturn => {
 
         return signature;
       } catch (err: any) {
-        const message = err.message || 'Failed to report completion';
-        setError(message);
+        console.error('reportCompletion error:', err);
+        if (!isUserCancellation(err)) {
+          const message = getTransactionErrorMessage(err) ?? 'Something went wrong. Please try again.';
+          setError(message);
+        }
         throw err;
       } finally {
         setIsLoading(false);
@@ -245,8 +252,10 @@ export const useProgram = (): UseProgramReturn => {
 
         return signature;
       } catch (err: any) {
-        const message = err.message || 'Failed to report and settle';
-        setError(message);
+        if (!isUserCancellation(err)) {
+          const message = getTransactionErrorMessage(err) ?? 'Something went wrong. Please try again.';
+          setError(message);
+        }
         throw err;
       } finally {
         setIsLoading(false);

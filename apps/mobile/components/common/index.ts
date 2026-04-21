@@ -13,3 +13,4 @@ export * from './Checkbox';
 export * from './Slider';
 export * from './Alert';
 export * from './DateCarousel';
+export * from './Toast';

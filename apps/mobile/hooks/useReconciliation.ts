@@ -38,7 +38,7 @@ export const useReconciliation = (): UseReconciliationReturn => {
 
     setIsReconciling(true);
     try {
-      const result = await reconcileUserPledges(supabase, walletAddress);
+      const result = await reconcileUserPledges(supabase, walletAddress, user.id);
       setLastResult(result);
 
       if (__DEV__) {

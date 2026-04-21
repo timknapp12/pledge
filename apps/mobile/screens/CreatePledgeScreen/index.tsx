@@ -218,19 +218,16 @@ export const CreatePledgeScreen = () => {
                       goalName={form.name.trim() || undefined}
                     />
                   )}
-
-                  {(form.error || form.programError) && (
-                    <ErrorText
-                      style={{ marginBottom: 16, textAlign: 'center' }}
-                    >
-                      {form.error || form.programError}
-                    </ErrorText>
-                  )}
                 </CenteredColumn>
               </ScrollView>
             </KeyboardAvoidingView>
 
             <CenteredColumn gap={12} width='100%'>
+              {(form.error || form.programError) && (
+                <ErrorText style={{ textAlign: 'center' }}>
+                  {t(form.error || form.programError || '')}
+                </ErrorText>
+              )}
               {form.taskDefinitions.length > 0 && form.templateDirty && (
                 <Pressable
                   onPress={() => {

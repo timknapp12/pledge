@@ -2,13 +2,6 @@ P0
 
 P1
 
-- diagnose recovered pledges
-
-- db strings for noties
-
-- audit error handling
-- audit all migration files
-
 - add needed stuff to explorer.solana configs
 
 P2
