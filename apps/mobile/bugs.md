@@ -2,7 +2,6 @@ P0
 
 P1
 
-- audit error handling
 - add needed stuff to explorer.solana configs
 
 P2
