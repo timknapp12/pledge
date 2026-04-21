@@ -27,6 +27,7 @@ import {
   getVerifyWalletUrl,
   supabaseAnon,
 } from '../lib/supabase';
+import { setRpcAuthToken } from '../lib/anchor/connection';
 import { queryKeys } from '@/hooks/queryKeys';
 import { isUserCancellation, getWalletErrorMessage } from '../lib/errors';
 
@@ -171,6 +172,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // Token still valid
             const authenticatedClient = createAuthenticatedClient(token);
             setSupabase(authenticatedClient);
+            setRpcAuthToken(token);
             setWalletAddress(payload.wallet_address);
             setUser({
               id: payload.sub,
@@ -276,6 +278,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const authenticatedClient = createAuthenticatedClient(token);
 
         setSupabase(authenticatedClient);
+        setRpcAuthToken(token);
         setWalletAddress(walletAddr);
         setUser(userData);
         // Prefetch pledges data and sync timezone
@@ -298,6 +301,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const disconnect = useCallback(async () => {
     try {
       await removeAuthToken();
+      setRpcAuthToken(null);
       setUser(null);
       setWalletAddress(null);
       setSupabase(supabaseAnon);
