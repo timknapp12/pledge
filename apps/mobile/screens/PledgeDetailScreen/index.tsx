@@ -5,6 +5,7 @@ import {
   Pressable,
   View,
   StyleSheet,
+  Platform,
 } from 'react-native';
 import BottomSheet from '@gorhom/bottom-sheet';
 import { useTranslation } from 'react-i18next';
@@ -291,6 +292,15 @@ export const PledgeDetailScreen = () => {
                 pledge.on_chain_address,
                 completionPct,
               );
+              // iOS Phantom deep-link returns trigger Expo Router to reset
+              // the stack to the home tab. Re-push this screen so the user
+              // lands back here to see the settlement result.
+              if (Platform.OS === 'ios') {
+                router.push({
+                  pathname: '/pledge/[id]',
+                  params: { id: pledge.id },
+                });
+              }
               await updatePledgeStatus.mutateAsync({
                 pledgeId: pledge.id,
                 status: finalStatus,
