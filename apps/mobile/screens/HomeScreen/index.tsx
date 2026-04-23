@@ -158,7 +158,7 @@ export const HomeScreen = () => {
             >
               <ActivityIndicator size='large' color={theme.colors.primary} />
               <BodySecondary style={{ marginTop: 16 }}>
-                {t('Pledging...')}
+                {t('Loading...')}
               </BodySecondary>
             </CenteredColumn>
           ) : isError ? (

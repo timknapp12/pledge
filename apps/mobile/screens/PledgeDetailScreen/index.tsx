@@ -30,6 +30,7 @@ import {
   type ReminderSettings,
 } from '@/hooks/useSupabase';
 import { useProgram } from '@/hooks/useProgram';
+import { useTxFlow } from '@/contexts/TxFlowContext';
 import {
   Title1,
   Title3,
@@ -175,6 +176,7 @@ export const PledgeDetailScreen = () => {
   const updatePledgeStatus = useUpdatePledgeStatus();
   const { reportAndSettle } = useProgram();
   const updatePledge = useUpdatePledge();
+  const { beginFlow, setStep, endFlow } = useTxFlow();
   const editSheetRef = useRef<BottomSheet>(null);
 
   const { alert } = useAlert();
@@ -287,6 +289,7 @@ export const PledgeDetailScreen = () => {
           text: t('Confirm'),
           onPress: async () => {
             setIsReporting(true);
+            beginFlow({ title: t('Settling your pledge'), step: 'wallet' });
             try {
               const signature = await reportAndSettle(
                 pledge.on_chain_address,
@@ -294,26 +297,32 @@ export const PledgeDetailScreen = () => {
               );
               // iOS Phantom deep-link returns trigger Expo Router to reset
               // the stack to the home tab. Re-push this screen so the user
-              // lands back here to see the settlement result.
+              // lands back here to see the settlement result. The overlay
+              // hides the flash while this happens.
               if (Platform.OS === 'ios') {
                 router.push({
                   pathname: '/pledge/[id]',
                   params: { id: pledge.id },
                 });
               }
+              setStep('saving');
               await updatePledgeStatus.mutateAsync({
                 pledgeId: pledge.id,
                 status: finalStatus,
                 completionPercentage: completionPct,
                 settleTxSignature: signature,
               });
-              refetch();
+              // Await the refetch so the overlay stays up until the screen
+              // renders the resolved status — no stale-data flash.
+              await refetch();
+              endFlow(150);
               toast({
                 message: t('Pledge settled successfully'),
                 variant: 'success',
               });
             } catch (err: any) {
               console.error('Report and settle error:', err);
+              endFlow();
               if (!isUserCancellation(err)) {
                 const message = getTransactionErrorMessage(err);
                 alert({ title: t('Error'), message: t(message!) });

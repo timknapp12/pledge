@@ -299,5 +299,11 @@
   "You have already used a referral code.": "You have already used a referral code.",
   "You can't use your own referral code.": "You can't use your own referral code.",
   "Invalid referral code. Please check and try again.": "Invalid referral code. Please check and try again.",
-  "Pledge created! Data will sync shortly.": "Pledge created! Data will sync shortly."
+  "Pledge created! Data will sync shortly.": "Pledge created! Data will sync shortly.",
+  "Creating your pledge": "Creating your pledge",
+  "Settling your pledge": "Settling your pledge",
+  "Opening Phantom…": "Opening Phantom…",
+  "Waiting for wallet approval…": "Waiting for wallet approval…",
+  "Confirming on Solana…": "Confirming on Solana…",
+  "Saving…": "Saving…"
 }

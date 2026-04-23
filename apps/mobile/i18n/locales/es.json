@@ -299,5 +299,11 @@
   "You have already used a referral code.": "Ya has usado un código de referido.",
   "You can't use your own referral code.": "No puedes usar tu propio código de referido.",
   "Invalid referral code. Please check and try again.": "Código de referido inválido. Por favor verifica e intenta de nuevo.",
-  "Pledge created! Data will sync shortly.": "¡Compromiso creado! Los datos se sincronizarán en breve."
+  "Pledge created! Data will sync shortly.": "¡Compromiso creado! Los datos se sincronizarán en breve.",
+  "Creating your pledge": "Creando tu compromiso",
+  "Settling your pledge": "Liquidando tu compromiso",
+  "Opening Phantom…": "Abriendo Phantom…",
+  "Waiting for wallet approval…": "Esperando aprobación de la cartera…",
+  "Confirming on Solana…": "Confirmando en Solana…",
+  "Saving…": "Guardando…"
 }
