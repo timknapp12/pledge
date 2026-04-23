@@ -25,7 +25,8 @@ const DEV_SUPABASE_PUBLISHABLE_KEY =
   process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
 
 const PROD_SUPABASE_URL =
-  process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://xbltaxjcpthidsglslxf.supabase.co';
+  process.env.EXPO_PUBLIC_SUPABASE_URL ||
+  'https://xbltaxjcpthidsglslxf.supabase.co';
 const PROD_SUPABASE_PUBLISHABLE_KEY =
   process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
 
@@ -35,7 +36,7 @@ const slug = 'pledge';
 const owner = 'timknapp12';
 let version = '0.0.1';
 const easProjectId = 'd01efb8d-0437-42d9-b4d4-971d2207ab66';
-let icon = './assets/images/P-white-1024.png';
+let icon = './assets/images/p-white-bg-purple-1024.png';
 let androidIcon = './assets/images/P-white-1024.png';
 let packageName = 'com.pledge.dev';
 let iosBundleId = 'com.pledge.dev';
