@@ -90,7 +90,6 @@ module.exports = {
     icon,
     scheme,
     userInterfaceStyle: 'automatic',
-    newArchEnabled: true,
     updates: {
       url: `https://u.expo.dev/${easProjectId}`,
     },
@@ -102,7 +101,6 @@ module.exports = {
         foregroundImage: androidIcon,
         backgroundColor: '#6366F1',
       },
-      edgeToEdgeEnabled: true,
       softwareKeyboardLayoutMode: 'resize',
       package: packageName,
       googleServicesFile,
@@ -117,6 +115,8 @@ module.exports = {
     },
     plugins: [
       'expo-router',
+      'expo-font',
+      'expo-web-browser',
       'expo-localization',
       'expo-secure-store',
       '@react-native-community/datetimepicker',
@@ -159,7 +159,11 @@ module.exports = {
       backgroundColor: '#6366F1',
     },
     experiments: {
-      typedRoutes: true,
+      // Disabled: SDK 55 upstream version skew between @expo/router-server@55.0.15
+      // (in @expo/cli@55.0.26) and expo-router@55.0.13. The router-server requires
+      // expo-router/internal/routing, which the latest stable expo-router does not
+      // export. Re-enable once Expo ships matching versions.
+      typedRoutes: false,
     },
     extra: {
       router: {},
