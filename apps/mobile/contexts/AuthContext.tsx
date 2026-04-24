@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 // Authentication context using Sign in with Solana (SIWS) and Mobile Wallet Adapter
 import React, {
   createContext,
@@ -7,12 +8,10 @@ import React, {
   useCallback,
   ReactNode,
 } from 'react';
+import { Platform } from 'react-native';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { PublicKey } from '@solana/web3.js';
-import {
-  transact,
-  Web3MobileWallet,
-} from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
+import type { Web3MobileWallet } from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
 import { toUint8Array } from 'js-base64';
 import nacl from 'tweetnacl';
 import bs58 from 'bs58';
@@ -30,15 +29,18 @@ import {
 import { setRpcAuthToken } from '../lib/anchor/connection';
 import { queryKeys } from '@/hooks/queryKeys';
 import { isUserCancellation, getWalletErrorMessage } from '../lib/errors';
+import * as phantom from '../lib/phantom';
 
 // Read cluster from app.config.ts (set based on DEPLOY_ENVIRONMENT)
 type SolanaCluster = 'devnet' | 'testnet' | 'mainnet-beta';
 const VALID_CLUSTERS: SolanaCluster[] = ['devnet', 'testnet', 'mainnet-beta'];
-const rawCluster = Constants.expoConfig?.extra?.solanaNetwork as string | undefined;
+const rawCluster = Constants.expoConfig?.extra?.solanaNetwork as
+  | string
+  | undefined;
 if (!rawCluster || !VALID_CLUSTERS.includes(rawCluster as SolanaCluster)) {
   throw new Error(
     `Invalid or missing solanaNetwork in app.config.ts extra: "${rawCluster}". ` +
-    'Must be one of: devnet, testnet, mainnet-beta.',
+      'Must be one of: devnet, testnet, mainnet-beta.',
   );
 }
 const solanaCluster = rawCluster as SolanaCluster;
@@ -49,6 +51,22 @@ const APP_IDENTITY = {
   uri: 'https://pledge.app',
   icon: 'favicon.ico',
 };
+
+// MWA is an Android-only native module. Lazy-require it behind a Platform
+// guard so the iOS bundle never touches it at load time. iOS auth will go
+// through the Phantom deep-link flow (added separately).
+type TransactFn =
+  typeof import('@solana-mobile/mobile-wallet-adapter-protocol-web3js').transact;
+
+let transact: TransactFn | null = null;
+if (Platform.OS === 'android') {
+  try {
+    transact =
+      require('@solana-mobile/mobile-wallet-adapter-protocol-web3js').transact;
+  } catch (error) {
+    console.error('[MWA] Failed to load mobile-wallet-adapter:', error);
+  }
+}
 
 interface User {
   id: string;
@@ -137,7 +155,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error('Failed to store timezone/language:', err);
       }
     },
-    []
+    [],
   );
 
   // Prefetch pledges data after authentication
@@ -155,7 +173,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         },
       });
     },
-    [queryClient]
+    [queryClient],
   );
 
   // Check for existing session on mount
@@ -197,96 +215,134 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     checkExistingSession();
   }, [prefetchPledges, storeTimezoneAndLanguage]);
 
+  // Exchange a verified SIWS (message, signature, pubkey) for a Supabase
+  // JWT and wire up the authenticated client. Shared by the iOS (Phantom)
+  // and Android (MWA) paths.
+  const exchangeAndFinalize = useCallback(
+    async (
+      message: string,
+      signatureBase58: string,
+      walletAddr: string,
+    ): Promise<void> => {
+      const response = await fetch(getVerifyWalletUrl(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message,
+          signature: signatureBase58,
+          publicKey: walletAddr,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(
+          'Edge function error response:',
+          response.status,
+          errorText,
+        );
+        let errorMessage = 'Wallet verification failed';
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const { token, user: userData } = await response.json();
+
+      await storeAuthToken(token);
+      const authenticatedClient = createAuthenticatedClient(token);
+
+      setSupabase(authenticatedClient);
+      setRpcAuthToken(token);
+      setWalletAddress(walletAddr);
+      setUser(userData);
+      prefetchPledges(authenticatedClient, walletAddr);
+      storeTimezoneAndLanguage(authenticatedClient, userData.id);
+    },
+    [prefetchPledges, storeTimezoneAndLanguage],
+  );
+
+  const connectIos = useCallback(async (): Promise<void> => {
+    // Phantom handshake (no-op if already connected from a prior session)
+    const walletAddr = await phantom.connect(
+      solanaCluster === 'mainnet-beta' ? 'mainnet-beta' : 'devnet',
+    );
+
+    const nonce = generateNonce();
+    const message = createSiwsMessage(walletAddr, nonce);
+    const signatureBase58 = await phantom.signMessage(message);
+
+    // Local sanity check before burning the Edge Function request
+    const publicKeyBytes = bs58.decode(walletAddr);
+    const signatureBytes = bs58.decode(signatureBase58);
+    const messageBytes = new TextEncoder().encode(message);
+    const isValidLocally = nacl.sign.detached.verify(
+      messageBytes,
+      signatureBytes,
+      publicKeyBytes,
+    );
+    if (!isValidLocally) {
+      throw new Error('Local signature verification failed');
+    }
+
+    await exchangeAndFinalize(message, signatureBase58, walletAddr);
+  }, [exchangeAndFinalize]);
+
+  const connectAndroid = useCallback(async (): Promise<void> => {
+    if (!transact) {
+      throw new Error('Mobile Wallet Adapter failed to load');
+    }
+    await transact(async (wallet: Web3MobileWallet) => {
+      const authResult = await wallet.authorize({
+        cluster: solanaCluster,
+        identity: APP_IDENTITY,
+      });
+
+      const base64Address = authResult.accounts[0].address;
+      const publicKeyBytes = toUint8Array(base64Address);
+      const publicKey = new PublicKey(publicKeyBytes);
+      const walletAddr = publicKey.toBase58();
+
+      const nonce = generateNonce();
+      const message = createSiwsMessage(walletAddr, nonce);
+      const messageBytes = new TextEncoder().encode(message);
+
+      const signedMessages = await wallet.signMessages({
+        addresses: [base64Address],
+        payloads: [messageBytes],
+      });
+
+      const signatureBytes = signedMessages[0];
+      const signatureBase58 = uint8ArrayToBase58(signatureBytes);
+
+      const isValidLocally = nacl.sign.detached.verify(
+        messageBytes,
+        signatureBytes,
+        publicKeyBytes,
+      );
+      if (!isValidLocally) {
+        throw new Error('Local signature verification failed');
+      }
+
+      await exchangeAndFinalize(message, signatureBase58, walletAddr);
+    });
+  }, [exchangeAndFinalize]);
+
   const connect = useCallback(async () => {
     setIsConnecting(true);
     setError(null);
 
     try {
-      await transact(async (wallet: Web3MobileWallet) => {
-        // Step 1: Authorize with wallet
-        const authResult = await wallet.authorize({
-          cluster: solanaCluster,
-          identity: APP_IDENTITY,
-        });
-
-        // The address from MWA is base64-encoded public key bytes
-        const base64Address = authResult.accounts[0].address;
-        const publicKeyBytes = toUint8Array(base64Address);
-        const publicKey = new PublicKey(publicKeyBytes);
-        const walletAddr = publicKey.toBase58();
-
-        // Step 2: Create SIWS message
-        const nonce = generateNonce();
-        const message = createSiwsMessage(walletAddr, nonce);
-        const messageBytes = new TextEncoder().encode(message);
-
-        // Step 3: Sign the message using MWA
-        // addresses expects base64-encoded addresses
-        const signedMessages = await wallet.signMessages({
-          addresses: [base64Address],
-          payloads: [messageBytes],
-        });
-
-        const signatureBytes = signedMessages[0];
-        const signatureBase58 = uint8ArrayToBase58(signatureBytes);
-
-        // Step 4: Verify locally before sending to server (optional sanity check)
-        const isValidLocally = nacl.sign.detached.verify(
-          messageBytes,
-          signatureBytes,
-          publicKeyBytes
-        );
-
-        if (!isValidLocally) {
-          throw new Error('Local signature verification failed');
-        }
-
-        // Step 5: Send to Edge Function for verification and JWT
-        const response = await fetch(getVerifyWalletUrl(), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            message,
-            signature: signatureBase58,
-            publicKey: walletAddr,
-          }),
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error(
-            'Edge function error response:',
-            response.status,
-            errorText
-          );
-          let errorMessage = 'Wallet verification failed';
-          try {
-            const errorData = JSON.parse(errorText);
-            errorMessage = errorData.error || errorMessage;
-          } catch {
-            errorMessage = errorText || errorMessage;
-          }
-          throw new Error(errorMessage);
-        }
-
-        const { token, user: userData } = await response.json();
-
-        // Step 6: Store token and update state
-        await storeAuthToken(token);
-        const authenticatedClient = createAuthenticatedClient(token);
-
-        setSupabase(authenticatedClient);
-        setRpcAuthToken(token);
-        setWalletAddress(walletAddr);
-        setUser(userData);
-        // Prefetch pledges data and sync timezone
-        prefetchPledges(authenticatedClient, walletAddr);
-        storeTimezoneAndLanguage(authenticatedClient, userData.id);
-      });
+      if (Platform.OS === 'ios') {
+        await connectIos();
+      } else {
+        await connectAndroid();
+      }
     } catch (err: any) {
-      // User dismissed the wallet prompt — not an error, just do nothing
       if (isUserCancellation(err)) {
         return;
       }
@@ -296,10 +352,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsConnecting(false);
     }
-  }, [prefetchPledges, storeTimezoneAndLanguage]);
+  }, [connectIos, connectAndroid]);
 
   const disconnect = useCallback(async () => {
     try {
+      if (Platform.OS === 'ios') {
+        // Clear Phantom's cached shared secret / session token so the next
+        // `connect` re-handshakes cleanly. Fire-and-forget; don't block
+        // logout on the deep-link round trip.
+        phantom.disconnect().catch(() => {});
+      }
       await removeAuthToken();
       setRpcAuthToken(null);
       setUser(null);

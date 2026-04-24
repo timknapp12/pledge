@@ -1,11 +1,34 @@
-import { Transaction, Connection } from '@solana/web3.js';
-import {
-  transact,
-  Web3MobileWallet,
-} from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
+/* eslint-disable @typescript-eslint/no-require-imports */
+import { Platform } from 'react-native';
+import { Transaction } from '@solana/web3.js';
+import type { Web3MobileWallet } from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
 import { getConnection, CLUSTER } from './connection';
+import { pollForConfirmation } from './confirm';
 
-// App identity for MWA
+// MWA is an Android-only native module. Importing it on iOS crashes at
+// module-load time, so we pull it in lazily via require() behind a Platform
+// guard. iOS wallet flows go through the Phantom deep-link signer instead.
+type TransactFn =
+  typeof import('@solana-mobile/mobile-wallet-adapter-protocol-web3js').transact;
+
+let transact: TransactFn | null = null;
+if (Platform.OS === 'android') {
+  try {
+    transact = require('@solana-mobile/mobile-wallet-adapter-protocol-web3js').transact;
+  } catch (error) {
+    console.error('[MWA] Failed to load mobile-wallet-adapter:', error);
+  }
+}
+
+const assertAndroid = (): TransactFn => {
+  if (!transact) {
+    throw new Error(
+      'Mobile Wallet Adapter is Android-only. iOS must route wallet flows through Phantom.',
+    );
+  }
+  return transact;
+};
+
 const APP_IDENTITY = {
   name: 'Pledge',
   uri: 'https://pledge.app',
@@ -18,29 +41,28 @@ export interface SignAndSendResult {
 }
 
 /**
- * Sign and send a transaction using Mobile Wallet Adapter
- * Waits for confirmation before returning
+ * Android (MWA) path: sign and send a transaction, wait for confirmation.
+ * iOS callers should go through `lib/anchor/signer.ts` instead, which
+ * branches to the Phantom deep-link signer.
  */
-export const signAndSendTransaction = async (
+export const signAndSendTransactionMwa = async (
   transaction: Transaction,
 ): Promise<SignAndSendResult> => {
   const connection = getConnection();
+  const mwa = assertAndroid();
 
-  return await transact(async (wallet: Web3MobileWallet) => {
-    // Authorize with wallet
+  return await mwa(async (wallet: Web3MobileWallet) => {
     await wallet.authorize({
       cluster: CLUSTER,
       identity: APP_IDENTITY,
     });
 
-    // Sign the transaction
     const signedTransactions = await wallet.signTransactions({
       transactions: [transaction],
     });
 
     const signedTx = signedTransactions[0];
 
-    // Send the signed transaction
     const signature = await connection.sendRawTransaction(
       signedTx.serialize(),
       {
@@ -49,7 +71,6 @@ export const signAndSendTransaction = async (
       },
     );
 
-    // Poll for confirmation (HTTP-only, works through RPC proxy)
     await pollForConfirmation(connection, signature);
 
     return {
@@ -59,77 +80,31 @@ export const signAndSendTransaction = async (
   });
 };
 
-/**
- * Poll for transaction confirmation using getSignatureStatuses.
- * Works over HTTP — no WebSocket needed.
- */
-const pollForConfirmation = async (
-  connection: Connection,
-  signature: string,
-  timeoutMs = 60000,
-  intervalMs = 2000,
-): Promise<void> => {
-  const start = Date.now();
-
-  while (Date.now() - start < timeoutMs) {
-    const { value } = await connection.getSignatureStatuses([signature]);
-    const status = value?.[0];
-
-    if (status) {
-      if (status.err) {
-        throw new Error(
-          `Transaction failed: ${JSON.stringify(status.err)}`,
-        );
-      }
-      // 'confirmed' or 'finalized' means success
-      if (
-        status.confirmationStatus === 'confirmed' ||
-        status.confirmationStatus === 'finalized'
-      ) {
-        return;
-      }
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
-  }
-
-  throw new Error('Transaction confirmation timed out');
-};
-
-/**
- * Sign a transaction without sending (for inspection or manual send)
- */
-export const signTransaction = async (
+export const signTransactionMwa = async (
   transaction: Transaction,
 ): Promise<Transaction> => {
-  return await transact(async (wallet: Web3MobileWallet) => {
+  const mwa = assertAndroid();
+  return await mwa(async (wallet: Web3MobileWallet) => {
     await wallet.authorize({
       cluster: CLUSTER,
       identity: APP_IDENTITY,
     });
-
     const signedTransactions = await wallet.signTransactions({
       transactions: [transaction],
     });
-
     return signedTransactions[0];
   });
 };
 
-/**
- * Sign multiple transactions in a single MWA session
- */
-export const signAllTransactions = async (
+export const signAllTransactionsMwa = async (
   transactions: Transaction[],
 ): Promise<Transaction[]> => {
-  return await transact(async (wallet: Web3MobileWallet) => {
+  const mwa = assertAndroid();
+  return await mwa(async (wallet: Web3MobileWallet) => {
     await wallet.authorize({
       cluster: CLUSTER,
       identity: APP_IDENTITY,
     });
-
-    return await wallet.signTransactions({
-      transactions,
-    });
+    return await wallet.signTransactions({ transactions });
   });
 };

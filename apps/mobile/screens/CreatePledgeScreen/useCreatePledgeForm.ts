@@ -16,6 +16,7 @@ import {
 import { useProgram } from '@/hooks/useProgram';
 import { useNotifications } from '@/hooks/useNotifications';
 import { type DurationPreset, useToast } from '@/components';
+import { useTxFlow } from '@/contexts/TxFlowContext';
 import { isUserCancellation, getTransactionErrorMessage } from '@/lib/errors';
 import { enqueueRetry } from '@/lib/sync';
 
@@ -34,6 +35,7 @@ export const useCreatePledgeForm = () => {
   const { walletAddress } = useAuth();
 
   const { toast } = useToast();
+  const { beginFlow, setStep, endFlow } = useTxFlow();
   const { createPledge, error: programError } = useProgram();
   const createPledgeInDb = useCreatePledgeInDb();
   const createTemplate = useCreateTemplate();
@@ -251,6 +253,7 @@ export const useCreatePledgeForm = () => {
 
     setIsSubmitting(true);
     setError(null);
+    beginFlow({ title: t('Creating your pledge'), step: 'wallet' });
 
     try {
       const stakeAmountNumber = parseFloat(stakeAmount);
@@ -260,6 +263,8 @@ export const useCreatePledgeForm = () => {
       if (!result?.pledgeAddress) {
         throw new Error('Failed to create pledge on-chain');
       }
+
+      setStep('saving');
 
       // Ensure push token is registered before scheduling notifications
       if (reminderSettings?.reminders?.length) {
@@ -305,10 +310,18 @@ export const useCreatePledgeForm = () => {
       }
 
       // Defer navigation to let React Query's onSuccess re-renders
-      // settle before the screen unmounts (prevents Android crash)
-      requestAnimationFrame(() => router.back());
+      // settle before the screen unmounts (prevents Android crash).
+      // Keep the overlay up through the back transition so the home
+      // screen doesn't flash empty while the pledges query settles.
+      // On iOS the Phantom deep-link callback has already reset the
+      // stack to home, so canGoBack() returns false — skip the back().
+      requestAnimationFrame(() => {
+        if (router.canGoBack()) router.back();
+      });
+      endFlow(450);
     } catch (err: any) {
       console.error('Create pledge error:', err);
+      endFlow();
       if (!isUserCancellation(err)) {
         setError(
           getTransactionErrorMessage(err) ??

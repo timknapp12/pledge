@@ -26,6 +26,8 @@ import { AlertProvider } from '@/components/common/Alert';
 import { ToastProvider } from '@/components/common/Toast';
 import { NotificationsProvider } from '@/hooks/useNotifications';
 import { UserPreferencesProvider } from '@/contexts/UserPreferencesContext';
+import { TxFlowProvider } from '@/contexts/TxFlowContext';
+import { usePhantomListener } from '@/hooks/usePhantomListener';
 
 const LightNavTheme = {
   ...DefaultTheme,
@@ -59,6 +61,9 @@ export const unstable_settings = {
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  // iOS-only Phantom deep-link callback listener. No-op on Android.
+  usePhantomListener();
+
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     Iceberg: require('../assets/fonts/Iceberg-Regular.ttf'),
@@ -93,7 +98,9 @@ function RootLayoutNav() {
             <ThemeProvider>
               <AlertProvider>
                 <ToastProvider>
-                  <ThemedNavigation />
+                  <TxFlowProvider>
+                    <ThemedNavigation />
+                  </TxFlowProvider>
                 </ToastProvider>
               </AlertProvider>
             </ThemeProvider>

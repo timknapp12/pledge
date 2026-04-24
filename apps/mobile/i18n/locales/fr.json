@@ -299,5 +299,11 @@
   "You have already used a referral code.": "Vous avez déjà utilisé un code de parrainage.",
   "You can't use your own referral code.": "Vous ne pouvez pas utiliser votre propre code de parrainage.",
   "Invalid referral code. Please check and try again.": "Code de parrainage invalide. Veuillez vérifier et réessayer.",
-  "Pledge created! Data will sync shortly.": "Engagement créé ! Les données se synchroniseront sous peu."
+  "Pledge created! Data will sync shortly.": "Engagement créé ! Les données se synchroniseront sous peu.",
+  "Creating your pledge": "Création de votre engagement",
+  "Settling your pledge": "Règlement de votre engagement",
+  "Opening Phantom…": "Ouverture de Phantom…",
+  "Waiting for wallet approval…": "En attente d'approbation du portefeuille…",
+  "Confirming on Solana…": "Confirmation sur Solana…",
+  "Saving…": "Enregistrement…"
 }

@@ -1,6 +1,8 @@
 // Pledge App Configuration
 // Supports: development, preview, production environments
-// Android only
+// Android: Mobile Wallet Adapter (MWA) for wallet flows
+// iOS: Phantom deep linking for wallet flows; APNs handled by Expo Push
+// Firebase (Crashlytics/Analytics) is configured on both platforms.
 
 // RPC URLs - proxied through Supabase Edge Functions to keep Helius API key server-side
 // The rpc-proxy edge function forwards JSON-RPC requests to Helius
@@ -23,7 +25,8 @@ const DEV_SUPABASE_PUBLISHABLE_KEY =
   process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
 
 const PROD_SUPABASE_URL =
-  process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://xbltaxjcpthidsglslxf.supabase.co';
+  process.env.EXPO_PUBLIC_SUPABASE_URL ||
+  'https://xbltaxjcpthidsglslxf.supabase.co';
 const PROD_SUPABASE_PUBLISHABLE_KEY =
   process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
 
@@ -33,9 +36,10 @@ const slug = 'pledge';
 const owner = 'timknapp12';
 let version = '0.0.1';
 const easProjectId = 'd01efb8d-0437-42d9-b4d4-971d2207ab66';
-let icon = './assets/images/P-white-1024.png';
+let icon = './assets/images/p-white-bg-purple-1024.png';
 let androidIcon = './assets/images/P-white-1024.png';
 let packageName = 'com.pledge.dev';
+let iosBundleId = 'com.pledge.dev';
 let scheme = 'pledgedev';
 let env = 'development';
 let solanaNetwork = 'devnet';
@@ -45,14 +49,17 @@ let programId = DEVNET_PROGRAM_ID;
 let supabaseUrl = DEV_SUPABASE_URL;
 let supabasePublishableKey = DEV_SUPABASE_PUBLISHABLE_KEY;
 let googleServicesFile = './firebase/dev/google-services.json';
+let iosGoogleServicesFile = './firebase/dev/GoogleService-Info.plist';
 
 // Preview settings (still uses devnet but separate app install)
 if (process.env.DEPLOY_ENVIRONMENT === 'preview') {
   name = 'Pledge Preview';
   packageName = 'com.pledge.preview';
+  iosBundleId = 'com.pledge.preview';
   scheme = 'pledgepreview';
   env = 'preview';
   googleServicesFile = './firebase/preview/google-services.json';
+  iosGoogleServicesFile = './firebase/preview/GoogleService-Info.plist';
 }
 
 // Production settings
@@ -60,6 +67,7 @@ if (process.env.DEPLOY_ENVIRONMENT === 'production') {
   name = 'Pledge';
   version = '1.0.0';
   packageName = 'com.pledge.app';
+  iosBundleId = 'com.pledge.app';
   scheme = 'pledge';
   env = 'production';
   solanaNetwork = 'mainnet-beta';
@@ -69,6 +77,7 @@ if (process.env.DEPLOY_ENVIRONMENT === 'production') {
   supabaseUrl = PROD_SUPABASE_URL;
   supabasePublishableKey = PROD_SUPABASE_PUBLISHABLE_KEY;
   googleServicesFile = './firebase/prod/google-services.json';
+  iosGoogleServicesFile = './firebase/prod/GoogleService-Info.plist';
 }
 
 module.exports = {
@@ -98,6 +107,14 @@ module.exports = {
       package: packageName,
       googleServicesFile,
     },
+    ios: {
+      bundleIdentifier: iosBundleId,
+      supportsTablet: false,
+      googleServicesFile: iosGoogleServicesFile,
+      infoPlist: {
+        ITSAppUsesNonExemptEncryption: false,
+      },
+    },
     plugins: [
       'expo-router',
       'expo-localization',
@@ -120,6 +137,18 @@ module.exports = {
           android: {
             minSdkVersion: 26, // Required for MWA
             enableProguardInReleaseBuilds: false,
+          },
+          ios: {
+            // @react-native-firebase/* transitive pods don't declare clang
+            // modules, which breaks module-aware builds. Opt these three
+            // pods into modular headers instead of globally forcing
+            // `useFrameworks: 'static'` (which would break Reanimated v4
+            // and the New Architecture).
+            extraPods: [
+              { name: 'GoogleUtilities', modular_headers: true },
+              { name: 'GoogleDataTransport', modular_headers: true },
+              { name: 'nanopb', modular_headers: true },
+            ],
           },
         },
       ],

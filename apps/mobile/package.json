@@ -6,9 +6,15 @@
     "lint": "eslint .",
     "start": "expo start",
     "android": "expo start --android",
-    "build:dev": "eas build --platform android --profile development",
-    "build:preview": "eas build --platform android --profile preview",
-    "build:prod": "eas build --platform android --profile production"
+    "build:dev:a": "eas build --platform android --profile development",
+    "build:dev:i": "eas build --platform ios --profile development",
+    "build:dev": "eas build --platform all --profile development",
+    "build:preview:a": "eas build --platform android --profile preview",
+    "build:preview:i": "eas build --platform ios --profile preview",
+    "build:preview": "eas build --platform all --profile preview",
+    "build:prod:a": "eas build --platform android --profile production",
+    "build:prod:i": "eas build --platform ios --profile production",
+    "build:prod": "eas build --platform all --profile production"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.28.0",
