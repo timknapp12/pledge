@@ -114,7 +114,9 @@ export const TxFlowOverlay = ({ visible, title, step }: TxFlowOverlayProps) => {
           </Title3>
         ) : null}
         <ActivityIndicator size='large' color={theme.colors.primary} />
-        <Body style={{ color: theme.colors.textSecondary, textAlign: 'center' }}>
+        <Body
+          style={{ color: theme.colors.textSecondary, textAlign: 'center' }}
+        >
           {stepLabel}
         </Body>
       </View>
@@ -157,8 +159,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     alignItems: 'center',
     gap: 16,
-    minWidth: 240,
-    maxWidth: 320,
+    width: 280,
     borderWidth: 1,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
