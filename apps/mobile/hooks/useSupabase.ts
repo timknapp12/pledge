@@ -425,18 +425,6 @@ export const useCreatePledgeInDb = () => {
 
       if (error) throw error;
 
-      // Schedule notifications if reminder settings are configured
-      if (pledge.reminder_settings?.reminders?.length) {
-        const { error: rpcError } = await supabase.rpc(
-          'schedule_pledge_notifications',
-          { p_pledge_id: data.id, p_user_id: user.id }
-        );
-        if (rpcError) {
-          console.error('Failed to schedule notifications:', rpcError);
-          // Non-fatal: pledge was created successfully
-        }
-      }
-
       return data;
     },
     onSuccess: () => {

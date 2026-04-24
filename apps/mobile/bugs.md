@@ -9,4 +9,3 @@ P2
 - more languages
 - upgrade expo sdk
 - OTA updates
-- hook up phantom for ios
