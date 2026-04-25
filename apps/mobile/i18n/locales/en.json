@@ -305,5 +305,8 @@
   "Opening Phantom…": "Opening Phantom…",
   "Waiting for wallet approval…": "Waiting for wallet approval…",
   "Confirming on Solana…": "Confirming on Solana…",
-  "Saving…": "Saving…"
+  "Saving…": "Saving…",
+  "New Update Available": "New Update Available",
+  "A new version of Pledge is ready to install.": "A new version of Pledge is ready to install.",
+  "Restart & Update": "Restart & Update"
 }
