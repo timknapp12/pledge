@@ -89,6 +89,7 @@ module.exports = {
     orientation: 'portrait',
     icon,
     scheme,
+    platforms: ['ios', 'android'],
     userInterfaceStyle: 'automatic',
     updates: {
       url: `https://u.expo.dev/${easProjectId}`,
