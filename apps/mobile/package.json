@@ -16,7 +16,9 @@
     "build:prod:i": "eas build --platform ios --profile production",
     "build:prod": "eas build --platform all --profile production",
     "update:preview": "DEPLOY_ENVIRONMENT=preview eas update --branch preview --environment preview --clear-cache",
-    "update:prod": "DEPLOY_ENVIRONMENT=production eas update --branch production --environment production --clear-cache"
+    "update:prod": "DEPLOY_ENVIRONMENT=production eas update --branch production --environment production --clear-cache",
+    "update:preview:nocache": "DEPLOY_ENVIRONMENT=preview eas update --branch preview --environment preview",
+    "update:prod:nocache": "DEPLOY_ENVIRONMENT=production eas update --branch production --environment production"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.28.0",
