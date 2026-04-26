@@ -1,5 +1,6 @@
 // Polyfills must be imported first
 import '../lib/polyfills';
+import '../lib/appCheck';
 
 import 'react-native-reanimated';
 

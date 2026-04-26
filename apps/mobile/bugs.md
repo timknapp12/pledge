@@ -7,5 +7,4 @@ P1
 P2
 
 - more languages
-- upgrade expo sdk
-- OTA updates
+- protect google credentials
