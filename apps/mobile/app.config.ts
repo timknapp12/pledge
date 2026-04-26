@@ -66,8 +66,8 @@ if (process.env.DEPLOY_ENVIRONMENT === 'preview') {
 if (process.env.DEPLOY_ENVIRONMENT === 'production') {
   name = 'Pledge';
   version = '1.0.0';
-  packageName = 'com.pledge.app';
-  iosBundleId = 'com.pledge.app';
+  packageName = 'com.pledgeapp.app';
+  iosBundleId = 'com.pledgeapp.app';
   scheme = 'pledge';
   env = 'production';
   solanaNetwork = 'mainnet-beta';
@@ -123,6 +123,7 @@ module.exports = {
       '@react-native-community/datetimepicker',
       '@react-native-firebase/app',
       '@react-native-firebase/crashlytics',
+      '@react-native-firebase/app-check',
       [
         'expo-notifications',
         {

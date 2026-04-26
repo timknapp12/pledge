@@ -7,15 +7,15 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:765611262272:android:3845c3aadc2f35b3dc7aa5",
+        "mobilesdk_app_id": "1:765611262272:android:2036ebba42020ccbdc7aa5",
         "android_client_info": {
-          "package_name": "com.pledge.app"
+          "package_name": "com.pledgeapp.app"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAsIhsBdiHEOLEwlBTHlZOSRaXVhPXD5kw"
+          "current_key": "AIzaSyDx6PwyLdap-81byLMzsqV1vGytPZJA8xY"
         }
       ],
       "services": {

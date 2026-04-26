@@ -3,13 +3,13 @@
 <plist version="1.0">
 <dict>
 	<key>API_KEY</key>
-	<string>AIzaSyDJdgsdMja2DHtEkf0cx37V5iB09rF9JBg</string>
+	<string>AIzaSyAxPh385GAhfgN3u9HV1m98TAmdvv8ZWb0</string>
 	<key>GCM_SENDER_ID</key>
 	<string>765611262272</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.pledge.app</string>
+	<string>com.pledgeapp.app</string>
 	<key>PROJECT_ID</key>
 	<string>pledge-mainnet</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:765611262272:ios:131e60105c5d573fdc7aa5</string>
+	<string>1:765611262272:ios:f74b9c94c5c7d31edc7aa5</string>
 </dict>
 </plist>
