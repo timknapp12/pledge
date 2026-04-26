@@ -436,14 +436,16 @@ Deno.serve(async (req) => {
     }
 
     // Verify webhook auth token (passed as query param to avoid
-    // Supabase intercepting the Authorization header)
+    // Supabase intercepting the Authorization header).
+    // Fail closed: missing env var is a misconfiguration, not a bypass.
     const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
-    if (webhookSecret) {
-      const url = new URL(req.url);
-      const token = url.searchParams.get('webhook_secret');
-      if (token !== webhookSecret) {
-        return new Response('Unauthorized', { status: 401 });
-      }
+    if (!webhookSecret) {
+      console.error('[Indexer] WEBHOOK_SECRET not configured');
+      return new Response('Server misconfigured', { status: 500 });
+    }
+    const token = new URL(req.url).searchParams.get('webhook_secret');
+    if (token !== webhookSecret) {
+      return new Response('Unauthorized', { status: 401 });
     }
 
     // Initialize Supabase with service role key (bypasses RLS)

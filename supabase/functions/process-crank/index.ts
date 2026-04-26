@@ -210,19 +210,14 @@ Deno.serve(async (req) => {
       return new Response('Method not allowed', { status: 405 });
     }
 
-    // Verify shared secret (if FUNCTION_SECRET is set)
-    const functionSecret = Deno.env.get('FUNCTION_SECRET');
-    if (functionSecret) {
-      const authHeader = req.headers.get('Authorization');
-      const providedSecret = authHeader?.replace('Bearer ', '');
-      if (providedSecret !== functionSecret) {
-        return new Response('Unauthorized', { status: 401 });
-      }
-    }
-
-    // --- Initialize clients ---
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+    // Only the pg_cron job (or privileged backends) should reach this function.
+    if (req.headers.get('Authorization') !== `Bearer ${supabaseServiceKey}`) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const heliusApiKey = Deno.env.get('HELIUS_API_KEY')!;

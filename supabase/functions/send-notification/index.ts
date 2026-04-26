@@ -3,8 +3,7 @@
 
 /// <reference path="../shims.d.ts" />
 
-import { serve } from 'std/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from '@supabase/supabase-js';
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 const BATCH_SIZE = 100;
@@ -28,7 +27,7 @@ interface ExpoPushTicket {
   details?: { error?: string };
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   try {
     if (req.method !== 'POST') {
       return new Response('Method not allowed', { status: 405 });
@@ -36,6 +35,13 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+    // Only the pg_cron job (or privileged backends) should reach this function.
+    // The anon key would otherwise pass the gateway's verify_jwt check.
+    if (req.headers.get('Authorization') !== `Bearer ${supabaseServiceKey}`) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Query pending notifications that are due, joined with user for push_token
