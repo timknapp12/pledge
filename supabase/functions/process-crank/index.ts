@@ -214,7 +214,25 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
     // Only the pg_cron job (or privileged backends) should reach this function.
-    if (req.headers.get('Authorization') !== `Bearer ${supabaseServiceKey}`) {
+    // verify_jwt at the gateway validates signature; we enforce role=service_role
+    // so anon JWTs and authenticated users can't trigger this. Decoding the role
+    // claim survives Supabase's legacy-JWT → sb_secret_* key format migration;
+    // exact-match fallback covers the non-JWT sb_secret_* format.
+    const authHeader = req.headers.get('Authorization') ?? '';
+    const bearer = authHeader.replace(/^Bearer\s+/i, '');
+    let isServiceRole = bearer === supabaseServiceKey;
+    if (!isServiceRole) {
+      try {
+        const payloadB64 = bearer.split('.')[1] ?? '';
+        const b64 = payloadB64.replace(/-/g, '+').replace(/_/g, '/');
+        const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+        const payload = JSON.parse(atob(padded));
+        isServiceRole = payload?.role === 'service_role';
+      } catch {
+        // not a JWT — leave isServiceRole false
+      }
+    }
+    if (!isServiceRole) {
       return new Response('Unauthorized', { status: 401 });
     }
 
