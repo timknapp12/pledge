@@ -17,18 +17,18 @@ const DEVNET_PROGRAM_ID =
   process.env.EXPO_PUBLIC_PROGRAM_ID || 'YOUR_DEVNET_PROGRAM_ID';
 const MAINNET_PROGRAM_ID = 'PLDG12YsnCxRHa9CkWDnzkA9vsbEFpThXHR9zgnDTDp';
 
-// Supabase Configuration (dev/preview share one project, production uses another)
-const DEV_SUPABASE_URL =
-  process.env.EXPO_PUBLIC_SUPABASE_URL ||
-  'https://ejgcfgjkwlkblwrqtqbr.supabase.co';
-const DEV_SUPABASE_PUBLISHABLE_KEY =
-  process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
-
-const PROD_SUPABASE_URL =
-  process.env.EXPO_PUBLIC_SUPABASE_URL ||
-  'https://xbltaxjcpthidsglslxf.supabase.co';
-const PROD_SUPABASE_PUBLISHABLE_KEY =
-  process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
+// Supabase URL + publishable key are set per build profile in the EAS dashboard
+// (dev/preview point at the dev project, production points at the prod project).
+// Fail loudly if missing rather than silently shipping with an empty string.
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const SUPABASE_PUBLISHABLE_KEY =
+  process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+  throw new Error(
+    'Missing EXPO_PUBLIC_SUPABASE_URL or EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY. ' +
+      'Set them in the EAS build profile (or apps/mobile/.env for local dev).',
+  );
+}
 
 // Default (development) settings
 let name = 'Pledge Dev';
@@ -43,11 +43,9 @@ let iosBundleId = 'com.pledge.dev';
 let scheme = 'pledgedev';
 let env = 'development';
 let solanaNetwork = 'devnet';
-let solanaRpcUrl = `${DEV_SUPABASE_URL}/functions/v1/rpc-proxy`;
+let solanaRpcUrl = `${SUPABASE_URL}/functions/v1/rpc-proxy`;
 let usdcMint = DEVNET_USDC;
 let programId = DEVNET_PROGRAM_ID;
-let supabaseUrl = DEV_SUPABASE_URL;
-let supabasePublishableKey = DEV_SUPABASE_PUBLISHABLE_KEY;
 let googleServicesFile = './firebase/dev/google-services.json';
 let iosGoogleServicesFile = './firebase/dev/GoogleService-Info.plist';
 
@@ -71,11 +69,9 @@ if (process.env.DEPLOY_ENVIRONMENT === 'production') {
   scheme = 'pledge';
   env = 'production';
   solanaNetwork = 'mainnet-beta';
-  solanaRpcUrl = `${PROD_SUPABASE_URL}/functions/v1/rpc-proxy`;
+  solanaRpcUrl = `${SUPABASE_URL}/functions/v1/rpc-proxy`;
   usdcMint = MAINNET_USDC;
   programId = MAINNET_PROGRAM_ID;
-  supabaseUrl = PROD_SUPABASE_URL;
-  supabasePublishableKey = PROD_SUPABASE_PUBLISHABLE_KEY;
   googleServicesFile = './firebase/prod/google-services.json';
   iosGoogleServicesFile = './firebase/prod/GoogleService-Info.plist';
 }
@@ -177,8 +173,8 @@ module.exports = {
       solanaRpcUrl,
       usdcMint,
       programId,
-      supabaseUrl,
-      supabasePublishableKey,
+      supabaseUrl: SUPABASE_URL,
+      supabasePublishableKey: SUPABASE_PUBLISHABLE_KEY,
       experienceId: `@${owner}/${slug}`,
     },
   },
