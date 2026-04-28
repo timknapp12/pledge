@@ -27,6 +27,17 @@ const EVENT_DISCRIMINATORS: Record<string, string> = {
   PledgeForfeited: 'da389a3202688f41',
 };
 
+// Constant-time comparison for the webhook shared secret. Avoids leaking
+// the prefix length via early-exit timing.
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let mismatch = 0;
+  for (let i = 0; i < a.length; i++) {
+    mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return mismatch === 0;
+}
+
 function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes)
     .map((b) => b.toString(16).padStart(2, '0'))
@@ -233,60 +244,20 @@ function parseEventsFromLogs(logs: string[]): PledgeEvent[] {
 // --- DB handlers for each event type ---
 
 async function handlePledgeCreated(
-  supabase: SupabaseClient,
+  _supabase: SupabaseClient,
   event: PledgeCreatedEvent,
 ): Promise<void> {
-  // Check if pledge already exists in DB (frontend confirm-then-write usually handles this)
-  const { data: existing } = await supabase
-    .from('pledges')
-    .select('id')
-    .eq('on_chain_address', event.pledge)
-    .maybeSingle();
-
-  if (existing) {
-    // Already exists — frontend wrote it first. Nothing to do.
-    console.log(`[Indexer] PledgeCreated: already in DB (${event.pledge})`);
-    return;
-  }
-
-  // Pledge exists on-chain but not in DB — create a minimal recovered record.
-  // Metadata (name, todos, reminders) is lost since it's not on-chain.
-  // The user's wallet must be looked up from the user pubkey.
-  const { data: userRecord } = await supabase
-    .from('users')
-    .select('id')
-    .eq('wallet_address', event.user)
-    .maybeSingle();
-
-  if (!userRecord) {
-    console.error(`[Indexer] PledgeCreated: no user found for wallet ${event.user}`);
-    return;
-  }
-
-  const deadlineDate = new Date(Number(event.deadline) * 1000);
-
-  const { error } = await supabase.from('pledges').insert({
-    user_id: userRecord.id,
-    on_chain_address: event.pledge,
-    name: '',
-    timeframe_type: 'custom',
-    start_date: new Date().toISOString(),
-    end_date: deadlineDate.toISOString(),
-    deadline: deadlineDate.toISOString(),
-    stake_amount: Number(event.stakeAmount),
-    todos: { goals: [], daily: {} },
-    status: 'Active',
-  });
-
-  if (error) {
-    if (error.code === '23505') {
-      // Unique violation — race condition, already created
-      return;
-    }
-    throw new Error(`PledgeCreated insert failed: ${error.message}`);
-  }
-
-  console.log(`[Indexer] PledgeCreated: recovered pledge ${event.pledge}`);
+  // Frontend writes the pledge row immediately after on-chain confirmation,
+  // and Helius can fire the webhook before that DB write completes. Inserting
+  // a placeholder here would (a) race the frontend (causing 23505 unique-key
+  // errors) and (b) be useless to the user — name/todos/reminders live only
+  // in the client and would be empty in any indexer-created row.
+  //
+  // The frontend's reconcile-on-app-load handles the rare case where the
+  // tx confirmed but the DB write dropped, so we no-op here. The outer loop
+  // still records the tx in processed_transactions so we know the indexer
+  // saw the event.
+  console.log(`[Indexer] PledgeCreated observed for ${event.pledge} — DB write deferred to client`);
 }
 
 async function handlePledgeEdited(
@@ -435,16 +406,21 @@ Deno.serve(async (req) => {
       return new Response('Method not allowed', { status: 405 });
     }
 
-    // Verify webhook auth token (passed as query param to avoid
-    // Supabase intercepting the Authorization header).
+    // Verify webhook auth token. Prefer the X-Webhook-Secret header so the
+    // secret never appears in URL access logs. Fall back to the legacy
+    // ?webhook_secret query param so an in-flight Helius config swap doesn't
+    // drop events; remove that branch once the Helius webhook is updated.
     // Fail closed: missing env var is a misconfiguration, not a bypass.
     const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
     if (!webhookSecret) {
       console.error('[Indexer] WEBHOOK_SECRET not configured');
       return new Response('Server misconfigured', { status: 500 });
     }
-    const token = new URL(req.url).searchParams.get('webhook_secret');
-    if (token !== webhookSecret) {
+    const provided =
+      req.headers.get('x-webhook-secret') ??
+      new URL(req.url).searchParams.get('webhook_secret') ??
+      '';
+    if (!timingSafeEqual(provided, webhookSecret)) {
       return new Response('Unauthorized', { status: 401 });
     }
 
@@ -453,8 +429,12 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Parse Helius webhook payload
-    // Helius sends an array of enhanced transaction objects
+    // Parse Helius webhook payload. Helius sends an array of transaction
+    // objects. Two payload shapes exist:
+    //   - "Enhanced": top-level `signature` and parsed event fields
+    //   - "Raw": signature lives at `transaction.signatures[0]`,
+    //     logs at `meta.logMessages`
+    // We support both so a webhook config swap doesn't break this function.
     const payload = await req.json();
     const transactions = Array.isArray(payload) ? payload : [payload];
 
@@ -462,7 +442,11 @@ Deno.serve(async (req) => {
     let skippedCount = 0;
 
     for (const tx of transactions) {
-      const txSignature = tx.signature;
+      const txSignature: string | undefined =
+        tx.signature ??
+        tx.transaction?.signatures?.[0] ??
+        tx.signatures?.[0];
+
       if (!txSignature) {
         console.warn('[Indexer] Transaction missing signature, skipping');
         continue;
