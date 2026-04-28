@@ -23,6 +23,9 @@ jwt_expiry = 86400
 [functions.verify-wallet]
 verify_jwt = false
 
+[functions.issue-siws-nonce]
+verify_jwt = false
+
 [functions.indexer]
 verify_jwt = false
 

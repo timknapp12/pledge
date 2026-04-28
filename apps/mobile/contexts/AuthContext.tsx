@@ -24,6 +24,7 @@ import {
   storeAuthToken,
   removeAuthToken,
   getVerifyWalletUrl,
+  getIssueSiwsNonceUrl,
   supabaseAnon,
 } from '../lib/supabase';
 import { setRpcAuthToken } from '../lib/anchor/connection';
@@ -102,14 +103,24 @@ Nonce: ${nonce}
 Issued At: ${issuedAt}`;
 }
 
-// Generate a random nonce
-function generateNonce(): string {
-  const randomBytes = new Uint8Array(32);
-  crypto.getRandomValues(randomBytes);
-  // Convert to hex string for simplicity
-  return Array.from(randomBytes)
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
+// Fetch a single-use, server-issued SIWS nonce bound to this wallet.
+// Pairs with the issue-siws-nonce Edge Function. The server tracks the nonce
+// (5-minute TTL, single use) so a captured signed message cannot be replayed.
+async function fetchSiwsNonce(walletAddress: string): Promise<string> {
+  const response = await fetch(getIssueSiwsNonceUrl(), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ walletAddress }),
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(text || 'Failed to obtain sign-in nonce');
+  }
+  const { nonce } = await response.json();
+  if (typeof nonce !== 'string' || !nonce) {
+    throw new Error('Invalid nonce response');
+  }
+  return nonce;
 }
 
 // Convert signature Uint8Array to base58 string
@@ -272,7 +283,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       solanaCluster === 'mainnet-beta' ? 'mainnet-beta' : 'devnet',
     );
 
-    const nonce = generateNonce();
+    const nonce = await fetchSiwsNonce(walletAddr);
     const message = createSiwsMessage(walletAddr, nonce);
     const signatureBase58 = await phantom.signMessage(message);
 
@@ -307,7 +318,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const publicKey = new PublicKey(publicKeyBytes);
       const walletAddr = publicKey.toBase58();
 
-      const nonce = generateNonce();
+      const nonce = await fetchSiwsNonce(walletAddr);
       const message = createSiwsMessage(walletAddr, nonce);
       const messageBytes = new TextEncoder().encode(message);
 

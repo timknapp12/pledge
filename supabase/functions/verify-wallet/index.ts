@@ -63,7 +63,17 @@ Deno.serve(async (req) => {
       return errorResponse(401, 'Stale or invalid timestamp');
     }
 
-    // Verify the signature
+    // Server-issued nonce check. The client must have called
+    // issue-siws-nonce first; that nonce must be in our DB, bound to this
+    // wallet, unused, and unexpired.
+    const nonceMatch = msgText.match(/^Nonce: (\S+)$/m);
+    if (!nonceMatch) {
+      return errorResponse(401, 'Missing nonce');
+    }
+    const nonce = nonceMatch[1];
+
+    // Verify the signature BEFORE consuming the nonce — otherwise an attacker
+    // could exhaust valid nonces by spamming bogus signatures.
     const messageBytes = new TextEncoder().encode(msgText);
     const signatureBytes = bs58.decode(signature);
     const publicKeyBytes = bs58.decode(publicKey);
@@ -83,6 +93,27 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Atomically claim the nonce: only succeeds if it exists, is bound to
+    // this wallet, hasn't been used, and hasn't expired. Returning the row
+    // confirms it was claimed by this call (single-use guarantee).
+    const { data: claimed, error: nonceError } = await supabase
+      .from('siws_nonces')
+      .update({ used_at: new Date().toISOString() })
+      .eq('nonce', nonce)
+      .eq('wallet_address', publicKey)
+      .is('used_at', null)
+      .gt('expires_at', new Date().toISOString())
+      .select('nonce')
+      .maybeSingle();
+
+    if (nonceError) {
+      console.error('nonce claim failed', nonceError);
+      return errorResponse(500, 'Nonce check failed');
+    }
+    if (!claimed) {
+      return errorResponse(401, 'Invalid, expired, or already used nonce');
+    }
 
     // Upsert user (create if not exists)
     const { data: user, error: userError } = await supabase
