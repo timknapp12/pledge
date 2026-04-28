@@ -1,13 +1,3 @@
-// Pledge App Configuration
-// Supports: development, preview, production environments
-// Android: Mobile Wallet Adapter (MWA) for wallet flows
-// iOS: Phantom deep linking for wallet flows; APNs handled by Expo Push
-// Firebase (Crashlytics/Analytics) is configured on both platforms.
-
-// RPC URLs - proxied through Supabase Edge Functions to keep Helius API key server-side
-// The rpc-proxy edge function forwards JSON-RPC requests to Helius
-// Fallback to public RPCs if Supabase URL is not configured
-
 // USDC Mint Addresses
 const DEVNET_USDC = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'; // Devnet USDC
 const MAINNET_USDC = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'; // Mainnet USDC
@@ -19,14 +9,16 @@ const MAINNET_PROGRAM_ID = 'PLDG12YsnCxRHa9CkWDnzkA9vsbEFpThXHR9zgnDTDp';
 
 // Supabase URL + publishable key are set per build profile in the EAS dashboard
 // (dev/preview point at the dev project, production points at the prod project).
-// Fail loudly if missing rather than silently shipping with an empty string.
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
+// Fail loudly only during an actual build — non-build EAS commands like
+// `eas device:create` evaluate this config without loading the local .env.
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
 const SUPABASE_PUBLISHABLE_KEY =
-  process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+  process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? '';
+const isBuilding = process.env.EAS_BUILD === 'true';
+if (isBuilding && (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY)) {
   throw new Error(
-    'Missing EXPO_PUBLIC_SUPABASE_URL or EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY. ' +
-      'Set them in the EAS build profile (or apps/mobile/.env for local dev).',
+    'Missing EXPO_PUBLIC_SUPABASE_URL or EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ' +
+      'in EAS build env. Set them in the EAS build profile.',
   );
 }
 
