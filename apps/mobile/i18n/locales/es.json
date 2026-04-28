@@ -7,6 +7,8 @@
   "User ID:": "ID de usuario:",
   "Connect your Solana wallet to get started": "Conecta tu billetera Solana para comenzar",
   "Connect Wallet": "Conectar billetera",
+  "By connecting your wallet, you agree to our {{terms}} and {{privacy}}.": "Al conectar tu billetera, aceptas nuestros {{terms}} y nuestra {{privacy}}.",
+  "Terms": "Términos",
   "Disconnect": "Desconectar",
   "Home": "Inicio",
   "History": "Historial",
