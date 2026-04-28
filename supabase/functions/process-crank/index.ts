@@ -451,8 +451,9 @@ Deno.serve(async (req) => {
 
         console.log(`Pledge ${pledge.id}: TX ${txSignature}`);
 
-        // --- 5. Wait for confirmation ---
-        await connection.confirmTransaction(txSignature, 'confirmed');
+        // --- 5. Wait for finalized confirmation ---
+        // Funds move on settle; 'finalized' avoids the rare confirmed-but-rolled-back case.
+        await connection.confirmTransaction(txSignature, 'finalized');
 
         // --- 6. Update DB status ---
         const finalStatus = settlementPct > 0 ? 'Completed' : 'Forfeited';
@@ -486,7 +487,7 @@ Deno.serve(async (req) => {
         results.push({
           pledgeId: pledge.id,
           success: false,
-          error: pledgeError.message || String(pledgeError),
+          error: 'Pledge processing failed',
         });
       }
     }
@@ -498,7 +499,7 @@ Deno.serve(async (req) => {
   } catch (error: any) {
     console.error('Crank error:', error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } },
     );
   }

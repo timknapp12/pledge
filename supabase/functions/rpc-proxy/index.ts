@@ -42,6 +42,59 @@ interface JwtPayload {
   exp?: number;
 }
 
+// JSON-RPC methods the mobile client legitimately uses. Anything else is
+// rejected before forwarding so a compromised client can't drain credits via
+// expensive methods like an unfiltered getProgramAccounts on a hot account.
+const ALLOWED_METHODS = new Set<string>([
+  // Reads
+  'getAccountInfo',
+  'getMultipleAccounts',
+  'getProgramAccounts', // requires filters — see validateRpcCall
+  'getBalance',
+  'getTokenAccountBalance',
+  'getTokenAccountsByOwner',
+  'getMinimumBalanceForRentExemption',
+  'getLatestBlockhash',
+  'getBlockHeight',
+  'getSlot',
+  'getEpochInfo',
+  'getSignatureStatuses',
+  'getSignaturesForAddress',
+  'getTransaction',
+  'getFeeForMessage',
+  'isBlockhashValid',
+  'getRecentPrioritizationFees',
+  // Writes / simulation
+  'sendTransaction',
+  'simulateTransaction',
+]);
+
+interface RpcCall {
+  method?: unknown;
+  params?: unknown;
+}
+
+// Returns null if the call is allowed, or an error message if it should be rejected.
+function validateRpcCall(call: RpcCall): string | null {
+  const method = call?.method;
+  if (typeof method !== 'string' || !ALLOWED_METHODS.has(method)) {
+    return `Method not allowed: ${typeof method === 'string' ? method : 'unknown'}`;
+  }
+
+  // Reject unfiltered getProgramAccounts — without filters this scans the
+  // entire program and is the most common credit-drain vector.
+  if (method === 'getProgramAccounts') {
+    const params = Array.isArray(call?.params) ? call.params : [];
+    const cfg = (params[1] ?? {}) as { filters?: unknown };
+    const filters = Array.isArray(cfg.filters) ? cfg.filters : [];
+    if (filters.length === 0) {
+      return 'getProgramAccounts requires filters';
+    }
+  }
+
+  return null;
+}
+
 // Decode JWT without verifying — the Supabase gateway already verified it
 // because this function is deployed with verify_jwt = true.
 function decodeJwt(authHeader: string | null): JwtPayload | null {
@@ -149,6 +202,27 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.text();
+
+    // Validate every JSON-RPC call in the body. Supports single calls and
+    // batches. Reject the whole request on any disallowed method.
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(body);
+    } catch {
+      return jsonResponse({ error: 'Invalid JSON body' }, 400);
+    }
+
+    const calls: RpcCall[] = Array.isArray(parsed)
+      ? (parsed as RpcCall[])
+      : [parsed as RpcCall];
+
+    for (const call of calls) {
+      const err = validateRpcCall(call);
+      if (err) {
+        return jsonResponse({ error: err }, 403);
+      }
+    }
+
     const resp = await fetch(heliusUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
