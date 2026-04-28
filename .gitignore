@@ -37,6 +37,10 @@ apps/web/deploy.html
 .env.*.local
 *.env
 
+# Firebase config (uploaded to EAS as file env vars per environment)
+apps/mobile/firebase/**/google-services.json
+apps/mobile/firebase/**/GoogleService-Info.plist
+
 # IDE
 .idea/
 .vscode/

@@ -22,6 +22,20 @@ if (isBuilding && (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY)) {
   );
 }
 
+// Firebase config files live as EAS file env vars per environment (uploaded
+// via the dashboard). At build time EAS materializes them to disk and exposes
+// the absolute path via these env vars. Locally they're unset, so we fall back
+// to gitignored copies under firebase/{dev,preview,prod}/.
+const ANDROID_FIREBASE_ENV = process.env.GOOGLE_SERVICES_JSON;
+const IOS_FIREBASE_ENV = process.env.GOOGLE_SERVICES_PLIST;
+if (isBuilding && (!ANDROID_FIREBASE_ENV || !IOS_FIREBASE_ENV)) {
+  throw new Error(
+    'Missing GOOGLE_SERVICES_JSON or GOOGLE_SERVICES_PLIST in EAS build env. ' +
+      'Upload google-services.json and GoogleService-Info.plist as file env ' +
+      'vars in the EAS dashboard for this environment.',
+  );
+}
+
 // Default (development) settings
 let name = 'Pledge Dev';
 const slug = 'pledge';
@@ -38,8 +52,10 @@ let solanaNetwork = 'devnet';
 let solanaRpcUrl = `${SUPABASE_URL}/functions/v1/rpc-proxy`;
 let usdcMint = DEVNET_USDC;
 let programId = DEVNET_PROGRAM_ID;
-let googleServicesFile = './firebase/dev/google-services.json';
-let iosGoogleServicesFile = './firebase/dev/GoogleService-Info.plist';
+let googleServicesFile =
+  ANDROID_FIREBASE_ENV ?? './firebase/dev/google-services.json';
+let iosGoogleServicesFile =
+  IOS_FIREBASE_ENV ?? './firebase/dev/GoogleService-Info.plist';
 
 // Preview settings (still uses devnet but separate app install)
 if (process.env.DEPLOY_ENVIRONMENT === 'preview') {
@@ -48,8 +64,10 @@ if (process.env.DEPLOY_ENVIRONMENT === 'preview') {
   iosBundleId = 'com.pledge.preview';
   scheme = 'pledgepreview';
   env = 'preview';
-  googleServicesFile = './firebase/preview/google-services.json';
-  iosGoogleServicesFile = './firebase/preview/GoogleService-Info.plist';
+  googleServicesFile =
+    ANDROID_FIREBASE_ENV ?? './firebase/preview/google-services.json';
+  iosGoogleServicesFile =
+    IOS_FIREBASE_ENV ?? './firebase/preview/GoogleService-Info.plist';
 }
 
 // Production settings
@@ -64,8 +82,10 @@ if (process.env.DEPLOY_ENVIRONMENT === 'production') {
   solanaRpcUrl = `${SUPABASE_URL}/functions/v1/rpc-proxy`;
   usdcMint = MAINNET_USDC;
   programId = MAINNET_PROGRAM_ID;
-  googleServicesFile = './firebase/prod/google-services.json';
-  iosGoogleServicesFile = './firebase/prod/GoogleService-Info.plist';
+  googleServicesFile =
+    ANDROID_FIREBASE_ENV ?? './firebase/prod/google-services.json';
+  iosGoogleServicesFile =
+    IOS_FIREBASE_ENV ?? './firebase/prod/GoogleService-Info.plist';
 }
 
 module.exports = {
