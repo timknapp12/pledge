@@ -230,10 +230,12 @@ export const HistoryScreen = () => {
                       {t('Total Pledged')}
                     </BodySmallSecondary>
                     <ProgressBar
-                      progress={100}
+                      progress={totalPledged > 0 ? 100 : 0}
                       height={6}
                       style={{ width: '100%' }}
-                      animateKey={focusCount}
+                      animateKey={
+                        totalPledged > 0 ? focusCount : 0
+                      }
                       color={theme.colors.accent}
                     />
                   </Card>
