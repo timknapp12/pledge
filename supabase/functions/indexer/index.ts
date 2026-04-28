@@ -27,6 +27,66 @@ const EVENT_DISCRIMINATORS: Record<string, string> = {
   PledgeForfeited: 'da389a3202688f41',
 };
 
+// Fetch transaction logs directly from Solana RPC (Helius). Used to verify
+// the webhook payload — we don't trust whatever Helius posted us. Even if
+// WEBHOOK_SECRET leaks, an attacker can at most trigger reprocessing of a
+// real on-chain tx; they can't forge events because we re-read logs from
+// the chain.
+async function fetchTxLogsFromChain(
+  signature: string,
+): Promise<{ logs: string[] | null; error?: string }> {
+  const apiKey = Deno.env.get('HELIUS_API_KEY');
+  if (!apiKey) {
+    return { logs: null, error: 'HELIUS_API_KEY not configured' };
+  }
+  const network = Deno.env.get('SOLANA_NETWORK') || 'mainnet';
+  const host =
+    network === 'devnet' ? 'devnet.helius-rpc.com' : 'mainnet.helius-rpc.com';
+  const url = `https://${host}/?api-key=${apiKey}`;
+
+  const body = JSON.stringify({
+    jsonrpc: '2.0',
+    id: 1,
+    method: 'getTransaction',
+    params: [
+      signature,
+      {
+        encoding: 'json',
+        commitment: 'confirmed',
+        maxSupportedTransactionVersion: 0,
+      },
+    ],
+  });
+
+  let resp: Response;
+  try {
+    resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+  } catch (e) {
+    return { logs: null, error: `RPC fetch failed: ${e}` };
+  }
+  if (!resp.ok) {
+    return { logs: null, error: `RPC HTTP ${resp.status}` };
+  }
+
+  const json = await resp.json().catch(() => null);
+  const tx = (json as { result?: { meta?: { logMessages?: string[] } } })?.result;
+  if (!tx) {
+    // tx not found yet (race) or signature is bogus — return null so caller
+    // can decide to fail (Helius will retry the webhook).
+    return { logs: null };
+  }
+
+  const logs = tx.meta?.logMessages;
+  if (!Array.isArray(logs)) {
+    return { logs: null, error: 'No logMessages on tx' };
+  }
+  return { logs };
+}
+
 // Constant-time comparison for the webhook shared secret. Avoids leaking
 // the prefix length via early-exit timing.
 function timingSafeEqual(a: string, b: string): boolean {
@@ -467,19 +527,30 @@ Deno.serve(async (req) => {
       // Extract logs from the transaction
       // Helius enhanced transactions have logs in tx.meta.logMessages
       // or in tx.transaction.meta.logMessages depending on the format
-      const logs: string[] =
-        tx.meta?.logMessages ??
-        tx.transaction?.meta?.logMessages ??
-        tx.logMessages ??
-        [];
+      // Re-fetch logs from Solana RPC by signature instead of trusting
+      // whatever Helius posted us. Defends against a leaked WEBHOOK_SECRET
+      // being used to forge fake events: the worst an attacker can do is
+      // ask us to reprocess a real on-chain tx (which is idempotent).
+      const { logs: chainLogs, error: rpcError } =
+        await fetchTxLogsFromChain(txSignature);
 
-      if (logs.length === 0) {
+      if (rpcError) {
+        console.error(`[Indexer] RPC fetch failed for ${txSignature}:`, rpcError);
+        // Return 500 so Helius retries — likely a transient RPC blip.
+        return new Response('Upstream RPC error', { status: 500 });
+      }
+      if (!chainLogs) {
+        // Tx not yet visible on-chain (rare race) — let Helius retry.
+        console.warn(`[Indexer] tx ${txSignature} not found on-chain yet, will retry`);
+        return new Response('Transaction not yet visible', { status: 500 });
+      }
+      if (chainLogs.length === 0) {
         console.warn(`[Indexer] No logs in tx ${txSignature}`);
         continue;
       }
 
-      // Parse Anchor events from logs
-      const events = parseEventsFromLogs(logs);
+      // Parse Anchor events from the on-chain logs (not the webhook payload).
+      const events = parseEventsFromLogs(chainLogs);
 
       if (events.length === 0) {
         // Transaction involved our program but had no recognizable events
