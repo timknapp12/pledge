@@ -70,13 +70,12 @@ const parseQuery = (url: string): QueryParams => {
   const raw = Linking.parse(url).queryParams ?? {};
   const out: QueryParams = {};
   for (const [key, value] of Object.entries(raw)) {
-    out[key] = Array.isArray(value) ? value[0] : (value ?? undefined);
+    out[key] = Array.isArray(value) ? value[0] : value ?? undefined;
   }
   return out;
 };
 
 const openAndAwait = async (url: string): Promise<QueryParams> => {
-  console.log('[Phantom] openURL →', url);
   const responsePromise = awaitCallback();
   try {
     await Linking.openURL(url);
@@ -88,7 +87,6 @@ const openAndAwait = async (url: string): Promise<QueryParams> => {
   }
   const responseUrl = await responsePromise;
   const params = parseQuery(responseUrl);
-  console.log('[Phantom] response params keys:', Object.keys(params));
   if (params.errorCode) {
     const errorMessage =
       params.errorMessage ?? `Phantom error ${params.errorCode}`;
@@ -108,7 +106,11 @@ const requireSharedSecret = async (): Promise<{
   sessionToken: string;
 }> => {
   const session = await loadSession();
-  if (!isConnected(session) || !session.sharedSecretBs58 || !session.sessionToken) {
+  if (
+    !isConnected(session) ||
+    !session.sharedSecretBs58 ||
+    !session.sessionToken
+  ) {
     throw new Error('Phantom is not connected');
   }
   return {
@@ -148,10 +150,7 @@ export const connect = async (cluster: PhantomCluster): Promise<string> => {
   );
 
   console.log('[Phantom] connect OK — wallet:', payload.public_key);
-  console.log(
-    '[Phantom] session token length:',
-    payload.session?.length ?? 0,
-  );
+  console.log('[Phantom] session token length:', payload.session?.length ?? 0);
 
   await persistSession({
     ...session,
@@ -257,7 +256,11 @@ export const signTransaction = async (
 export const disconnect = async (): Promise<void> => {
   try {
     const session = await loadSession();
-    if (isConnected(session) && session.sharedSecretBs58 && session.sessionToken) {
+    if (
+      isConnected(session) &&
+      session.sharedSecretBs58 &&
+      session.sessionToken
+    ) {
       const sharedSecret = bs58.decode(session.sharedSecretBs58);
       const dappPublicKey = bs58.decode(session.dappPublicKeyBs58);
       const { encrypted, nonce } = encryptForPhantom(
