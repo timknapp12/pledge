@@ -13,11 +13,13 @@
       },
       "env": {
         "DEPLOY_ENVIRONMENT": "development"
-      }
+      },
+      "channel": "development"
     },
     "preview": {
       "environment": "preview",
       "distribution": "internal",
+      "channel": "preview",
       "android": {
         "buildType": "apk"
       },
@@ -29,6 +31,7 @@
       "environment": "production",
       "distribution": "internal",
       "autoIncrement": true,
+      "channel": "production",
       "android": {
         "buildType": "apk"
       },

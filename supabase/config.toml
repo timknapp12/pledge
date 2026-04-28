@@ -23,8 +23,22 @@ jwt_expiry = 86400
 [functions.verify-wallet]
 verify_jwt = false
 
+[functions.issue-siws-nonce]
+verify_jwt = false
+
 [functions.indexer]
 verify_jwt = false
 
 [functions.rpc-proxy]
+verify_jwt = true
+
+# Service-role-only functions. The gateway enforces a valid JWT; each function
+# additionally checks that the JWT's role claim is "service_role".
+[functions.process-crank]
+verify_jwt = true
+
+[functions.daily-reconcile]
+verify_jwt = true
+
+[functions.send-notification]
 verify_jwt = true

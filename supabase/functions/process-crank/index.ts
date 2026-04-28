@@ -210,19 +210,32 @@ Deno.serve(async (req) => {
       return new Response('Method not allowed', { status: 405 });
     }
 
-    // Verify shared secret (if FUNCTION_SECRET is set)
-    const functionSecret = Deno.env.get('FUNCTION_SECRET');
-    if (functionSecret) {
-      const authHeader = req.headers.get('Authorization');
-      const providedSecret = authHeader?.replace('Bearer ', '');
-      if (providedSecret !== functionSecret) {
-        return new Response('Unauthorized', { status: 401 });
-      }
-    }
-
-    // --- Initialize clients ---
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+    // Only the pg_cron job (or privileged backends) should reach this function.
+    // verify_jwt at the gateway validates signature; we enforce role=service_role
+    // so anon JWTs and authenticated users can't trigger this. Decoding the role
+    // claim survives Supabase's legacy-JWT → sb_secret_* key format migration;
+    // exact-match fallback covers the non-JWT sb_secret_* format.
+    const authHeader = req.headers.get('Authorization') ?? '';
+    const bearer = authHeader.replace(/^Bearer\s+/i, '');
+    let isServiceRole = bearer === supabaseServiceKey;
+    if (!isServiceRole) {
+      try {
+        const payloadB64 = bearer.split('.')[1] ?? '';
+        const b64 = payloadB64.replace(/-/g, '+').replace(/_/g, '/');
+        const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+        const payload = JSON.parse(atob(padded));
+        isServiceRole = payload?.role === 'service_role';
+      } catch {
+        // not a JWT — leave isServiceRole false
+      }
+    }
+    if (!isServiceRole) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const heliusApiKey = Deno.env.get('HELIUS_API_KEY')!;
@@ -438,8 +451,9 @@ Deno.serve(async (req) => {
 
         console.log(`Pledge ${pledge.id}: TX ${txSignature}`);
 
-        // --- 5. Wait for confirmation ---
-        await connection.confirmTransaction(txSignature, 'confirmed');
+        // --- 5. Wait for finalized confirmation ---
+        // Funds move on settle; 'finalized' avoids the rare confirmed-but-rolled-back case.
+        await connection.confirmTransaction(txSignature, 'finalized');
 
         // --- 6. Update DB status ---
         const finalStatus = settlementPct > 0 ? 'Completed' : 'Forfeited';
@@ -473,7 +487,7 @@ Deno.serve(async (req) => {
         results.push({
           pledgeId: pledge.id,
           success: false,
-          error: pledgeError.message || String(pledgeError),
+          error: 'Pledge processing failed',
         });
       }
     }
@@ -485,7 +499,7 @@ Deno.serve(async (req) => {
   } catch (error: any) {
     console.error('Crank error:', error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } },
     );
   }

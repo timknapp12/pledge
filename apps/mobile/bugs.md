@@ -7,5 +7,5 @@ P1
 P2
 
 - more languages
-- upgrade expo sdk
-- OTA updates
+- add analytics
+- look at other rpcs

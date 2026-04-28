@@ -1,13 +1,3 @@
-// Pledge App Configuration
-// Supports: development, preview, production environments
-// Android: Mobile Wallet Adapter (MWA) for wallet flows
-// iOS: Phantom deep linking for wallet flows; APNs handled by Expo Push
-// Firebase (Crashlytics/Analytics) is configured on both platforms.
-
-// RPC URLs - proxied through Supabase Edge Functions to keep Helius API key server-side
-// The rpc-proxy edge function forwards JSON-RPC requests to Helius
-// Fallback to public RPCs if Supabase URL is not configured
-
 // USDC Mint Addresses
 const DEVNET_USDC = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'; // Devnet USDC
 const MAINNET_USDC = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'; // Mainnet USDC
@@ -17,18 +7,20 @@ const DEVNET_PROGRAM_ID =
   process.env.EXPO_PUBLIC_PROGRAM_ID || 'YOUR_DEVNET_PROGRAM_ID';
 const MAINNET_PROGRAM_ID = 'PLDG12YsnCxRHa9CkWDnzkA9vsbEFpThXHR9zgnDTDp';
 
-// Supabase Configuration (dev/preview share one project, production uses another)
-const DEV_SUPABASE_URL =
-  process.env.EXPO_PUBLIC_SUPABASE_URL ||
-  'https://ejgcfgjkwlkblwrqtqbr.supabase.co';
-const DEV_SUPABASE_PUBLISHABLE_KEY =
-  process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
-
-const PROD_SUPABASE_URL =
-  process.env.EXPO_PUBLIC_SUPABASE_URL ||
-  'https://xbltaxjcpthidsglslxf.supabase.co';
-const PROD_SUPABASE_PUBLISHABLE_KEY =
-  process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
+// Supabase URL + publishable key are set per build profile in the EAS dashboard
+// (dev/preview point at the dev project, production points at the prod project).
+// Fail loudly only during an actual build — non-build EAS commands like
+// `eas device:create` evaluate this config without loading the local .env.
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
+const SUPABASE_PUBLISHABLE_KEY =
+  process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? '';
+const isBuilding = process.env.EAS_BUILD === 'true';
+if (isBuilding && (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY)) {
+  throw new Error(
+    'Missing EXPO_PUBLIC_SUPABASE_URL or EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ' +
+      'in EAS build env. Set them in the EAS build profile.',
+  );
+}
 
 // Default (development) settings
 let name = 'Pledge Dev';
@@ -43,11 +35,9 @@ let iosBundleId = 'com.pledge.dev';
 let scheme = 'pledgedev';
 let env = 'development';
 let solanaNetwork = 'devnet';
-let solanaRpcUrl = `${DEV_SUPABASE_URL}/functions/v1/rpc-proxy`;
+let solanaRpcUrl = `${SUPABASE_URL}/functions/v1/rpc-proxy`;
 let usdcMint = DEVNET_USDC;
 let programId = DEVNET_PROGRAM_ID;
-let supabaseUrl = DEV_SUPABASE_URL;
-let supabasePublishableKey = DEV_SUPABASE_PUBLISHABLE_KEY;
 let googleServicesFile = './firebase/dev/google-services.json';
 let iosGoogleServicesFile = './firebase/dev/GoogleService-Info.plist';
 
@@ -66,16 +56,14 @@ if (process.env.DEPLOY_ENVIRONMENT === 'preview') {
 if (process.env.DEPLOY_ENVIRONMENT === 'production') {
   name = 'Pledge';
   version = '1.0.0';
-  packageName = 'com.pledge.app';
-  iosBundleId = 'com.pledge.app';
+  packageName = 'com.pledgeapp.app';
+  iosBundleId = 'com.pledgeapp.app';
   scheme = 'pledge';
   env = 'production';
   solanaNetwork = 'mainnet-beta';
-  solanaRpcUrl = `${PROD_SUPABASE_URL}/functions/v1/rpc-proxy`;
+  solanaRpcUrl = `${SUPABASE_URL}/functions/v1/rpc-proxy`;
   usdcMint = MAINNET_USDC;
   programId = MAINNET_PROGRAM_ID;
-  supabaseUrl = PROD_SUPABASE_URL;
-  supabasePublishableKey = PROD_SUPABASE_PUBLISHABLE_KEY;
   googleServicesFile = './firebase/prod/google-services.json';
   iosGoogleServicesFile = './firebase/prod/GoogleService-Info.plist';
 }
@@ -89,8 +77,8 @@ module.exports = {
     orientation: 'portrait',
     icon,
     scheme,
+    platforms: ['ios', 'android'],
     userInterfaceStyle: 'automatic',
-    newArchEnabled: true,
     updates: {
       url: `https://u.expo.dev/${easProjectId}`,
     },
@@ -102,7 +90,6 @@ module.exports = {
         foregroundImage: androidIcon,
         backgroundColor: '#6366F1',
       },
-      edgeToEdgeEnabled: true,
       softwareKeyboardLayoutMode: 'resize',
       package: packageName,
       googleServicesFile,
@@ -117,11 +104,14 @@ module.exports = {
     },
     plugins: [
       'expo-router',
+      'expo-font',
+      'expo-web-browser',
       'expo-localization',
       'expo-secure-store',
       '@react-native-community/datetimepicker',
       '@react-native-firebase/app',
       '@react-native-firebase/crashlytics',
+      '@react-native-firebase/app-check',
       [
         'expo-notifications',
         {
@@ -159,7 +149,11 @@ module.exports = {
       backgroundColor: '#6366F1',
     },
     experiments: {
-      typedRoutes: true,
+      // Disabled: SDK 55 upstream version skew between @expo/router-server@55.0.15
+      // (in @expo/cli@55.0.26) and expo-router@55.0.13. The router-server requires
+      // expo-router/internal/routing, which the latest stable expo-router does not
+      // export. Re-enable once Expo ships matching versions.
+      typedRoutes: false,
     },
     extra: {
       router: {},
@@ -171,8 +165,8 @@ module.exports = {
       solanaRpcUrl,
       usdcMint,
       programId,
-      supabaseUrl,
-      supabasePublishableKey,
+      supabaseUrl: SUPABASE_URL,
+      supabasePublishableKey: SUPABASE_PUBLISHABLE_KEY,
       experienceId: `@${owner}/${slug}`,
     },
   },

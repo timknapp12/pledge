@@ -1,5 +1,6 @@
 // Polyfills must be imported first
 import '../lib/polyfills';
+import '../lib/appCheck';
 
 import 'react-native-reanimated';
 
@@ -28,6 +29,8 @@ import { NotificationsProvider } from '@/hooks/useNotifications';
 import { UserPreferencesProvider } from '@/contexts/UserPreferencesContext';
 import { TxFlowProvider } from '@/contexts/TxFlowContext';
 import { usePhantomListener } from '@/hooks/usePhantomListener';
+import { useOTAUpdates } from '@/hooks/useOTAUpdates';
+import { OTAUpdateOverlay } from '@/components/common/OTAUpdateOverlay';
 
 const LightNavTheme = {
   ...DefaultTheme,
@@ -114,6 +117,9 @@ function RootLayoutNav() {
 
 function ThemedNavigation() {
   const { isDark } = useThemeMode();
+  const { status: otaStatus, applyUpdate } = useOTAUpdates();
+  const showUpdateOverlay =
+    otaStatus === 'available' || otaStatus === 'downloading';
 
   return (
     <GestureHandlerRootView
@@ -130,6 +136,9 @@ function ThemedNavigation() {
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name='(tabs)' />
           </Stack>
+          {showUpdateOverlay && (
+            <OTAUpdateOverlay status={otaStatus} onUpdate={applyUpdate} />
+          )}
         </NavigationThemeProvider>
       </ScrollProvider>
     </GestureHandlerRootView>

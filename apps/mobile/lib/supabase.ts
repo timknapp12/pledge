@@ -69,3 +69,8 @@ export const removeAuthToken = async (): Promise<void> => {
 export const getVerifyWalletUrl = (): string => {
   return `${SUPABASE_URL}/functions/v1/verify-wallet`;
 };
+
+// Get the Edge Function URL for issue-siws-nonce
+export const getIssueSiwsNonceUrl = (): string => {
+  return `${SUPABASE_URL}/functions/v1/issue-siws-nonce`;
+};

@@ -1,10 +1,10 @@
-import { useEffect } from 'react';
+import { RefObject, useEffect } from 'react';
 import { View, Pressable, StyleSheet, Dimensions } from 'react-native';
-import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { usePathname, useRouter } from 'expo-router';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -21,24 +21,27 @@ type IconName = keyof typeof Ionicons.glyphMap;
 interface TabConfig {
   activeIcon: IconName;
   inactiveIcon: IconName;
-  labelKey: string;
+  path: '/' | '/history' | '/profile';
 }
 
-const TAB_CONFIG: Record<string, TabConfig> = {
+const TAB_ORDER = ['index', 'history', 'profile'] as const;
+type TabName = (typeof TAB_ORDER)[number];
+
+const TAB_CONFIG: Record<TabName, TabConfig> = {
   index: {
     activeIcon: 'home',
     inactiveIcon: 'home-outline',
-    labelKey: 'Home',
+    path: '/',
   },
   history: {
     activeIcon: 'time',
     inactiveIcon: 'time-outline',
-    labelKey: 'History',
+    path: '/history',
   },
   profile: {
     activeIcon: 'person',
     inactiveIcon: 'person-outline',
-    labelKey: 'Profile',
+    path: '/profile',
   },
 };
 
@@ -50,22 +53,17 @@ const SPRING_CONFIG = {
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface TabItemProps {
-  routeName: string;
+  routeName: TabName;
   isFocused: boolean;
   onPress: () => void;
-  onLongPress: () => void;
 }
 
-function TabItem({ routeName, isFocused, onPress, onLongPress }: TabItemProps) {
+function TabItem({ routeName, isFocused, onPress }: TabItemProps) {
   const { theme } = useAppTheme();
   const reduceMotion = useReducedMotion();
   const scale = useSharedValue(1);
 
-  const config = TAB_CONFIG[routeName] || {
-    activeIcon: 'ellipse' as IconName,
-    inactiveIcon: 'ellipse-outline' as IconName,
-    labelKey: routeName,
-  };
+  const config = TAB_CONFIG[routeName];
 
   useEffect(() => {
     if (isFocused && !reduceMotion) {
@@ -83,11 +81,7 @@ function TabItem({ routeName, isFocused, onPress, onLongPress }: TabItemProps) {
   const color = isFocused ? theme.colors.primary : theme.colors.textSecondary;
 
   return (
-    <Pressable
-      onPress={onPress}
-      onLongPress={onLongPress}
-      style={styles.tabItem}
-    >
+    <Pressable onPress={onPress} style={styles.tabItem}>
       <Animated.View style={animatedStyle}>
         <Ionicons name={iconName} size={26} color={color} />
       </Animated.View>
@@ -95,27 +89,34 @@ function TabItem({ routeName, isFocused, onPress, onLongPress }: TabItemProps) {
   );
 }
 
-export const CustomTabBar = ({ state, navigation }: BottomTabBarProps) => {
+interface CustomTabBarProps {
+  blurTarget?: RefObject<View | null>;
+}
+
+export const CustomTabBar = ({ blurTarget }: CustomTabBarProps) => {
   const { theme } = useAppTheme();
   const { isDark } = useThemeMode();
   const { isScrolling } = useScrollContext();
-  const numTabs = state.routes.length;
-  const tabWidth = SCREEN_WIDTH / numTabs;
+  const router = useRouter();
+  const pathname = usePathname();
 
-  // Animated position for the glow
-  const glowPosition = useSharedValue(state.index * tabWidth);
+  const currentTab: TabName =
+    TAB_ORDER.find((name) => TAB_CONFIG[name].path === pathname) ?? 'index';
+  const currentIndex = TAB_ORDER.indexOf(currentTab);
+  const tabWidth = SCREEN_WIDTH / TAB_ORDER.length;
 
-  // Animated background opacity based on scroll state
+  const glowPosition = useSharedValue(currentIndex * tabWidth);
+
   const backgroundOpacity = useDerivedValue(() => {
     return withTiming(isScrolling.value ? 0 : 1, { duration: 150 });
   });
 
   useEffect(() => {
-    glowPosition.value = withSpring(state.index * tabWidth, {
+    glowPosition.value = withSpring(currentIndex * tabWidth, {
       damping: 50,
       stiffness: 400,
     });
-  }, [state.index, tabWidth, glowPosition]);
+  }, [currentIndex, tabWidth, glowPosition]);
 
   const glowStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: glowPosition.value }],
@@ -127,23 +128,20 @@ export const CustomTabBar = ({ state, navigation }: BottomTabBarProps) => {
     opacity: backgroundOpacity.value,
   }));
 
-  // Gradient colors for the glow
   const glowColors = isDark
     ? [`${theme.colors.primary}00`, `${theme.colors.primary}40`]
     : [`${theme.colors.primary}00`, `${theme.colors.primary}30`];
 
   return (
     <View style={styles.container}>
-      {/* Blur background (visible when scrolling) */}
       <BlurView
         intensity={50}
         tint={isDark ? 'dark' : 'light'}
-        experimentalBlurMethod='dimezisBlurView'
+        blurMethod='dimezisBlurViewSdk31Plus'
+        blurTarget={blurTarget}
         style={styles.background}
       />
-      {/* Solid background (fades out when scrolling to reveal blur) */}
       <Animated.View style={[styles.background, backgroundStyle]} />
-      {/* Animated glow behind selected tab */}
       <Animated.View
         style={[styles.glowContainer, { width: tabWidth }, glowStyle]}
       >
@@ -155,45 +153,30 @@ export const CustomTabBar = ({ state, navigation }: BottomTabBarProps) => {
         />
       </Animated.View>
 
-      {/* Tab items */}
       <View style={styles.tabBar}>
-        {state.routes.map((route, index) => {
-          const isFocused = state.index === index;
-
+        {TAB_ORDER.map((name) => {
+          const isFocused = name === currentTab;
           const onPress = () => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-            const event = navigation.emit({
-              type: 'tabPress',
-              target: route.key,
-              canPreventDefault: true,
-            });
-
-            if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(route.name, route.params);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+              () => {},
+            );
+            if (!isFocused) {
+              router.replace(TAB_CONFIG[name].path);
             }
           };
-
-          const onLongPress = () => {
-            navigation.emit({
-              type: 'tabLongPress',
-              target: route.key,
-            });
-          };
-
           return (
             <TabItem
-              key={route.key}
-              routeName={route.name}
+              key={name}
+              routeName={name}
               isFocused={isFocused}
               onPress={onPress}
-              onLongPress={onLongPress}
             />
           );
         })}
       </View>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {

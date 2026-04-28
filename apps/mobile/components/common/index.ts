@@ -15,3 +15,4 @@ export * from './Alert';
 export * from './DateCarousel';
 export * from './Toast';
 export * from './TxFlowOverlay';
+export * from './OTAUpdateOverlay';
