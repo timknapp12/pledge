@@ -2,9 +2,9 @@ P0
 
 P1
 
-- add needed stuff to explorer.solana configs
 - custom date does not work on ios
 - read terms and privacy
+- during 24-hour grace period the tasks are still clickable even though the deadline is over and it says Due today even though it was due yesterday on pledge details
 
 P2
 
