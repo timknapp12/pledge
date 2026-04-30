@@ -318,9 +318,9 @@ export const HistoryScreen = () => {
                     message={error instanceof Error ? error.message : undefined}
                     onRetry={refetch}
                   />
-                ) : pastPledges.length > 0 ? (
+                ) : sortedSettled.length > 0 ? (
                   <View style={localStyles.contentContainer}>
-                    {pastPledges.map((pledge) => (
+                    {sortedSettled.map((pledge) => (
                       <PastPledgeItem
                         key={pledge.id}
                         pledge={pledge}
