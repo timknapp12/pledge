@@ -24,6 +24,7 @@ const OFFSET_STAKE = 8 + 32 + 32;
 const OFFSET_DEADLINE = 8 + 32 + 32 + 8;
 const OFFSET_STATUS = 8 + 32 + 32 + 8 + 8;
 const OFFSET_COMPLETION = 8 + 32 + 32 + 8 + 8 + 1;
+const OFFSET_CREATED_AT = 8 + 32 + 32 + 8 + 8 + 1 + 2 + 9;
 
 // Pledge account discriminator: SHA256("account:Pledge")[0..8]
 const PLEDGE_DISCRIMINATOR = new Uint8Array([
@@ -37,6 +38,7 @@ interface OnChainPledge {
   deadline: number;
   status: string;
   completionPercentage: number | null;
+  createdAt: number;
 }
 
 function bytesToHex(bytes: Uint8Array): string {
@@ -105,6 +107,7 @@ function deserializePledge(
     deadline: readI64(data, OFFSET_DEADLINE),
     status,
     completionPercentage,
+    createdAt: readI64(data, OFFSET_CREATED_AT),
   };
 }
 
@@ -116,6 +119,7 @@ function buildPledgeAccountData(opts: {
   deadline?: bigint;
   status?: number;
   completionPercentage?: number | null;
+  createdAt?: bigint;
 }): Uint8Array {
   // Total: 110 bytes (INIT_SPACE)
   const data = new Uint8Array(110);
@@ -153,6 +157,14 @@ function buildPledgeAccountData(opts: {
     data[89] = 0; // None
     data[90] = 0;
   }
+
+  // reported_at Option<i64> at offset 91 (1 disc + 8 value) — leave None
+  data[91] = 0;
+
+  // created_at (i64 at offset 100)
+  const createdAt = opts.createdAt ?? 1700000000n;
+  const createdAtView = new DataView(data.buffer, OFFSET_CREATED_AT, 8);
+  createdAtView.setBigInt64(0, createdAt, true);
 
   return data;
 }
