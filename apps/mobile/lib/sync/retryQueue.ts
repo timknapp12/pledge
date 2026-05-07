@@ -162,6 +162,7 @@ export async function processRetryQueue(
         deadline: item.payload.deadline,
         stake_amount: item.payload.stake_amount,
         todos: item.payload.todos,
+        goals_completed: new Array(item.payload.todos.goals.length).fill(false),
         reminder_settings: item.payload.reminder_settings,
         status: 'Active',
       })

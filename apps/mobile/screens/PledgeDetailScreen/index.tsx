@@ -18,6 +18,7 @@ import {
   usePledge,
   useDailyProgress,
   useUpdateDailyProgress,
+  useUpdateGoalCompletion,
   useUpdatePledgeStatus,
   useUpdatePledge,
   calculateCompletionPercentage,
@@ -26,7 +27,6 @@ import {
   getGoals,
   toLocalDateStr,
   type PledgeTodos,
-  type DailyProgress,
   type ReminderSettings,
 } from '@/hooks/useSupabase';
 import { useProgram } from '@/hooks/useProgram';
@@ -37,6 +37,7 @@ import {
   Body,
   BodySecondary,
   BodySmall,
+  BodySmallSecondary,
   ErrorText,
   ScreenContainer,
   Column,
@@ -102,60 +103,6 @@ function countFutureTasks(todos: PledgeTodos): number {
   return count;
 }
 
-/**
- * Calculate completion across the FULL pledge duration (including future tasks).
- * Used for early settlement so future uncompleted tasks reduce the percentage.
- */
-function calculateFullDurationCompletion(
-  todos: PledgeTodos,
-  dailyProgress: DailyProgress[],
-  startDate: Date,
-  endDate: Date,
-): number {
-  let totalTasks = 0;
-  let completedTasks = 0;
-
-  const todayStr = toLocalDateStr(new Date());
-
-  // Count ALL daily tasks across entire duration
-  const currentDate = new Date(startDate);
-  currentDate.setHours(0, 0, 0, 0);
-  const end = new Date(endDate);
-  end.setHours(23, 59, 59, 999);
-
-  while (currentDate <= end) {
-    const dateStr = toLocalDateStr(currentDate);
-    const dayTasks = todos.daily[dateStr] || [];
-    totalTasks += dayTasks.length;
-
-    // Only count completions for days up to today
-    if (dateStr <= todayStr) {
-      const dayProgress = dailyProgress.find((p) => p.date === dateStr);
-      const completedIndices = dayProgress?.todos_completed ?? [];
-      completedTasks += completedIndices.filter(
-        (i) => i >= 0 && i < dayTasks.length,
-      ).length;
-    }
-
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
-
-  // Goals count once
-  const goalCount = todos.goals.length;
-  if (goalCount > 0) {
-    totalTasks += goalCount;
-    const todayProgress = dailyProgress.find((p) => p.date === todayStr);
-    const todayDayTasks = todos.daily[todayStr] || [];
-    const completedIndices = todayProgress?.todos_completed ?? [];
-    completedTasks += completedIndices.filter(
-      (i) => i >= todayDayTasks.length && i < todayDayTasks.length + goalCount,
-    ).length;
-  }
-
-  if (totalTasks === 0) return 0;
-  return Math.round((completedTasks / totalTasks) * 100);
-}
-
 export const PledgeDetailScreen = () => {
   const { t } = useTranslation();
   const { theme } = useAppTheme();
@@ -173,6 +120,7 @@ export const PledgeDetailScreen = () => {
   const { data: allProgress, isLoading: progressLoading } =
     useDailyProgress(id);
   const updateProgress = useUpdateDailyProgress();
+  const updateGoal = useUpdateGoalCompletion();
   const updatePledgeStatus = useUpdatePledgeStatus();
   const { reportAndSettle } = useProgram();
   const updatePledge = useUpdatePledge();
@@ -182,11 +130,12 @@ export const PledgeDetailScreen = () => {
   const { alert } = useAlert();
   const { toast } = useToast();
   const [completedTodos, setCompletedTodos] = useState<number[]>([]);
+  const [completedGoals, setCompletedGoals] = useState<boolean[]>([]);
   const [overrideProgress, setOverrideProgress] = useState<number | null>(null);
   const [isReporting, setIsReporting] = useState(false);
-  const isCompletionBusy = updateProgress.isPending || isReporting;
+  const isCompletionBusy = updateProgress.isPending || updateGoal.isPending || isReporting;
 
-  // Initialize completed todos from today's progress
+  // Initialize completed todos from today's progress (daily) and pledge.goals_completed (goals)
   const today = toLocalDateStr(new Date());
   useEffect(() => {
     if (allProgress) {
@@ -194,6 +143,12 @@ export const PledgeDetailScreen = () => {
       setCompletedTodos(todayRecord?.todos_completed || []);
     }
   }, [allProgress, today]);
+
+  useEffect(() => {
+    if (pledge) {
+      setCompletedGoals(pledge.goals_completed ?? []);
+    }
+  }, [pledge]);
 
   const handleTodoToggle = useCallback(
     async (index: number) => {
@@ -225,10 +180,30 @@ export const PledgeDetailScreen = () => {
     [completedTodos, id, updateProgress],
   );
 
+  const handleGoalToggle = useCallback(
+    async (index: number) => {
+      if (!id || !pledge) return;
+      const next = [...completedGoals];
+      while (next.length <= index) next.push(false);
+      next[index] = !next[index];
+      setCompletedGoals(next);
+      try {
+        await updateGoal.mutateAsync({ pledgeId: id, goalsCompleted: next });
+      } catch (err) {
+        console.error('Failed to update goal:', err);
+        setCompletedGoals(completedGoals);
+        toast({
+          message: t("Couldn't save progress. Please try again."),
+          variant: 'error',
+        });
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [completedGoals, id, pledge, updateGoal],
+  );
+
   const dailyTasks = pledge ? getDailyTasksForDate(pledge.todos, today) : [];
   const goals = pledge ? getGoals(pledge.todos) : [];
-  // Combined list: daily tasks first, then goals — indices match todos_completed
-  const allTasks = [...dailyTasks, ...goals];
 
   const taskProgress = (): number => {
     if (!pledge || !allProgress) return 0;
@@ -251,8 +226,12 @@ export const PledgeDetailScreen = () => {
         updated_at: '',
       });
     }
+    // Through-today completion: only counts days up to today. The slider
+    // overrides this for past/present claims. Future-task dock is applied
+    // separately at settle time so the user cannot override it via the slider.
     return calculateCompletionPercentage(
       pledge.todos,
+      completedGoals,
       progressWithLocalState,
       new Date(pledge.start_date),
       new Date(pledge.end_date),
@@ -264,29 +243,41 @@ export const PledgeDetailScreen = () => {
   // Reset override when todos change so slider stays in sync
   useEffect(() => {
     setOverrideProgress(null);
-  }, [completedTodos.length]);
+  }, [completedTodos.length, completedGoals]);
 
-  const executeSettlement = async (completionPct: number) => {
+  const executeSettlement = async (
+    completionPct: number,
+    earlyTaskCount?: number,
+  ) => {
     if (!pledge || !walletAddress) return;
 
     const finalStatus: 'Completed' | 'Forfeited' =
       completionPct > 0 ? 'Completed' : 'Forfeited';
 
+    const refund = Math.round(
+      pledge.stake_amount *
+        (completionPct / 100) *
+        (completionPct === 100 ? 1 : 0.99),
+    );
+
+    const isEarly = earlyTaskCount !== undefined && earlyTaskCount > 0;
+    const earlyWarning = isEarly
+      ? t(
+          'You still have {{count}} tasks scheduled. Settling now means those count as incomplete and will reduce your return.',
+          { count: earlyTaskCount },
+        ) + '\n\n'
+      : '';
+    const calc = `${t('Completion')}: ${completionPct}%\n${t(
+      'Your Refund',
+    )}: $${formatUsdcAmount(refund)}`;
+
     alert({
-      title: t('Report Completion'),
-      message: `${t('Completion')}: ${completionPct}%\n${t(
-        'Your Refund',
-      )}: $${formatUsdcAmount(
-        Math.round(
-          pledge.stake_amount *
-            (completionPct / 100) *
-            (completionPct === 100 ? 1 : 0.99),
-        ),
-      )}`,
+      title: isEarly ? t('Settle Early?') : t('Report Completion'),
+      message: earlyWarning + calc,
       buttons: [
         { text: t('Cancel'), style: 'cancel' },
         {
-          text: t('Confirm'),
+          text: isEarly ? t('Settle Now') : t('Confirm'),
           onPress: async () => {
             setIsReporting(true);
             beginFlow({ title: t('Settling your pledge'), step: 'wallet' });
@@ -339,63 +330,31 @@ export const PledgeDetailScreen = () => {
   const handleReportAndSettle = async () => {
     if (!pledge || !walletAddress || !allProgress) return;
 
+    // The slider (`progress`, with override) controls the through-today claim.
+    // Future-day tasks are deducted automatically: actual = slider * (today / total).
+    // This makes it impossible to override the future-task dock — sliding to
+    // 100% claims 100% of past/present, but no more than that.
     const deadlinePassed = new Date(pledge.deadline) <= new Date();
+    const futureTasks = deadlinePassed ? 0 : countFutureTasks(pledge.todos);
 
-    if (deadlinePassed) {
-      // Deadline passed — use normal progress (capped at today)
-      await executeSettlement(progress);
-      return;
+    let settlementPct = progress;
+    if (futureTasks > 0) {
+      const todayStr = toLocalDateStr(new Date());
+      let nToday = 0;
+      let nTotal = 0;
+      for (const [dateStr, tasks] of Object.entries(pledge.todos.daily)) {
+        nTotal += tasks.length;
+        if (dateStr <= todayStr) nToday += tasks.length;
+      }
+      // Goals are per-pledge (not date-bound) and never get future-docked
+      nToday += pledge.todos.goals.length;
+      nTotal += pledge.todos.goals.length;
+      if (nTotal > 0) {
+        settlementPct = Math.round((progress / 100) * (nToday / nTotal) * 100);
+      }
     }
 
-    // Early settlement — check for future tasks
-    const futureTasks = countFutureTasks(pledge.todos);
-
-    if (futureTasks === 0) {
-      // No future tasks — settle immediately with normal progress
-      await executeSettlement(progress);
-      return;
-    }
-
-    // Future tasks exist — calculate completion across full duration
-    const progressWithLocalState = allProgress.map((p) =>
-      p.date === today ? { ...p, todos_completed: completedTodos } : p,
-    );
-    if (
-      completedTodos.length > 0 &&
-      !allProgress.find((p) => p.date === today)
-    ) {
-      progressWithLocalState.push({
-        id: '',
-        pledge_id: pledge.id,
-        user_id: pledge.user_id,
-        date: today,
-        todos_completed: completedTodos,
-        created_at: '',
-        updated_at: '',
-      });
-    }
-
-    const earlyCompletionPct = calculateFullDurationCompletion(
-      pledge.todos,
-      progressWithLocalState,
-      new Date(pledge.start_date),
-      new Date(pledge.end_date),
-    );
-
-    alert({
-      title: t('Settle Early?'),
-      message: t(
-        'You still have {{count}} tasks scheduled. Settling now means those count as incomplete and will reduce your return.',
-        { count: futureTasks },
-      ),
-      buttons: [
-        { text: t('Cancel'), style: 'cancel' },
-        {
-          text: t('Settle Now'),
-          onPress: () => executeSettlement(earlyCompletionPct),
-        },
-      ],
-    });
+    await executeSettlement(settlementPct, futureTasks);
   };
 
   const handleEditSave = useCallback(
@@ -405,10 +364,20 @@ export const PledgeDetailScreen = () => {
       newReminderSettings: ReminderSettings | null,
     ) => {
       if (!pledge) return;
+      // Extend goals_completed if new goals were appended
+      const currentGoals = pledge.goals_completed ?? [];
+      const goalsGrew = newTodos.goals.length > currentGoals.length;
+      const nextGoalsCompleted = goalsGrew
+        ? [
+            ...currentGoals,
+            ...new Array(newTodos.goals.length - currentGoals.length).fill(false),
+          ]
+        : undefined;
       await updatePledge.mutateAsync({
         pledgeId: pledge.id,
         name: newName,
         todos: newTodos,
+        goals_completed: nextGoalsCompleted,
         reminder_settings: newReminderSettings,
       });
       toast({ message: t('Pledge updated successfully'), variant: 'success' });
@@ -530,19 +499,20 @@ export const PledgeDetailScreen = () => {
               onValueChange={(v) => setOverrideProgress(Math.round(v))}
               disabled={pledge.status !== 'Active' || isCompletionBusy}
             />
+            <BodySmallSecondary>
+              {t('Reflects progress up to today and does not account for future tasks')}
+            </BodySmallSecondary>
           </View>
 
-          {/* Tasks (daily + goals combined) */}
-          {allTasks.length > 0 && (
+          {/* Today's daily tasks */}
+          {dailyTasks.length > 0 && (
             <Column gap={8}>
-              <Title3 style={{ marginBottom: 8 }}>
-                {t(dailyTasks.length > 0 ? "Today's Tasks" : 'Tasks')}
-              </Title3>
-              {allTasks.map((taskText, index) => {
+              <Title3 style={{ marginBottom: 8 }}>{t("Today's Tasks")}</Title3>
+              {dailyTasks.map((taskText, index) => {
                 const completed = completedTodos.includes(index);
                 return (
                   <Pressable
-                    key={index}
+                    key={`daily-${index}`}
                     style={[
                       styles.todoItem,
                       {
@@ -566,6 +536,50 @@ export const PledgeDetailScreen = () => {
                       }}
                     >
                       {taskText}
+                    </Body>
+                  </Pressable>
+                );
+              })}
+            </Column>
+          )}
+
+          {/* Goals (one-time, persist across all dates) */}
+          {goals.length > 0 && (
+            <Column gap={8}>
+              <Title3 style={{ marginBottom: 8 }}>{t('One-time goals')}</Title3>
+              {goals.map((goalText, index) => {
+                const completed = completedGoals[index] ?? false;
+                return (
+                  <Pressable
+                    key={`goal-${index}`}
+                    style={[
+                      styles.todoItem,
+                      {
+                        backgroundColor: completed
+                          ? theme.colors.primaryAlpha10
+                          : theme.colors.cardBackground,
+                        borderColor: completed
+                          ? theme.colors.primaryAlpha40
+                          : theme.colors.border,
+                      },
+                    ]}
+                    onPress={() => handleGoalToggle(index)}
+                    disabled={pledge.status !== 'Active' || isCompletionBusy}
+                  >
+                    <Checkbox checked={completed} />
+                    <Ionicons
+                      name='flag-outline'
+                      size={16}
+                      color={theme.colors.primary}
+                    />
+                    <Body
+                      style={{
+                        flex: 1,
+                        textDecorationLine: completed ? 'line-through' : 'none',
+                        opacity: completed ? 0.6 : 1,
+                      }}
+                    >
+                      {goalText}
                     </Body>
                   </Pressable>
                 );

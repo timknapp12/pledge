@@ -138,6 +138,7 @@ async function createRecoveredPledge(
     deadline: deadlineIso,
     stake_amount: onChain.stakeAmount,
     todos: { goals: [], daily: {} },
+    goals_completed: [],
     status: onChain.status,
     completion_percentage: onChain.completionPercentage,
     created_at: createdIso,

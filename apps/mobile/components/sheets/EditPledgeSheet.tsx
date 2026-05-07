@@ -76,7 +76,8 @@ const appendNewTasks = (
 
   const dates: { dateStr: string; dayOfWeek: number }[] = [];
   const current = new Date(today);
-  while (current < end) {
+  // <= so the deadline day is included (end has been snapped to local midnight).
+  while (current <= end) {
     dates.push({
       dateStr: toLocalDateStr(current),
       dayOfWeek: current.getDay(),
