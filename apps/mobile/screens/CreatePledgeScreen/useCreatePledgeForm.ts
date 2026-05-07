@@ -108,7 +108,10 @@ export const useCreatePledgeForm = () => {
     [taskDefinitions, startDate, endDate],
   );
 
-  const isValid = taskDefinitions.length > 0 && parseFloat(stakeAmount) > 0;
+  const isValid =
+    taskDefinitions.length > 0 &&
+    parseFloat(stakeAmount) > 0 &&
+    endDate.getTime() > Date.now();
 
   // Task handlers
   const addTaskDefinition = useCallback((def: TaskDefinition) => {
@@ -250,6 +253,14 @@ export const useCreatePledgeForm = () => {
 
   const handleCreate = async () => {
     if (!isValid || !walletAddress) return;
+
+    // Re-check at submission time in case startDate/endDate went stale while
+    // the form was open — picker minimumDate enforces it on selection but
+    // wall-clock time keeps moving.
+    if (endDate.getTime() <= Date.now()) {
+      setError(t('End date must be in the future'));
+      return;
+    }
 
     setIsSubmitting(true);
     setError(null);
