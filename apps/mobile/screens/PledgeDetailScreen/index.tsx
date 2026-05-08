@@ -51,7 +51,7 @@ import {
   useAlert,
   useToast,
 } from '@/components';
-import { EditPledgeSheet } from '@/components/sheets';
+import { EditPledgeSheet, GracePeriodInfoSheet } from '@/components/sheets';
 import { isUserCancellation, getTransactionErrorMessage } from '@/lib/errors';
 
 function formatDeadline(deadline: string): string {
@@ -73,22 +73,34 @@ function formatDeadline(deadline: string): string {
 
 function formatTimeRemaining(
   deadline: string,
-  t: (key: string) => string,
-): string {
-  const date = new Date(deadline);
+  t: (key: string, opts?: Record<string, unknown>) => string,
+): { text: string; isPastDue: boolean } {
+  const deadlineDate = new Date(deadline);
   const now = new Date();
-  const diffMs = date.getTime() - now.getTime();
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  const startOfDay = (d: Date) =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const dayDiff = Math.round(
+    (startOfDay(deadlineDate) - startOfDay(now)) / (1000 * 60 * 60 * 24),
+  );
 
-  if (diffDays < 0) {
-    return t('Expired');
-  } else if (diffDays === 0) {
-    return t('Due today');
-  } else if (diffDays === 1) {
-    return `1 ${t('day left')}`;
-  } else {
-    return `${diffDays} ${t('days left')}`;
+  if (dayDiff > 1) {
+    return { text: `${dayDiff} ${t('days left')}`, isPastDue: false };
   }
+  if (dayDiff === 1) {
+    return { text: `1 ${t('day left')}`, isPastDue: false };
+  }
+  if (dayDiff === 0) {
+    return deadlineDate.getTime() < now.getTime()
+      ? { text: t('Past due'), isPastDue: true }
+      : { text: t('Due today'), isPastDue: false };
+  }
+  if (dayDiff === -1) {
+    return { text: t('Due yesterday'), isPastDue: true };
+  }
+  return {
+    text: t('{{count}} days overdue', { count: -dayDiff }),
+    isPastDue: true,
+  };
 }
 
 /** Count tasks scheduled for dates strictly after today */
@@ -126,6 +138,7 @@ export const PledgeDetailScreen = () => {
   const updatePledge = useUpdatePledge();
   const { beginFlow, setStep, endFlow } = useTxFlow();
   const editSheetRef = useRef<BottomSheet>(null);
+  const graceSheetRef = useRef<BottomSheet>(null);
 
   const { alert } = useAlert();
   const { toast } = useToast();
@@ -248,6 +261,7 @@ export const PledgeDetailScreen = () => {
   const executeSettlement = async (
     completionPct: number,
     earlyTaskCount?: number,
+    earlyGoalOnly?: boolean,
   ) => {
     if (!pledge || !walletAddress) return;
 
@@ -260,13 +274,21 @@ export const PledgeDetailScreen = () => {
         (completionPct === 100 ? 1 : 0.99),
     );
 
-    const isEarly = earlyTaskCount !== undefined && earlyTaskCount > 0;
-    const earlyWarning = isEarly
-      ? t(
+    const isEarlyDaily = earlyTaskCount !== undefined && earlyTaskCount > 0;
+    const isEarly = isEarlyDaily || !!earlyGoalOnly;
+    let earlyWarning = '';
+    if (isEarlyDaily) {
+      earlyWarning =
+        t(
           'You still have {{count}} tasks scheduled. Settling now means those count as incomplete and will reduce your return.',
           { count: earlyTaskCount },
-        ) + '\n\n'
-      : '';
+        ) + '\n\n';
+    } else if (earlyGoalOnly) {
+      earlyWarning =
+        t(
+          'Your refund is based on the goals you have checked off and the position of the progress bar. Confirm those reflect your actual progress before settling.',
+        ) + '\n\n';
+    }
     const calc = `${t('Completion')}: ${completionPct}%\n${t(
       'Your Refund',
     )}: $${formatUsdcAmount(refund)}`;
@@ -354,7 +376,16 @@ export const PledgeDetailScreen = () => {
       }
     }
 
-    await executeSettlement(settlementPct, futureTasks);
+    // Goal-only pledges have no future-task dock, so they bypass the daily
+    // early-settle warning. Warn here when the user is settling before the
+    // deadline at <100% so unchecked goals / a low slider don't silently
+    // reduce their refund.
+    const hasDaily = Object.keys(pledge.todos.daily).length > 0;
+    const hasGoals = pledge.todos.goals.length > 0;
+    const earlyGoalOnly =
+      !deadlinePassed && hasGoals && !hasDaily && settlementPct < 100;
+
+    await executeSettlement(settlementPct, futureTasks, earlyGoalOnly);
   };
 
   const handleEditSave = useCallback(
@@ -482,7 +513,32 @@ export const PledgeDetailScreen = () => {
             </View>
             <View style={styles.infoRow}>
               <BodySecondary>{t('Time Remaining')}</BodySecondary>
-              <Body>{formatTimeRemaining(pledge.deadline, t)}</Body>
+              {(() => {
+                const tr = formatTimeRemaining(pledge.deadline, t);
+                return (
+                  <View style={styles.timeRemainingRight}>
+                    <Body
+                      style={
+                        tr.isPastDue ? { color: theme.colors.error } : undefined
+                      }
+                    >
+                      {tr.text}
+                    </Body>
+                    {tr.isPastDue && (
+                      <Pressable
+                        onPress={() => graceSheetRef.current?.expand()}
+                        hitSlop={8}
+                      >
+                        <Ionicons
+                          name='information-circle-outline'
+                          size={18}
+                          color={theme.colors.error}
+                        />
+                      </Pressable>
+                    )}
+                  </View>
+                );
+              })()}
             </View>
           </Card>
 
@@ -612,6 +668,8 @@ export const PledgeDetailScreen = () => {
           onSave={handleEditSave}
         />
       )}
+
+      <GracePeriodInfoSheet ref={graceSheetRef} deadline={pledge.deadline} />
     </ScreenContainer>
   );
 };
@@ -644,6 +702,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingVertical: 8,
+  },
+  timeRemainingRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   progressContainer: {
     marginBottom: 24,
