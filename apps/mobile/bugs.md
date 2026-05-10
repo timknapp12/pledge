@@ -4,7 +4,8 @@ P1
 
 - custom date does not work on ios
 - read terms and privacy
-- during 24-hour grace period the tasks are still clickable even though the deadline is over and it says Due today even though it was due yesterday on pledge details
+
+- dont show tasks for yesterday if this is the first day of the pledge
 
 P2
 
