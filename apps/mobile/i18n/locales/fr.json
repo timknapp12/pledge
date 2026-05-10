@@ -70,6 +70,8 @@
   "Report Completion": "Signaler l'achèvement",
   "Settle Early": "Régler en Avance",
   "Claim Your Pledge": "Réclamez votre engagement",
+  "Ready to claim": "Prêt à réclamer",
+  "Claim within {{days}} days or your stake is forfeited.": "Réclamez sous {{days}} jours, sinon votre mise est perdue.",
   "Claim Your Pledge?": "Réclamez votre engagement ?",
   "Settle Early?": "Régler en Avance ?",
   "You still have {{count}} tasks scheduled. Settling now means those count as incomplete and will reduce your return.": "Vous avez encore {{count}} tâches planifiées. Régler maintenant signifie qu'elles compteront comme incomplètes et réduiront votre remboursement.",

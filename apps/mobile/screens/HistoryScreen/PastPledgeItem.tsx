@@ -25,18 +25,28 @@ function formatDate(dateString: string): string {
 
 export interface PastPledgeItemProps {
   pledge: Pledge;
+  /** Live completion% for pledges still in DB-status `Active` (AwaitingClaim).
+   *  For settled pledges, the stored `completion_percentage` is used. */
+  liveCompletionPct?: number;
   onPress: () => void;
   animateKey?: number;
 }
 
 export const PastPledgeItem = ({
   pledge,
+  liveCompletionPct,
   onPress,
   animateKey = 0,
 }: PastPledgeItemProps) => {
   const { t } = useTranslation();
   const { theme } = useAppTheme();
-  const effectiveStatus = getEffectiveStatus(pledge);
+  const effectiveStatus = getEffectiveStatus(pledge, liveCompletionPct);
+  const displayPct =
+    pledge.completion_percentage ?? liveCompletionPct ?? null;
+  const badgeLabel =
+    effectiveStatus === 'AwaitingClaim'
+      ? t('Ready to claim')
+      : t(effectiveStatus);
 
   return (
     <Pressable onPress={onPress}>
@@ -60,7 +70,7 @@ export const PastPledgeItem = ({
                 fontWeight: '600',
               }}
             >
-              {t(effectiveStatus)}
+              {badgeLabel}
             </BodySmall>
           </View>
         </Row>
@@ -69,9 +79,9 @@ export const PastPledgeItem = ({
           <BodySecondary>
             {t('Pledged')}: ${formatUsdcAmount(pledge.stake_amount)}
           </BodySecondary>
-          {pledge.completion_percentage !== null && (
+          {displayPct !== null && (
             <AnimatedCircularProgress
-              progress={pledge.completion_percentage}
+              progress={displayPct}
               size={48}
               strokeWidth={4}
               showPercentage

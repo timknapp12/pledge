@@ -24,8 +24,11 @@ import {
   calculateCompletionPercentage,
   formatUsdcAmount,
   getDailyTasksForDate,
+  getEffectiveStatus,
   getGoals,
   toLocalDateStr,
+  GRACE_PERIOD_MS,
+  CLAIM_EXPIRY_MS,
   type PledgeTodos,
   type ReminderSettings,
 } from '@/hooks/useSupabase';
@@ -253,6 +256,21 @@ export const PledgeDetailScreen = () => {
 
   const progress = overrideProgress ?? taskProgress();
 
+  // Effective status uses the unrounded through-today completion (sans slider override)
+  // so the user can't game the AwaitingClaim badge with the slider.
+  const effectiveStatus = pledge
+    ? getEffectiveStatus(pledge, taskProgress())
+    : 'Active';
+
+  // For AwaitingClaim pledges, show how long until the crank auto-forfeits the unclaimed stake.
+  const claimWindowRemaining =
+    effectiveStatus === 'AwaitingClaim' && pledge
+      ? new Date(pledge.deadline).getTime() +
+        GRACE_PERIOD_MS +
+        CLAIM_EXPIRY_MS -
+        Date.now()
+      : null;
+
   // Reset override when todos change so slider stays in sync
   useEffect(() => {
     setOverrideProgress(null);
@@ -462,7 +480,7 @@ export const PledgeDetailScreen = () => {
         <Column flex={1}>
           <Title1 numberOfLines={1}>{pledge.name}</Title1>
         </Column>
-        {pledge.status === 'Active' && (
+        {effectiveStatus === 'Active' && (
           <Pressable
             onPress={() => editSheetRef.current?.expand()}
             style={[
@@ -480,16 +498,18 @@ export const PledgeDetailScreen = () => {
         <View
           style={[
             styles.statusBadge,
-            { backgroundColor: getStatusBgColor(theme, pledge.status) },
+            { backgroundColor: getStatusBgColor(theme, effectiveStatus) },
           ]}
         >
           <BodySmall
             style={{
-              color: getStatusTextColor(theme, pledge.status),
+              color: getStatusTextColor(theme, effectiveStatus),
               fontWeight: '600',
             }}
           >
-            {t(pledge.status)}
+            {effectiveStatus === 'AwaitingClaim'
+              ? t('Ready to claim')
+              : t(effectiveStatus)}
           </BodySmall>
         </View>
       </Row>
@@ -515,16 +535,24 @@ export const PledgeDetailScreen = () => {
               <BodySecondary>{t('Time Remaining')}</BodySecondary>
               {(() => {
                 const tr = formatTimeRemaining(pledge.deadline, t);
+                // Past-due warning + grace-period sheet only matter while we're
+                // still in the grace window (DB Active, frontend Active).
+                // Once effective status becomes AwaitingClaim or Expired, grace
+                // is over and the sheet would be misleading.
+                const showGraceWarning =
+                  tr.isPastDue && effectiveStatus === 'Active';
                 return (
                   <View style={styles.timeRemainingRight}>
                     <Body
                       style={
-                        tr.isPastDue ? { color: theme.colors.error } : undefined
+                        showGraceWarning
+                          ? { color: theme.colors.error }
+                          : undefined
                       }
                     >
                       {tr.text}
                     </Body>
-                    {tr.isPastDue && (
+                    {showGraceWarning && (
                       <Pressable
                         onPress={() => graceSheetRef.current?.expand()}
                         hitSlop={8}
@@ -553,7 +581,7 @@ export const PledgeDetailScreen = () => {
             <Slider
               value={progress}
               onValueChange={(v) => setOverrideProgress(Math.round(v))}
-              disabled={pledge.status !== 'Active' || isCompletionBusy}
+              disabled={effectiveStatus !== 'Active' || isCompletionBusy}
             />
             <BodySmallSecondary>
               {t('Reflects progress up to today and does not account for future tasks')}
@@ -581,7 +609,7 @@ export const PledgeDetailScreen = () => {
                       },
                     ]}
                     onPress={() => handleTodoToggle(index)}
-                    disabled={pledge.status !== 'Active' || isCompletionBusy}
+                    disabled={effectiveStatus !== 'Active' || isCompletionBusy}
                   >
                     <Checkbox checked={completed} />
                     <Body
@@ -620,7 +648,7 @@ export const PledgeDetailScreen = () => {
                       },
                     ]}
                     onPress={() => handleGoalToggle(index)}
-                    disabled={pledge.status !== 'Active' || isCompletionBusy}
+                    disabled={effectiveStatus !== 'Active' || isCompletionBusy}
                   >
                     <Checkbox checked={completed} />
                     <Ionicons
@@ -646,7 +674,18 @@ export const PledgeDetailScreen = () => {
       </ScrollView>
 
       {pledge.status === 'Active' && (
-        <CenteredColumn>
+        <CenteredColumn gap={8}>
+          {effectiveStatus === 'AwaitingClaim' &&
+            claimWindowRemaining !== null && (
+              <BodySmallSecondary style={{ textAlign: 'center' }}>
+                {t('Claim within {{days}} days or your stake is forfeited.', {
+                  days: Math.max(
+                    0,
+                    Math.floor(claimWindowRemaining / (24 * 60 * 60 * 1000)),
+                  ),
+                })}
+              </BodySmallSecondary>
+            )}
           <PrimaryButton
             onPress={handleReportAndSettle}
             disabled={isReporting}

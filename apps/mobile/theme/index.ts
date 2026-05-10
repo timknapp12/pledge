@@ -124,6 +124,8 @@ export const getStatusBgColor = (theme: AppTheme, status: string): string => {
   switch (status) {
     case 'Active':
       return theme.colors.primaryAlpha20;
+    case 'AwaitingClaim':
+      return theme.colors.statusCompletedBg;
     case 'Completed':
       return theme.colors.statusCompletedBg;
     case 'Forfeited':
@@ -139,6 +141,8 @@ export const getStatusTextColor = (theme: AppTheme, status: string): string => {
   switch (status) {
     case 'Active':
       return theme.colors.primary;
+    case 'AwaitingClaim':
+      return theme.colors.statusCompleted;
     case 'Completed':
       return theme.colors.statusCompleted;
     case 'Forfeited':

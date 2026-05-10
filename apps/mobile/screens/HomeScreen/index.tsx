@@ -12,7 +12,7 @@ import { useAppTheme } from '@/theme/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
-import { useActivePledges, useActivePledgeProgress } from '@/hooks/useSupabase';
+import { useActivePledges } from '@/hooks/useSupabase';
 import {
   Title1,
   BodySecondary,
@@ -43,8 +43,8 @@ export const HomeScreen = () => {
     isError,
     error,
     refetch,
+    progressMap,
   } = useActivePledges();
-  const { progressMap } = useActivePledgeProgress(pledges);
 
   const [viewMode, setViewMode] = useState<ViewMode>('tasks');
   const [focusCount, setFocusCount] = useState(0);

@@ -70,6 +70,8 @@
   "Report Completion": "Report Completion",
   "Settle Early": "Settle Early",
   "Claim Your Pledge": "Claim Your Pledge",
+  "Ready to claim": "Ready to claim",
+  "Claim within {{days}} days or your stake is forfeited.": "Claim within {{days}} days or your stake is forfeited.",
   "Claim Your Pledge?": "Claim Your Pledge?",
   "Settle Early?": "Settle Early?",
   "You still have {{count}} tasks scheduled. Settling now means those count as incomplete and will reduce your return.": "You still have {{count}} tasks scheduled. Settling now means those count as incomplete and will reduce your return.",

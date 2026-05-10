@@ -70,6 +70,8 @@
   "Report Completion": "Reportar Completado",
   "Settle Early": "Liquidar Anticipadamente",
   "Claim Your Pledge": "Reclama tu compromiso",
+  "Ready to claim": "Listo para reclamar",
+  "Claim within {{days}} days or your stake is forfeited.": "Reclama en {{days}} días o pierdes tu apuesta.",
   "Claim Your Pledge?": "¿Reclamar tu compromiso?",
   "Settle Early?": "¿Liquidar Anticipadamente?",
   "You still have {{count}} tasks scheduled. Settling now means those count as incomplete and will reduce your return.": "Todavía tienes {{count}} tareas programadas. Liquidar ahora significa que esas contarán como incompletas y reducirán tu devolución.",
