@@ -827,35 +827,36 @@ export const useUpdatePledge = () => {
 
 // Calculate completion percentage from daily progress.
 // Only daily tasks count toward percentage. Goals are tracked separately.
+//
+// `todos.daily` keys are date strings written by the creating client in its
+// own local timezone. We iterate those keys directly so the math is stable
+// regardless of which timezone the *reader* runs in (phone in MDT vs. crank
+// edge function in UTC). Iterating [start_date, end_date] timestamps would
+// drift by a day at TZ boundaries — that was the historical bug.
+//
+// `startDate`/`endDate` parameters are kept for back-compat with existing
+// callers but are no longer used.
 export const calculateCompletionPercentage = (
   todos: PledgeTodos,
   goalsCompleted: boolean[],
   dailyProgress: DailyProgress[],
-  startDate: Date,
-  endDate: Date
+  _startDate?: Date,
+  _endDate?: Date
 ): number => {
   let totalExpectedCompletions = 0;
   let actualCompletions = 0;
 
-  const currentDate = new Date(startDate);
-  currentDate.setHours(0, 0, 0, 0);
-  // Don't count future days — cap at today
-  const now = new Date();
-  now.setHours(23, 59, 59, 999);
-  const end = new Date(Math.min(endDate.getTime(), now.getTime()));
+  // Don't count future days — cap at today (local to whoever's running this).
+  const todayStr = toLocalDateStr(new Date());
 
-  while (currentDate <= end) {
-    const dateStr = toLocalDateStr(currentDate);
+  for (const [dateStr, dayTasks] of Object.entries(todos.daily)) {
+    if (dateStr > todayStr) continue;
     const dayProgress = dailyProgress.find((p) => p.date === dateStr);
     const completedIndices = dayProgress?.todos_completed ?? [];
-
-    const dayTasks = todos.daily[dateStr] || [];
     totalExpectedCompletions += dayTasks.length;
     actualCompletions += completedIndices.filter(
       (i) => i >= 0 && i < dayTasks.length
     ).length;
-
-    currentDate.setDate(currentDate.getDate() + 1);
   }
 
   const goalCount = todos.goals.length;
