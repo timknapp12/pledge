@@ -156,47 +156,37 @@ function toLocalDateStr(d: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+// Iterate `todos.daily` keys (date strings written by the creating client in
+// its local timezone) instead of the [startDate, endDate] timestamp range.
+// This keeps the crank (UTC) and the mobile app (user's local TZ) in agreement
+// — the previous range-based loop drifted by a day for any non-UTC user.
 function calculateCompletionPercentage(
   todos: PledgeTodos,
+  goalsCompleted: boolean[],
   dailyProgress: DailyProgressRow[],
-  startDate: Date,
-  endDate: Date,
 ): number {
   let totalExpectedCompletions = 0;
   let actualCompletions = 0;
 
-  const currentDate = new Date(startDate);
-  currentDate.setHours(0, 0, 0, 0);
-  const now = new Date();
-  now.setHours(23, 59, 59, 999);
-  const end = new Date(Math.min(endDate.getTime(), now.getTime()));
-
-  const goalCount = todos.goals.length;
+  // Cap at "today" so settlement before the deadline doesn't penalize for
+  // unfinished future days. The crank only fires past deadline+grace, so this
+  // filter is effectively a no-op at crank time.
   const todayStr = toLocalDateStr(new Date());
 
-  while (currentDate <= end) {
-    const dateStr = toLocalDateStr(currentDate);
+  for (const [dateStr, dayTasks] of Object.entries(todos.daily)) {
+    if (dateStr > todayStr) continue;
     const dayProgress = dailyProgress.find((p) => p.date === dateStr);
     const completedIndices = dayProgress?.todos_completed ?? [];
-
-    const dayTasks = todos.daily[dateStr] || [];
     totalExpectedCompletions += dayTasks.length;
     actualCompletions += completedIndices.filter(
       (i) => i >= 0 && i < dayTasks.length,
     ).length;
-
-    currentDate.setDate(currentDate.getDate() + 1);
   }
 
-  // Goals count once — stored after daily task indices in today's progress
+  const goalCount = todos.goals.length;
   if (goalCount > 0) {
     totalExpectedCompletions += goalCount;
-    const todayProgress = dailyProgress.find((p) => p.date === todayStr);
-    const todayDayTasks = todos.daily[todayStr] || [];
-    const completedIndices = todayProgress?.todos_completed ?? [];
-    actualCompletions += completedIndices.filter(
-      (i) => i >= todayDayTasks.length && i < todayDayTasks.length + goalCount,
-    ).length;
+    actualCompletions += goalsCompleted.filter(Boolean).length;
   }
 
   if (totalExpectedCompletions === 0) return 0;
@@ -328,11 +318,11 @@ Deno.serve(async (req) => {
         // --- 2. Calculate completion percentage ---
         const todos: PledgeTodos = pledge.todos || { goals: [], daily: {} };
         const dailyProgress: DailyProgressRow[] = pledge.daily_progress || [];
+        const goalsCompleted: boolean[] = pledge.goals_completed || [];
         const completionPct = calculateCompletionPercentage(
           todos,
+          goalsCompleted,
           dailyProgress,
-          new Date(pledge.start_date),
-          new Date(pledge.end_date),
         );
 
         console.log(`Pledge ${pledge.id}: ${completionPct}% completion`);

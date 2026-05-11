@@ -51,6 +51,9 @@ export const Slider = ({
         theme={{
           minimumTrackTintColor: color || theme.colors.primary,
           maximumTrackTintColor: trackColor || theme.colors.border,
+          // Keep the filled-track color in disabled state — otherwise awesome-slider
+          // falls back to its own gray and the bar reads as "empty."
+          disableMinTrackTintColor: color || theme.colors.primary,
         }}
         thumbWidth={thumbSize}
         renderBubble={() => null}

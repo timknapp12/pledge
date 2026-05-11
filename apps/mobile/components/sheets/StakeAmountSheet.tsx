@@ -7,7 +7,7 @@ import { SHEET_COLORS } from '@/theme/colors';
 import { BaseSheet } from './BaseSheet';
 import { RoundButton, Row } from '../common';
 
-const PRESETS = [5, 10, 25, 50, 100];
+const PRESETS = [5, 10, 50, 100, 200, 500, 1000];
 
 interface StakeAmountSheetProps {
   value: string;
@@ -120,10 +120,7 @@ export const StakeAmountSheet = forwardRef<BottomSheet, StakeAmountSheetProps>(
                 selectionColor={colors.primary}
               />
               <Text
-                style={[
-                  localStyles.usdcLabel,
-                  { color: colors.textSecondary },
-                ]}
+                style={[localStyles.usdcLabel, { color: colors.textSecondary }]}
               >
                 USDC
               </Text>
@@ -144,14 +141,12 @@ export const StakeAmountSheet = forwardRef<BottomSheet, StakeAmountSheetProps>(
               >
                 {t('Balance')}
               </Text>
-              <Text
-                style={[localStyles.balanceValue, { color: colors.text }]}
-              >
+              <Text style={[localStyles.balanceValue, { color: colors.text }]}>
                 {balanceLoading
                   ? '...'
                   : walletBalance != null
-                    ? `${formatBalance(walletBalance)} USDC`
-                    : '—'}
+                  ? `${formatBalance(walletBalance)} USDC`
+                  : '—'}
               </Text>
             </View>
 
@@ -197,9 +192,7 @@ export const StakeAmountSheet = forwardRef<BottomSheet, StakeAmountSheetProps>(
                     backgroundColor: isMaxSelected
                       ? colors.primary
                       : colors.cardBackground,
-                    borderColor: isMaxSelected
-                      ? colors.primary
-                      : colors.border,
+                    borderColor: isMaxSelected ? colors.primary : colors.border,
                   },
                 ]}
                 onPress={handleMax}
@@ -212,8 +205,8 @@ export const StakeAmountSheet = forwardRef<BottomSheet, StakeAmountSheetProps>(
                       color: isMaxSelected
                         ? colors.iconOnPrimary
                         : walletBalance == null || walletBalance <= 0
-                          ? colors.textSecondary
-                          : colors.text,
+                        ? colors.textSecondary
+                        : colors.text,
                     },
                   ]}
                 >
@@ -239,7 +232,7 @@ export const StakeAmountSheet = forwardRef<BottomSheet, StakeAmountSheetProps>(
         )}
       </BaseSheet>
     );
-  }
+  },
 );
 
 StakeAmountSheet.displayName = 'StakeAmountSheet';

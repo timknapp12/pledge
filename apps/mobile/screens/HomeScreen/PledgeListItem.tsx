@@ -16,6 +16,7 @@ import {
   formatUsdcAmount,
   getTotalTaskCount,
   getGoals,
+  getEffectiveStatus,
   Pledge,
   type PledgeTodos,
 } from '@/hooks/useSupabase';
@@ -65,6 +66,11 @@ export const PledgeListItem = ({
 }: PledgeListItemProps) => {
   const { t } = useTranslation();
   const { theme } = useAppTheme();
+  const effectiveStatus = getEffectiveStatus(pledge, completionProgress);
+  const badgeLabel =
+    effectiveStatus === 'AwaitingClaim'
+      ? t('Ready to claim')
+      : t(effectiveStatus);
 
   return (
     <Pressable onPress={onPress}>
@@ -79,16 +85,16 @@ export const PledgeListItem = ({
           <View
             style={[
               localStyles.statusBadge,
-              { backgroundColor: getStatusBgColor(theme, pledge.status) },
+              { backgroundColor: getStatusBgColor(theme, effectiveStatus) },
             ]}
           >
             <BodySmall
               style={{
-                color: getStatusTextColor(theme, pledge.status),
+                color: getStatusTextColor(theme, effectiveStatus),
                 fontWeight: '600',
               }}
             >
-              {t(pledge.status)}
+              {badgeLabel}
             </BodySmall>
           </View>
         </Row>

@@ -40,6 +40,8 @@ const OFFSET_STAKE = 8 + 32 + 32;
 const OFFSET_DEADLINE = 8 + 32 + 32 + 8;
 const OFFSET_STATUS = 8 + 32 + 32 + 8 + 8;
 const OFFSET_COMPLETION = 8 + 32 + 32 + 8 + 8 + 1; // Option<u8>: 1 byte discriminant + 1 byte value
+// completion_percentage(2) + reported_at Option<i64>(1+8=9) brings us to created_at
+const OFFSET_CREATED_AT = 8 + 32 + 32 + 8 + 8 + 1 + 2 + 9;
 
 function readPublicKey(data: Uint8Array, offset: number): string {
   const keyBytes = data.slice(offset, offset + 32);
@@ -63,6 +65,7 @@ interface OnChainPledge {
   deadline: number; // unix seconds
   status: string;
   completionPercentage: number | null;
+  createdAt: number; // unix seconds
 }
 
 function deserializePledge(address: PublicKey, data: Uint8Array): OnChainPledge {
@@ -79,6 +82,7 @@ function deserializePledge(address: PublicKey, data: Uint8Array): OnChainPledge 
     deadline: readI64(data, OFFSET_DEADLINE),
     status,
     completionPercentage,
+    createdAt: readI64(data, OFFSET_CREATED_AT),
   };
 }
 
@@ -196,13 +200,20 @@ Deno.serve(async (req) => {
         }
 
         const deadlineDate = new Date(onChain.deadline * 1000);
+        const startDate = new Date(onChain.createdAt * 1000);
+        // Mirror the create-pledge form's no-name fallback: a "Mon DD - Mon DD"
+        // range. Metadata (real name, todos) was lost when the original retry
+        // queue expired; this gives the user a non-empty, sensible label.
+        const fmt = (d: Date) =>
+          d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const fallbackName = `${fmt(startDate)} - ${fmt(deadlineDate)}`;
 
         const { error: insertError } = await supabase.from('pledges').insert({
           user_id: userRecord.id,
           on_chain_address: onChain.address,
-          name: '',
+          name: fallbackName,
           timeframe_type: 'custom',
-          start_date: new Date().toISOString(),
+          start_date: startDate.toISOString(),
           end_date: deadlineDate.toISOString(),
           deadline: deadlineDate.toISOString(),
           stake_amount: onChain.stakeAmount,

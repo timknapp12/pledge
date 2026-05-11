@@ -18,10 +18,12 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   usePledges,
+  useActivePledgeProgress,
   formatUsdcAmount,
   getEffectiveStatus,
   useUserProfile,
   useSeasonPoints,
+  type Pledge,
 } from '@/hooks/useSupabase';
 import {
   getAnimatedDisplayLamports,
@@ -63,11 +65,31 @@ export const HistoryScreen = () => {
   const { data: userProfile } = useUserProfile();
   const { data: seasonData } = useSeasonPoints();
 
-  // Filter for past pledges (completed, forfeited, or expired)
+  // We need live completion% for any pledge whose DB status is still `Active`
+  // so we can tell AwaitingClaim (out of past list, counts toward streak) from
+  // Expired (in past list).
+  const stillActiveDbRows =
+    allPledges?.filter((p) => p.status === 'Active') ?? [];
+  const { progressMap } = useActivePledgeProgress(stillActiveDbRows);
+
+  const completionFor = (p: Pledge): number =>
+    p.status === 'Active'
+      ? progressMap.get(p.id) ?? 0
+      : p.completion_percentage ?? 0;
+
+  // Past pledges: anything not still in-progress. AwaitingClaim is included
+  // here AND on Home — it's an achievement waiting to be collected, so it
+  // belongs alongside completed/forfeited pledges, with a "Ready to claim"
+  // badge to distinguish it.
   const pastPledges =
     allPledges?.filter((p) => {
-      const s = getEffectiveStatus(p);
-      return s === 'Completed' || s === 'Forfeited' || s === 'Expired';
+      const s = getEffectiveStatus(p, completionFor(p));
+      return (
+        s === 'Completed' ||
+        s === 'Forfeited' ||
+        s === 'Expired' ||
+        s === 'AwaitingClaim'
+      );
     }) || [];
 
   // Calculate stats
@@ -85,13 +107,14 @@ export const HistoryScreen = () => {
         )
       : 0;
 
-  // Consecutive 100% completions from most recent
+  // Consecutive 100% completions from most recent. AwaitingClaim is in
+  // pastPledges with a null completion_percentage, so we use the live value.
   const sortedSettled = [...pastPledges].sort(
     (a, b) => new Date(b.deadline).getTime() - new Date(a.deadline).getTime(),
   );
   let perfectStreak = 0;
   for (const p of sortedSettled) {
-    if (p.completion_percentage === 100) perfectStreak++;
+    if (completionFor(p) === 100) perfectStreak++;
     else break;
   }
 
@@ -318,12 +341,13 @@ export const HistoryScreen = () => {
                     message={error instanceof Error ? error.message : undefined}
                     onRetry={refetch}
                   />
-                ) : pastPledges.length > 0 ? (
+                ) : sortedSettled.length > 0 ? (
                   <View style={localStyles.contentContainer}>
-                    {pastPledges.map((pledge) => (
+                    {sortedSettled.map((pledge) => (
                       <PastPledgeItem
                         key={pledge.id}
                         pledge={pledge}
+                        liveCompletionPct={completionFor(pledge)}
                         onPress={() => handlePledgePress(pledge.id)}
                         animateKey={focusCount}
                       />

@@ -64,6 +64,7 @@ export const FinishedPledgeDetailScreen = () => {
     if (!pledge || !allProgress) return 0;
     return calculateCompletionPercentage(
       pledge.todos,
+      pledge.goals_completed ?? [],
       allProgress,
       new Date(pledge.start_date),
       new Date(pledge.end_date),
@@ -96,12 +97,8 @@ export const FinishedPledgeDetailScreen = () => {
     return dayTasks.length > 0 && completed.filter((i) => i < dayTasks.length).length === dayTasks.length;
   }).length;
 
-  // Goal completion: stored in last day's progress after daily task indices
-  const lastDayTasks = lastDate && pledge ? getDailyTasksForDate(pledge.todos, lastDate) : [];
-  const lastDayCompleted = lastDate ? (completedIndicesPerDay.get(lastDate) ?? []) : [];
-  const completedGoalIndices = lastDayCompleted.filter(
-    (i) => i >= lastDayTasks.length && i < lastDayTasks.length + goals.length,
-  );
+  // Goal completion is now a per-pledge boolean array (single source of truth)
+  const goalsCompleted = pledge?.goals_completed ?? [];
 
   // Fallback: if completion is 100% but no daily_progress records, treat all tasks as done
   const allDoneByPercentage = completionPct === 100;
@@ -272,7 +269,7 @@ export const FinishedPledgeDetailScreen = () => {
 
               {/* Goals */}
               {goals.map((goalText, index) => {
-                const done = allDoneByPercentage || completedGoalIndices.includes(lastDayTasks.length + index);
+                const done = allDoneByPercentage || (goalsCompleted[index] ?? false);
                 return (
                   <View
                     key={`goal-${index}`}

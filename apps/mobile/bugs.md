@@ -2,7 +2,6 @@ P0
 
 P1
 
-- add needed stuff to explorer.solana configs
 - custom date does not work on ios
 - read terms and privacy
 

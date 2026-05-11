@@ -24,6 +24,7 @@ import {
   toLocalDateStr,
   useAllDailyProgress,
   useUpdateDailyProgress,
+  useUpdateGoalCompletion,
 } from '@/hooks/useSupabase';
 
 /** If a pledge has exactly 1 task/goal and a date-range name, show the task text instead. */
@@ -53,6 +54,7 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
   const { theme } = useAppTheme();
   const router = useRouter();
   const updateProgress = useUpdateDailyProgress();
+  const updateGoal = useUpdateGoalCompletion();
   const { toast } = useToast();
 
   // Date state: today or yesterday
@@ -65,20 +67,13 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
 
   const { data: allProgress } = useAllDailyProgress(selectedDate);
 
-  // Combine daily tasks + goals for a pledge on a given date.
-  // Goals only appear on today — they are one-time completions, not daily.
-  const todayStr = toLocalDateStr(new Date());
-  const getTasksForDate = useCallback(
-    (pledge: Pledge, date: string): string[] => {
-      const dailyTasks = getDailyTasksForDate(pledge.todos, date);
-      const startLocal = toLocalDateStr(new Date(pledge.start_date));
-      const endLocal = toLocalDateStr(new Date(pledge.end_date));
-      const isWithinRange = date >= startLocal && date <= endLocal;
-      const goals = isWithinRange && date === todayStr ? getGoals(pledge.todos) : [];
-      return [...dailyTasks, ...goals];
-    },
-    [todayStr],
-  );
+  // Daily tasks are date-specific; goals are per-pledge and shown on any
+  // in-range date so completion state is visible/editable from any tab.
+  const isDateInPledgeRange = useCallback((pledge: Pledge, date: string) => {
+    const startLocal = toLocalDateStr(new Date(pledge.start_date));
+    const endLocal = toLocalDateStr(new Date(pledge.end_date));
+    return date >= startLocal && date <= endLocal;
+  }, []);
 
   // Check if any pledge has tasks for yesterday (to decide whether to show the toggle)
   const yesterdayDate = useMemo(() => {
@@ -89,42 +84,28 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
 
   const hasYesterdayTasks = useMemo(() => {
     return pledges.some((pledge) => {
-      if (getTasksForDate(pledge, yesterdayDate).length > 0) return true;
-      // Also count goal-only pledges within range
-      const goals = getGoals(pledge.todos);
-      if (goals.length === 0) return false;
-      const start = toLocalDateStr(new Date(pledge.start_date));
-      const end = toLocalDateStr(new Date(pledge.end_date));
-      return yesterdayDate >= start && yesterdayDate <= end;
+      if (!isDateInPledgeRange(pledge, yesterdayDate)) return false;
+      if (getDailyTasksForDate(pledge.todos, yesterdayDate).length > 0) return true;
+      return getGoals(pledge.todos).length > 0;
     });
-  }, [pledges, yesterdayDate, getTasksForDate]);
+  }, [pledges, yesterdayDate, isDateInPledgeRange]);
 
-  // Build per-pledge task data
+  // Per-pledge data for the selected date: daily tasks (date-scoped) + goals (per-pledge)
   const pledgeTaskData = useMemo(() => {
     return pledges
       .map((pledge) => {
-        const tasks = getTasksForDate(pledge, selectedDate);
+        const dailyTasks = getDailyTasksForDate(pledge.todos, selectedDate);
+        const goals = isDateInPledgeRange(pledge, selectedDate)
+          ? getGoals(pledge.todos)
+          : [];
         const progress = allProgress?.find((p) => p.pledge_id === pledge.id);
-        const completed = progress?.todos_completed ?? [];
-        return { pledge, tasks, completed };
+        const completedDaily = (progress?.todos_completed ?? []).filter(
+          (i) => i >= 0 && i < dailyTasks.length,
+        );
+        return { pledge, dailyTasks, goals, completedDaily };
       })
-      .filter((d) => d.tasks.length > 0); // Only pledges with tasks for this date
-  }, [pledges, selectedDate, allProgress, getTasksForDate]);
-
-  // Goal-only pledges: have goals but no daily tasks for this date
-  const goalOnlyPledges = useMemo(() => {
-    const startLocal = (p: Pledge) => toLocalDateStr(new Date(p.start_date));
-    const endLocal = (p: Pledge) => toLocalDateStr(new Date(p.end_date));
-    return pledges.filter((pledge) => {
-      const hasTasks = getTasksForDate(pledge, selectedDate).length > 0;
-      if (hasTasks) return false; // already in pledgeTaskData
-      const goals = getGoals(pledge.todos);
-      if (goals.length === 0) return false;
-      const inRange =
-        selectedDate >= startLocal(pledge) && selectedDate <= endLocal(pledge);
-      return inRange;
-    });
-  }, [pledges, selectedDate, getTasksForDate]);
+      .filter((d) => d.dailyTasks.length > 0 || d.goals.length > 0);
+  }, [pledges, selectedDate, allProgress, isDateInPledgeRange]);
 
   const handleToggle = useCallback(
     async (pledgeId: string, taskIndex: number, currentCompleted: number[]) => {
@@ -148,31 +129,78 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
     [selectedDate, updateProgress, toast, t],
   );
 
+  const handleGoalToggle = useCallback(
+    async (pledge: Pledge, goalIndex: number) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      const current = pledge.goals_completed ?? [];
+      const next = [...current];
+      while (next.length <= goalIndex) next.push(false);
+      next[goalIndex] = !next[goalIndex];
+      try {
+        await updateGoal.mutateAsync({ pledgeId: pledge.id, goalsCompleted: next });
+      } catch (err) {
+        console.error('Failed to update goal:', err);
+        toast({ message: t("Couldn't save progress. Please try again."), variant: 'error' });
+      }
+    },
+    [updateGoal, toast, t],
+  );
+
+  // Select-all toggles every visible item on the card: daily tasks for the
+  // selected date AND the per-pledge goals. Two writes: daily_progress + pledges.
   const handleSelectAll = useCallback(
-    async (pledgeId: string, taskCount: number, currentCompleted: number[]) => {
+    async (
+      pledge: Pledge,
+      dailyTaskCount: number,
+      currentCompletedDaily: number[],
+      goalCount: number,
+    ) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
 
-      const allSelected = currentCompleted.length === taskCount;
-      const newCompleted = allSelected
+      const currentGoals = pledge.goals_completed ?? [];
+      const dailyAllDone =
+        dailyTaskCount === 0 || currentCompletedDaily.length === dailyTaskCount;
+      const goalsAllDone =
+        goalCount === 0 ||
+        Array.from({ length: goalCount }, (_, i) => currentGoals[i] ?? false).every(Boolean);
+      const allDone = dailyAllDone && goalsAllDone;
+
+      const newCompleted = allDone
         ? []
-        : Array.from({ length: taskCount }, (_, i) => i);
+        : Array.from({ length: dailyTaskCount }, (_, i) => i);
+      const newGoals = (() => {
+        const next = [...currentGoals];
+        while (next.length < goalCount) next.push(false);
+        for (let i = 0; i < goalCount; i++) next[i] = !allDone;
+        return next;
+      })();
 
       try {
-        await updateProgress.mutateAsync({
-          pledgeId,
-          date: selectedDate,
-          todosCompleted: newCompleted,
-        });
+        const writes: Promise<unknown>[] = [];
+        if (dailyTaskCount > 0) {
+          writes.push(
+            updateProgress.mutateAsync({
+              pledgeId: pledge.id,
+              date: selectedDate,
+              todosCompleted: newCompleted,
+            }),
+          );
+        }
+        if (goalCount > 0) {
+          writes.push(
+            updateGoal.mutateAsync({ pledgeId: pledge.id, goalsCompleted: newGoals }),
+          );
+        }
+        await Promise.all(writes);
       } catch (err) {
         console.error('Failed to update progress:', err);
         toast({ message: t("Couldn't save progress. Please try again."), variant: 'error' });
       }
     },
-    [selectedDate, updateProgress, toast, t],
+    [selectedDate, updateProgress, updateGoal, toast, t],
   );
 
-  const noTasksForSelectedDate =
-    pledgeTaskData.length === 0 && goalOnlyPledges.length === 0;
+  const noTasksForSelectedDate = pledgeTaskData.length === 0;
 
   if (noTasksForSelectedDate && !hasYesterdayTasks) {
     return (
@@ -253,8 +281,15 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
       </BodySmallSecondary>
 
       {/* Per-pledge task groups */}
-      {pledgeTaskData.map(({ pledge, tasks, completed }) => {
-        const allDone = completed.length === tasks.length && tasks.length > 0;
+      {pledgeTaskData.map(({ pledge, dailyTasks, goals, completedDaily }) => {
+        const goalsCompleted = pledge.goals_completed ?? [];
+        const goalDoneCount = Array.from(
+          { length: goals.length },
+          (_, i) => goalsCompleted[i] ?? false,
+        ).filter(Boolean).length;
+        const totalCount = dailyTasks.length + goals.length;
+        const totalDone = completedDaily.length + goalDoneCount;
+        const allDone = totalCount > 0 && totalDone === totalCount;
         return (
           <Card key={pledge.id}>
             {/* Pledge header — tappable to go to detail */}
@@ -265,14 +300,14 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
               <Column flex={1} width='auto'>
                 <Title3 numberOfLines={1}>{getDisplayName(pledge.name, pledge.todos)}</Title3>
                 <BodySmallSecondary>
-                  {completed.length}/{tasks.length} {t('done')}
+                  {totalDone}/{totalCount} {t('done')}
                 </BodySmallSecondary>
               </Column>
               <Row gap={8} width='auto'>
-                {/* Select all / deselect all */}
+                {/* Select all / deselect all — toggles daily + goals together */}
                 <Pressable
                   onPress={() =>
-                    handleSelectAll(pledge.id, tasks.length, completed)
+                    handleSelectAll(pledge, dailyTasks.length, completedDaily, goals.length)
                   }
                   style={[
                     styles.selectAllButton,
@@ -301,12 +336,12 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
               </Row>
             </Pressable>
 
-            {/* Task list */}
-            {tasks.map((taskText, index) => {
-              const isCompleted = completed.includes(index);
+            {/* Daily task list */}
+            {dailyTasks.map((taskText, index) => {
+              const isCompleted = completedDaily.includes(index);
               return (
                 <Pressable
-                  key={index}
+                  key={`daily-${index}`}
                   style={[
                     styles.taskRow,
                     {
@@ -315,7 +350,7 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
                         : 'transparent',
                     },
                   ]}
-                  onPress={() => handleToggle(pledge.id, index, completed)}
+                  onPress={() => handleToggle(pledge.id, index, completedDaily)}
                 >
                   <Checkbox checked={isCompleted} />
                   <Body
@@ -330,6 +365,50 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
                 </Pressable>
               );
             })}
+
+            {/* Goals subsection (per-pledge, visible on any in-range tab) */}
+            {goals.length > 0 && (
+              <>
+                {dailyTasks.length > 0 && (
+                  <BodySmallSecondary style={styles.goalsLabel}>
+                    {t('One-time goals')}
+                  </BodySmallSecondary>
+                )}
+                {goals.map((goalText, index) => {
+                  const isCompleted = goalsCompleted[index] ?? false;
+                  return (
+                    <Pressable
+                      key={`goal-${index}`}
+                      style={[
+                        styles.taskRow,
+                        {
+                          backgroundColor: isCompleted
+                            ? theme.colors.primaryAlpha10
+                            : 'transparent',
+                        },
+                      ]}
+                      onPress={() => handleGoalToggle(pledge, index)}
+                    >
+                      <Checkbox checked={isCompleted} />
+                      <Ionicons
+                        name='flag-outline'
+                        size={16}
+                        color={theme.colors.primary}
+                      />
+                      <Body
+                        style={{
+                          flex: 1,
+                          textDecorationLine: isCompleted ? 'line-through' : 'none',
+                          opacity: isCompleted ? 0.6 : 1,
+                        }}
+                      >
+                        {goalText}
+                      </Body>
+                    </Pressable>
+                  );
+                })}
+              </>
+            )}
           </Card>
         );
       })}
@@ -350,43 +429,6 @@ export const DailyTasksView = ({ pledges }: DailyTasksViewProps) => {
           </Body>
         </Column>
       )}
-
-      {/* Goal-only pledges — no daily tasks, shown as tappable reminder cards */}
-      {goalOnlyPledges.map((pledge) => {
-        const goals = getGoals(pledge.todos);
-        return (
-          <Pressable
-            key={pledge.id}
-            onPress={() => router.push(`/pledge/${pledge.id}`)}
-          >
-            <Card>
-              <Row justify='space-between' align='center'>
-                <Column flex={1} width='auto'>
-                  <Title3 numberOfLines={1}>{getDisplayName(pledge.name, pledge.todos)}</Title3>
-                  <BodySmallSecondary style={{ marginTop: 2 }}>
-                    {goals.length} {goals.length === 1 ? t('goal') : t('goals')}
-                  </BodySmallSecondary>
-                </Column>
-                <Ionicons
-                  name='chevron-forward'
-                  size={16}
-                  color={theme.colors.textSecondary}
-                />
-              </Row>
-              {goals.map((goal, index) => (
-                <Row key={index} gap={8} style={styles.goalRow}>
-                  <Ionicons
-                    name='flag-outline'
-                    size={16}
-                    color={theme.colors.primary}
-                  />
-                  <Body style={{ flex: 1 }}>{goal}</Body>
-                </Row>
-              ))}
-            </Card>
-          </Pressable>
-        );
-      })}
     </Column>
   );
 };
@@ -419,8 +461,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 2,
   },
-  goalRow: {
-    paddingVertical: 6,
+  goalsLabel: {
+    marginTop: 8,
+    marginBottom: 2,
     paddingHorizontal: 4,
+    fontWeight: '600',
   },
 });

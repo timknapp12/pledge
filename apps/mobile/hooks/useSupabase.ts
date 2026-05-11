@@ -57,7 +57,8 @@ export const computePledgeTodos = (
   end.setHours(0, 0, 0, 0);
 
   const dates: { dateStr: string; dayOfWeek: number }[] = [];
-  while (current < end) {
+  // <= so the deadline day is included (end has been snapped to local midnight).
+  while (current <= end) {
     dates.push({
       dateStr: toLocalDateStr(current),
       dayOfWeek: current.getDay(),
@@ -131,6 +132,7 @@ export interface Pledge {
   deadline: string;
   stake_amount: number; // in USDC lamports (6 decimals)
   todos: PledgeTodos;
+  goals_completed: boolean[]; // aligned to todos.goals — single source of truth for one-time task completion
   status: 'Active' | 'Reported' | 'Completed' | 'Forfeited';
   completion_percentage: number | null;
   settle_tx_signature: string | null;
@@ -139,15 +141,33 @@ export interface Pledge {
   created_at: string;
 }
 
-export type PledgeDisplayStatus = Pledge['status'] | 'Expired';
+export type PledgeDisplayStatus =
+  | Pledge['status']
+  | 'Expired'
+  | 'AwaitingClaim';
 
-/** Frontend failsafe: if deadline + 24h grace has passed and crank hasn't updated status, treat as Expired. */
-export const getEffectiveStatus = (pledge: Pledge): PledgeDisplayStatus => {
+export const GRACE_PERIOD_MS = 24 * 60 * 60 * 1000;
+export const CLAIM_EXPIRY_MS = 180 * 24 * 60 * 60 * 1000;
+
+/**
+ * Maps DB status + live completion% to a UI status.
+ *
+ * Past deadline + 24h grace, the crank has run by now (or will shortly).
+ * If completion is 100%, the crank deliberately leaves the pledge `Active`
+ * so the user can self-claim within 6 months → `AwaitingClaim`.
+ * If <100%, the pledge should be settled — `Expired` is the fallback for
+ * the brief window before the crank fires.
+ */
+export const getEffectiveStatus = (
+  pledge: Pledge,
+  completionPct?: number | null,
+): PledgeDisplayStatus => {
   if (pledge.status !== 'Active') return pledge.status;
-  const gracePeriodMs = 24 * 60 * 60 * 1000;
-  const deadlinePlusGrace = new Date(pledge.deadline).getTime() + gracePeriodMs;
-  if (Date.now() > deadlinePlusGrace) return 'Expired';
-  return 'Active';
+  const deadlinePlusGrace =
+    new Date(pledge.deadline).getTime() + GRACE_PERIOD_MS;
+  if (Date.now() <= deadlinePlusGrace) return 'Active';
+  if (completionPct === 100) return 'AwaitingClaim';
+  return 'Expired';
 };
 
 export interface DailyProgress {
@@ -196,20 +216,32 @@ export const usePledges = () => {
   });
 }
 
-// Fetch active pledges only (derived from usePledges to share cache)
+// Fetch active pledges (Active + Reported + AwaitingClaim).
+// Returns progressMap so consumers don't need a second hook for completion%.
 export const useActivePledges = () => {
   const pledgesQuery = usePledges();
 
-  return {
-    ...pledgesQuery,
-    data: pledgesQuery.data
-      ?.filter((p) => {
-        const effective = getEffectiveStatus(p);
-        return effective === 'Active' || effective === 'Reported';
-      })
-      .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime()),
-  };
-}
+  // DB-status candidates — we still need progress to distinguish
+  // AwaitingClaim from Expired for `Active` rows past grace.
+  const candidates =
+    pledgesQuery.data?.filter(
+      (p) => p.status === 'Active' || p.status === 'Reported',
+    ) ?? [];
+
+  const { progressMap } = useActivePledgeProgress(candidates);
+
+  const data = candidates
+    .filter((p) => {
+      const eff = getEffectiveStatus(p, progressMap.get(p.id));
+      return eff === 'Active' || eff === 'Reported' || eff === 'AwaitingClaim';
+    })
+    .sort(
+      (a, b) =>
+        new Date(a.deadline).getTime() - new Date(b.deadline).getTime(),
+    );
+
+  return { ...pledgesQuery, data, progressMap };
+};
 
 // Fetch completion progress for all active pledges in one query
 export const useActivePledgeProgress = (pledges: Pledge[] | undefined) => {
@@ -245,6 +277,7 @@ export const useActivePledgeProgress = (pledges: Pledge[] | undefined) => {
         pledge.id,
         calculateCompletionPercentage(
           pledge.todos,
+          pledge.goals_completed,
           dp,
           new Date(pledge.start_date),
           new Date(pledge.end_date),
@@ -386,6 +419,39 @@ export const useUpdateDailyProgress = () => {
   });
 }
 
+// Update a pledge's goal-completion array. Goals are per-pledge (not per-date).
+// Caller passes the full next array so this works for both single-goal toggle
+// and select-all flows.
+export const useUpdateGoalCompletion = () => {
+  const { supabase } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      pledgeId,
+      goalsCompleted,
+    }: {
+      pledgeId: string;
+      goalsCompleted: boolean[];
+    }) => {
+      const { data, error } = await supabase
+        .from('pledges')
+        .update({ goals_completed: goalsCompleted })
+        .eq('id', pledgeId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.pledge(variables.pledgeId) });
+      queryClient.invalidateQueries({ queryKey: ['pledges'] });
+      queryClient.invalidateQueries({ queryKey: ['allActivePledgeProgress'] });
+    },
+  });
+};
+
 // Create a new pledge in the database (after on-chain creation succeeds)
 export const useCreatePledgeInDb = () => {
   const { supabase, user } = useAuth();
@@ -417,6 +483,7 @@ export const useCreatePledgeInDb = () => {
           deadline: pledge.deadline,
           stake_amount: pledge.stake_amount,
           todos: pledge.todos,
+          goals_completed: new Array(pledge.todos.goals.length).fill(false),
           reminder_settings: pledge.reminder_settings ?? null,
           status: 'Active',
         })
@@ -721,16 +788,19 @@ export const useUpdatePledge = () => {
       pledgeId,
       name,
       todos,
+      goals_completed,
       reminder_settings,
     }: {
       pledgeId: string;
       name?: string;
       todos?: PledgeTodos;
+      goals_completed?: boolean[];
       reminder_settings?: ReminderSettings | null;
     }) => {
       const updateData: Record<string, unknown> = {};
       if (name !== undefined) updateData.name = name;
       if (todos !== undefined) updateData.todos = todos;
+      if (goals_completed !== undefined) updateData.goals_completed = goals_completed;
       if (reminder_settings !== undefined)
         updateData.reminder_settings = reminder_settings;
 
@@ -757,49 +827,43 @@ export const useUpdatePledge = () => {
 
 // Calculate completion percentage from daily progress.
 // Only daily tasks count toward percentage. Goals are tracked separately.
+//
+// `todos.daily` keys are date strings written by the creating client in its
+// own local timezone. We iterate those keys directly so the math is stable
+// regardless of which timezone the *reader* runs in (phone in MDT vs. crank
+// edge function in UTC). Iterating [start_date, end_date] timestamps would
+// drift by a day at TZ boundaries — that was the historical bug.
+//
+// `startDate`/`endDate` parameters are kept for back-compat with existing
+// callers but are no longer used.
 export const calculateCompletionPercentage = (
   todos: PledgeTodos,
+  goalsCompleted: boolean[],
   dailyProgress: DailyProgress[],
-  startDate: Date,
-  endDate: Date
+  _startDate?: Date,
+  _endDate?: Date
 ): number => {
   let totalExpectedCompletions = 0;
   let actualCompletions = 0;
 
-  const currentDate = new Date(startDate);
-  currentDate.setHours(0, 0, 0, 0);
-  // Don't count future days — cap at today
-  const now = new Date();
-  now.setHours(23, 59, 59, 999);
-  const end = new Date(Math.min(endDate.getTime(), now.getTime()));
-
-  const goalCount = todos.goals.length;
+  // Don't count future days — cap at today (local to whoever's running this).
   const todayStr = toLocalDateStr(new Date());
 
-  // Count daily tasks per day
-  while (currentDate <= end) {
-    const dateStr = toLocalDateStr(currentDate);
+  for (const [dateStr, dayTasks] of Object.entries(todos.daily)) {
+    if (dateStr > todayStr) continue;
     const dayProgress = dailyProgress.find((p) => p.date === dateStr);
     const completedIndices = dayProgress?.todos_completed ?? [];
-
-    const dayTasks = todos.daily[dateStr] || [];
     totalExpectedCompletions += dayTasks.length;
     actualCompletions += completedIndices.filter(
       (i) => i >= 0 && i < dayTasks.length
     ).length;
-
-    currentDate.setDate(currentDate.getDate() + 1);
   }
 
-  // Goals count once — completion stored in today's progress after daily task indices
+  const goalCount = todos.goals.length;
   if (goalCount > 0) {
     totalExpectedCompletions += goalCount;
-    const todayProgress = dailyProgress.find((p) => p.date === todayStr);
-    const todayDayTasks = todos.daily[todayStr] || [];
-    const completedIndices = todayProgress?.todos_completed ?? [];
-    actualCompletions += completedIndices.filter(
-      (i) => i >= todayDayTasks.length && i < todayDayTasks.length + goalCount
-    ).length;
+    // Tolerate a goals_completed array shorter than goals (defensive — shouldn't happen post-migration)
+    actualCompletions += goalsCompleted.filter(Boolean).length;
   }
 
   if (totalExpectedCompletions === 0) return 0;
