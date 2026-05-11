@@ -5,8 +5,6 @@ P1
 - custom date does not work on ios
 - read terms and privacy
 
-- dont show tasks for yesterday if this is the first day of the pledge
-
 P2
 
 - more languages
