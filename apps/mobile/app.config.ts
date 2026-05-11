@@ -73,7 +73,7 @@ if (process.env.DEPLOY_ENVIRONMENT === 'preview') {
 // Production settings
 if (process.env.DEPLOY_ENVIRONMENT === 'production') {
   name = 'Pledge';
-  version = '1.0.0';
+  version = '1.0.1';
   packageName = 'com.pledgeapp.app';
   iosBundleId = 'com.pledgeapp.app';
   scheme = 'pledge';
