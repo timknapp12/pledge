@@ -1,7 +1,9 @@
 import { forwardRef, useState, useCallback, useEffect, useMemo } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, Platform, StyleSheet } from 'react-native';
 import BottomSheet from '@gorhom/bottom-sheet';
-import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import DateTimePicker, {
+  DateTimePickerAndroid,
+} from '@react-native-community/datetimepicker';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeMode } from '@/theme/ThemeProvider';
@@ -38,6 +40,8 @@ export const DurationPickerSheet = forwardRef<
     hours: value.getHours(),
     minutes: value.getMinutes(),
   });
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [hasBeenOpened, setHasBeenOpened] = useState(false);
 
   useEffect(() => {
@@ -72,39 +76,73 @@ export const DurationPickerSheet = forwardRef<
 
   const openDatePicker = useCallback(
     (initial: Date) => {
-      DateTimePickerAndroid.open({
-        value: initial,
-        minimumDate: minimumEndDate,
-        mode: 'date',
-        onChange: (event, date) => {
-          if (event.type === 'dismissed' || !date) return;
-          setCustomDate(date);
-        },
-      });
+      if (Platform.OS === 'android') {
+        DateTimePickerAndroid.open({
+          value: initial,
+          minimumDate: minimumEndDate,
+          mode: 'date',
+          onChange: (event, date) => {
+            if (event.type === 'dismissed' || !date) return;
+            setCustomDate(date);
+          },
+        });
+      } else {
+        setCustomDate(initial);
+        setShowDatePicker(true);
+        setShowTimePicker(false);
+      }
     },
-    [minimumEndDate]
+    [minimumEndDate],
   );
 
   const openTimePicker = useCallback(() => {
-    DateTimePickerAndroid.open({
-      value: getEndDate(),
-      mode: 'time',
-      display: 'spinner',
-      onChange: (event, date) => {
-        if (event.type === 'dismissed' || !date) return;
-        setEndTime({ hours: date.getHours(), minutes: date.getMinutes() });
-      },
-    });
+    if (Platform.OS === 'android') {
+      DateTimePickerAndroid.open({
+        value: getEndDate(),
+        mode: 'time',
+        display: 'spinner',
+        onChange: (event, date) => {
+          if (event.type === 'dismissed' || !date) return;
+          setEndTime({ hours: date.getHours(), minutes: date.getMinutes() });
+        },
+      });
+    } else {
+      setShowTimePicker(true);
+      setShowDatePicker(false);
+    }
   }, [getEndDate]);
+
+  const handleDateChange = useCallback((_event: unknown, date?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    if (date) {
+      setCustomDate(date);
+      setPreset('custom');
+    }
+  }, []);
+
+  const handleTimeChange = useCallback((_event: unknown, date?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowTimePicker(false);
+    }
+    if (date) {
+      setEndTime({ hours: date.getHours(), minutes: date.getMinutes() });
+      setPreset('custom');
+    }
+  }, []);
 
   const handlePresetSelect = useCallback(
     (presetKey: DurationPreset) => {
       setPreset(presetKey);
       if (presetKey === 'custom') {
         openDatePicker(customDate);
+      } else {
+        setShowDatePicker(false);
+        setShowTimePicker(false);
       }
     },
-    [openDatePicker, customDate]
+    [openDatePicker, customDate],
   );
 
   const handleClose = useCallback(() => {
@@ -271,6 +309,31 @@ export const DurationPickerSheet = forwardRef<
             </View>
           </View>
 
+          {Platform.OS === 'ios' && showDatePicker && (
+            <View style={styles.pickerContainer}>
+              <DateTimePicker
+                value={customDate}
+                mode='date'
+                display='spinner'
+                minimumDate={minimumEndDate}
+                onChange={handleDateChange}
+                themeVariant={isDark ? 'dark' : 'light'}
+              />
+            </View>
+          )}
+
+          {Platform.OS === 'ios' && showTimePicker && (
+            <View style={styles.pickerContainer}>
+              <DateTimePicker
+                value={getEndDate()}
+                mode='time'
+                display='spinner'
+                onChange={handleTimeChange}
+                themeVariant={isDark ? 'dark' : 'light'}
+              />
+            </View>
+          )}
+
         </View>
       )}
     </BaseSheet>
@@ -344,5 +407,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginLeft: 4,
     fontWeight: '500',
+  },
+  pickerContainer: {
+    marginTop: 8,
   },
 });

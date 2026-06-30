@@ -1,7 +1,9 @@
 import { forwardRef, useState, useCallback, useEffect } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, Platform, StyleSheet } from 'react-native';
 import BottomSheet from '@gorhom/bottom-sheet';
-import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import DateTimePicker, {
+  DateTimePickerAndroid,
+} from '@react-native-community/datetimepicker';
 import { useTranslation } from 'react-i18next';
 import { useThemeMode } from '@/theme/ThemeProvider';
 import { SHEET_COLORS } from '@/theme/colors';
@@ -38,6 +40,9 @@ export const DateTimePickerSheet = forwardRef<
     const colors = isDark ? SHEET_COLORS.dark : SHEET_COLORS.light;
 
     const [selectedDate, setSelectedDate] = useState(value);
+    const [activePicker, setActivePicker] = useState<'date' | 'time' | null>(
+      null,
+    );
     const [hasBeenOpened, setHasBeenOpened] = useState(false);
 
     useEffect(() => {
@@ -46,19 +51,35 @@ export const DateTimePickerSheet = forwardRef<
 
     const openPicker = useCallback(
       (pickerMode: 'date' | 'time') => {
-        DateTimePickerAndroid.open({
-          value: selectedDate,
-          mode: pickerMode,
-          display: 'spinner',
-          minimumDate: pickerMode === 'date' ? minimumDate : undefined,
-          maximumDate: pickerMode === 'date' ? maximumDate : undefined,
-          onChange: (event, date) => {
-            if (event.type === 'dismissed' || !date) return;
-            setSelectedDate(date);
-          },
-        });
+        if (Platform.OS === 'android') {
+          DateTimePickerAndroid.open({
+            value: selectedDate,
+            mode: pickerMode,
+            display: 'spinner',
+            minimumDate: pickerMode === 'date' ? minimumDate : undefined,
+            maximumDate: pickerMode === 'date' ? maximumDate : undefined,
+            onChange: (event, date) => {
+              if (event.type === 'dismissed' || !date) return;
+              setSelectedDate(date);
+            },
+          });
+        } else {
+          setActivePicker(pickerMode);
+        }
       },
-      [selectedDate, minimumDate, maximumDate]
+      [selectedDate, minimumDate, maximumDate],
+    );
+
+    const handlePickerChange = useCallback(
+      (_event: unknown, date?: Date) => {
+        if (Platform.OS === 'android') {
+          setActivePicker(null);
+        }
+        if (date) {
+          setSelectedDate(date);
+        }
+      },
+      [],
     );
 
     const handleClose = useCallback(() => {
@@ -157,6 +178,24 @@ export const DateTimePickerSheet = forwardRef<
               </Pressable>
             )}
 
+            {Platform.OS === 'ios' && activePicker && (
+              <View style={styles.pickerContainer}>
+                <DateTimePicker
+                  value={selectedDate}
+                  mode={activePicker}
+                  display='spinner'
+                  minimumDate={
+                    activePicker === 'date' ? minimumDate : undefined
+                  }
+                  maximumDate={
+                    activePicker === 'date' ? maximumDate : undefined
+                  }
+                  onChange={handlePickerChange}
+                  themeVariant={isDark ? 'dark' : 'light'}
+                />
+              </View>
+            )}
+
           </View>
         )}
       </BaseSheet>
@@ -199,5 +238,8 @@ const styles = StyleSheet.create({
   modeButtonText: {
     fontSize: 15,
     fontWeight: '500',
+  },
+  pickerContainer: {
+    marginTop: 8,
   },
 });
