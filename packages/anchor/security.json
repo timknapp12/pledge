@@ -10,7 +10,7 @@
   "preferred_languages": ["en"],
   "source_code": "https://github.com/timknapp12/pledge",
   "source_release": "main",
-  "source_revision": "c048f107d1767f4dc8f28a439c79bb4326d80528",
+  "source_revision": "69c167101a0ab8c6b53a98a9836c4772cfe81acc",
   "auditors": [],
   "expiry": "2027-04-18",
   "version": "0.1.0"
