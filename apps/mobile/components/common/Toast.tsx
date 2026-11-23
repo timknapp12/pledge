@@ -175,12 +175,16 @@ const ToastView = ({ config, opacity, translateY }: ToastViewProps) => {
         style={[
           styles.container,
           {
-            backgroundColor: bgColorMap[variant],
+            // Opaque base so screen content doesn't bleed through the tint
+            backgroundColor: theme.colors.background,
             borderColor: colorMap[variant],
           },
           animatedStyle,
         ]}
       >
+        <View
+          style={[styles.tint, { backgroundColor: bgColorMap[variant] }]}
+        />
         <Ionicons
           name={ICON_MAP[variant]}
           size={18}
@@ -220,6 +224,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 6,
+  },
+  tint: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 13, // container radius minus border width
   },
   text: {
     fontSize: 14,
