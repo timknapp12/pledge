@@ -20,6 +20,7 @@ import {
   TEN_USDC,
   HUNDRED_USDC,
   sleep,
+  dustVault,
 } from "./utils/helpers";
 
 describe("process_expired", () => {
@@ -211,6 +212,78 @@ describe("process_expired", () => {
     } catch (err) {
       expect(err.message).to.include("Account does not exist");
     }
+  });
+
+  it("processes a dusted vault (0%) and sweeps dust to user", async () => {
+    // Regression: extra USDC sent to the vault by a third party used to make
+    // close_account fail with NonNativeHasBalance (0xb), bricking the crank.
+    const user = await createTestUser(ctx, HUNDRED_USDC);
+    const stakeAmount = TEN_USDC;
+    const dust = 2;
+
+    const currentTimestamp = await getCurrentTimestamp(ctx.provider.connection);
+    const createdAt = new anchor.BN(currentTimestamp);
+    const deadline = new anchor.BN(currentTimestamp + 1);
+
+    const [pledgePda] = derivePledgePda(
+      ctx.program.programId,
+      user.keypair.publicKey,
+      createdAt
+    );
+    const [vaultPda] = deriveVaultPda(ctx.program.programId, pledgePda);
+
+    await ctx.program.methods
+      .createPledge(new anchor.BN(stakeAmount), deadline, createdAt)
+      .accounts({
+        user: user.keypair.publicKey,
+        config: ctx.configPda,
+        pledge: pledgePda,
+        vault: vaultPda,
+        userTokenAccount: user.tokenAccount,
+        mint: ctx.usdcMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([user.keypair])
+      .rpc();
+
+    await dustVault(ctx, vaultPda, dust);
+    await sleep(5000);
+
+    const userBalanceBefore = await getTokenBalance(ctx.provider.connection, user.tokenAccount);
+    const treasuryTokenAccount = await getTreasuryTokenAccount(ctx);
+    const charityTokenAccount = await getCharityTokenAccount(ctx);
+    const treasuryBefore = await getTokenBalance(ctx.provider.connection, treasuryTokenAccount);
+    const charityBefore = await getTokenBalance(ctx.provider.connection, charityTokenAccount);
+
+    await ctx.program.methods
+      .processExpired(0)
+      .accounts({
+        crank: crank.publicKey,
+        config: ctx.configPda,
+        pledge: pledgePda,
+        vault: vaultPda,
+        user: user.keypair.publicKey,
+        userTokenAccount: user.tokenAccount,
+        treasuryTokenAccount,
+        charityTokenAccount,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .signers([crank])
+      .rpc();
+
+    // Full forfeiture of the stake; only the dust goes back to the user
+    const userBalanceAfter = await getTokenBalance(ctx.provider.connection, user.tokenAccount);
+    expect(Number(userBalanceAfter - userBalanceBefore)).to.equal(dust);
+
+    const treasuryAfter = await getTokenBalance(ctx.provider.connection, treasuryTokenAccount);
+    const charityAfter = await getTokenBalance(ctx.provider.connection, charityTokenAccount);
+    expect(Number(treasuryAfter - treasuryBefore)).to.equal(7_000_000);
+    expect(Number(charityAfter - charityBefore)).to.equal(3_000_000);
+
+    expect(await ctx.provider.connection.getAccountInfo(vaultPda)).to.be.null;
+    expect(await ctx.provider.connection.getAccountInfo(pledgePda)).to.be.null;
   });
 
   it("fails if grace period has not ended", async () => {
