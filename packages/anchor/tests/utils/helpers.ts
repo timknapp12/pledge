@@ -10,6 +10,7 @@ import {
   createMint,
   createAssociatedTokenAccount,
   mintTo,
+  transfer,
   getAssociatedTokenAddress,
   TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -239,6 +240,26 @@ export const createTestUser = async (
   );
 
   return { keypair, tokenAccount };
+}
+
+/**
+ * Simulate a griefing attack: an unrelated wallet sends `amount` raw units of
+ * USDC directly to a pledge vault, so the vault holds more than stake_amount.
+ */
+export const dustVault = async (
+  ctx: TestContext,
+  vault: PublicKey,
+  amount: number = 1
+): Promise<void> => {
+  const attacker = await createTestUser(ctx, amount);
+  await transfer(
+    ctx.provider.connection,
+    attacker.keypair,
+    attacker.tokenAccount,
+    vault,
+    attacker.keypair,
+    amount
+  );
 }
 
 /**

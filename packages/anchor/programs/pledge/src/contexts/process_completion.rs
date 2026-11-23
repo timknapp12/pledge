@@ -159,6 +159,22 @@ impl<'info> ProcessCompletion<'info> {
             transfer(transfer_ctx, charity_amount)?;
         }
 
+        // Sweep any tokens sent directly to the vault (e.g. dust griefing) to the user.
+        // Without this, close_account fails with NonNativeHasBalance and the pledge is stuck.
+        self.vault.reload()?;
+        if self.vault.amount > 0 {
+            let transfer_ctx = CpiContext::new_with_signer(
+                self.token_program.to_account_info(),
+                Transfer {
+                    from: self.vault.to_account_info(),
+                    to: self.user_token_account.to_account_info(),
+                    authority: self.pledge.to_account_info(),
+                },
+                signer_seeds,
+            );
+            transfer(transfer_ctx, self.vault.amount)?;
+        }
+
         // Close vault account (return rent to user)
         let close_ctx = CpiContext::new_with_signer(
             self.token_program.to_account_info(),

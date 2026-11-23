@@ -20,6 +20,7 @@ import {
   TEN_USDC,
   HUNDRED_USDC,
   sleep,
+  dustVault,
 } from "./utils/helpers";
 
 describe("process_completion", () => {
@@ -580,6 +581,83 @@ describe("process_completion", () => {
     } catch (err) {
       expect(err.message).to.include("Account does not exist");
     }
+  });
+
+  it("self-settles a dusted vault (report + settle in one tx) and sweeps dust to user", async () => {
+    // Regression: a third party sent extra USDC to the vault, so it held more than
+    // stake_amount and close_account failed with NonNativeHasBalance (0xb).
+    const user = await createTestUser(ctx, HUNDRED_USDC);
+    const stakeAmount = TEN_USDC;
+    const dust = 2;
+
+    const currentTimestamp = await getCurrentTimestamp(ctx.provider.connection);
+    const createdAt = new anchor.BN(currentTimestamp);
+    const deadline = new anchor.BN(currentTimestamp + 3600);
+
+    const [pledgePda] = derivePledgePda(
+      ctx.program.programId,
+      user.keypair.publicKey,
+      createdAt
+    );
+    const [vaultPda] = deriveVaultPda(ctx.program.programId, pledgePda);
+
+    await ctx.program.methods
+      .createPledge(new anchor.BN(stakeAmount), deadline, createdAt)
+      .accounts({
+        user: user.keypair.publicKey,
+        pledge: pledgePda,
+        vault: vaultPda,
+        userTokenAccount: user.tokenAccount,
+        mint: ctx.usdcMint,
+      })
+      .signers([user.keypair])
+      .rpc();
+
+    await dustVault(ctx, vaultPda, dust);
+    expect(Number(await getTokenBalance(ctx.provider.connection, vaultPda))).to.equal(
+      stakeAmount + dust
+    );
+
+    const userBalanceBefore = await getTokenBalance(ctx.provider.connection, user.tokenAccount);
+    const treasuryTokenAccount = await getTreasuryTokenAccount(ctx);
+    const charityTokenAccount = await getCharityTokenAccount(ctx);
+    const treasuryBefore = await getTokenBalance(ctx.provider.connection, treasuryTokenAccount);
+    const charityBefore = await getTokenBalance(ctx.provider.connection, charityTokenAccount);
+
+    // Same shape as the mobile app's buildReportAndSettleTransaction
+    const reportIx = await ctx.program.methods
+      .reportCompletion(50)
+      .accounts({ user: user.keypair.publicKey, pledge: pledgePda })
+      .instruction();
+
+    await ctx.program.methods
+      .processCompletion()
+      .accounts({
+        crank: user.keypair.publicKey,
+        pledge: pledgePda,
+        vault: vaultPda,
+        user: user.keypair.publicKey,
+        userTokenAccount: user.tokenAccount,
+        treasuryTokenAccount,
+        charityTokenAccount,
+      })
+      .preInstructions([reportIx])
+      .signers([user.keypair])
+      .rpc();
+
+    // Normal 50% payout, plus the dust swept back to the user
+    const userBalanceAfter = await getTokenBalance(ctx.provider.connection, user.tokenAccount);
+    expect(Number(userBalanceAfter - userBalanceBefore)).to.equal(4_950_000 + dust);
+
+    // Treasury/charity amounts are unaffected by the dust
+    const treasuryAfter = await getTokenBalance(ctx.provider.connection, treasuryTokenAccount);
+    const charityAfter = await getTokenBalance(ctx.provider.connection, charityTokenAccount);
+    expect(Number(treasuryAfter - treasuryBefore)).to.equal(3_535_000);
+    expect(Number(charityAfter - charityBefore)).to.equal(1_515_000);
+
+    // Vault and pledge are both closed
+    expect(await ctx.provider.connection.getAccountInfo(vaultPda)).to.be.null;
+    expect(await ctx.provider.connection.getAccountInfo(pledgePda)).to.be.null;
   });
 
   it("rejects crank settling before deadline", async () => {
