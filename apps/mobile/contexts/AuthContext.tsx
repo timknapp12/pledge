@@ -372,10 +372,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const disconnect = useCallback(async () => {
     try {
       if (Platform.OS === 'ios') {
-        // Clear Phantom's cached shared secret / session token so the next
-        // `connect` re-handshakes cleanly. Fire-and-forget; don't block
-        // logout on the deep-link round trip.
-        phantom.disconnect().catch(() => {});
+        // Local-only: clears the cached Phantom session without opening Phantom.
+        await phantom.disconnect();
       }
       await removeAuthToken();
       setRpcAuthToken(null);

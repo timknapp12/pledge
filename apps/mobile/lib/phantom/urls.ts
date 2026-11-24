@@ -58,17 +58,3 @@ export const buildSignTransactionUrl = (
   });
   return `${PHANTOM_BASE}/signTransaction?${params.toString()}`;
 };
-
-export const buildDisconnectUrl = (
-  dappPublicKey: Uint8Array,
-  encryptedPayload: Uint8Array,
-  nonce: Uint8Array,
-): string => {
-  const params = new URLSearchParams({
-    dapp_encryption_public_key: bs58.encode(dappPublicKey),
-    nonce: bs58.encode(nonce),
-    redirect_link: redirectLink(),
-    payload: bs58.encode(encryptedPayload),
-  });
-  return `${PHANTOM_BASE}/disconnect?${params.toString()}`;
-};
