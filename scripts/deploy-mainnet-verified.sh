@@ -277,6 +277,7 @@ solana-verify verify-from-repo \
 # === Step 8: Submit OtterSec job ===
 bold "Submitting OtterSec remote build job"
 solana-verify remote submit-job \
+  -u "$RPC_URL" \
   --program-id "$PROGRAM_ID" \
   --uploader "$TEMP_PUBKEY"
 
