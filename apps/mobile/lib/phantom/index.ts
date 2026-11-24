@@ -6,4 +6,5 @@ export {
   getConnectedWallet,
   resolveIncomingUrl,
 } from './client';
+export { clearSession } from './session';
 export type { PhantomCluster } from './types';

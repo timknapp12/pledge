@@ -278,7 +278,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const connectIos = useCallback(async (): Promise<void> => {
-    // Phantom handshake (no-op if already connected from a prior session)
+    // Always start login with a fresh Phantom handshake. A cached session can
+    // go stale (app removed from Phantom's connected apps, Phantom reinstalled,
+    // keychain surviving an app reinstall); Phantom then shows "Request
+    // blocked" on signMessage and never calls back, so the user can't log in.
+    await phantom.clearSession();
     const walletAddr = await phantom.connect(
       solanaCluster === 'mainnet-beta' ? 'mainnet-beta' : 'devnet',
     );
