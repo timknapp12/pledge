@@ -11,7 +11,6 @@ import {
   buildConnectUrl,
   buildSignMessageUrl,
   buildSignTransactionUrl,
-  buildDisconnectUrl,
 } from './urls';
 import {
   encryptForPhantom,
@@ -55,7 +54,6 @@ const clearPending = (): void => {
 // Called by the iOS Linking listener for every inbound URL. Gated on
 // `pending` so unrelated deep links are ignored.
 export const resolveIncomingUrl = (url: string): void => {
-  console.log('[Phantom] incoming URL:', url, 'pending?', !!pending);
   if (!pending) return;
   const resolver = pending.resolve;
   clearPending();
@@ -149,9 +147,6 @@ export const connect = async (cluster: PhantomCluster): Promise<string> => {
     sharedSecret,
   );
 
-  console.log('[Phantom] connect OK — wallet:', payload.public_key);
-  console.log('[Phantom] session token length:', payload.session?.length ?? 0);
-
   await persistSession({
     ...session,
     phantomPublicKeyBs58,
@@ -173,16 +168,6 @@ export const signMessage = async (message: string): Promise<string> => {
 
   const messageBytes = new TextEncoder().encode(message);
   const messageB58 = bs58.encode(messageBytes);
-  console.log(
-    '[Phantom] signMessage — len:',
-    message.length,
-    'bytes:',
-    messageBytes.length,
-    'session.len:',
-    sessionToken.length,
-    'sharedSecret.len:',
-    sharedSecret.length,
-  );
 
   const { encrypted, nonce } = encryptForPhantom(
     {
@@ -250,33 +235,14 @@ export const signTransaction = async (
 };
 
 /**
- * Tell Phantom to drop its session and forget the local connection state.
- * The dApp keypair is kept so we don't churn the persistent identity.
+ * Forget the local Phantom connection. Local-only: we don't deep-link to
+ * Phantom's /disconnect, which would bounce the user into Phantom on logout.
+ * Login always starts with a fresh handshake, so Phantom's stale side of the
+ * session is never reused.
  */
 export const disconnect = async (): Promise<void> => {
-  try {
-    const session = await loadSession();
-    if (
-      isConnected(session) &&
-      session.sharedSecretBs58 &&
-      session.sessionToken
-    ) {
-      const sharedSecret = bs58.decode(session.sharedSecretBs58);
-      const dappPublicKey = bs58.decode(session.dappPublicKeyBs58);
-      const { encrypted, nonce } = encryptForPhantom(
-        { session: session.sessionToken },
-        sharedSecret,
-      );
-      // Fire-and-forget. We don't need the result — if Phantom never
-      // responds we still want local state cleared.
-      Linking.openURL(
-        buildDisconnectUrl(dappPublicKey, encrypted, nonce),
-      ).catch(() => {});
-    }
-  } finally {
-    clearPending();
-    await clearConnection();
-  }
+  clearPending();
+  await clearConnection();
 };
 
 export const getConnectedWallet = async (): Promise<string | null> => {
